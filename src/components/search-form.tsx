@@ -50,7 +50,7 @@ export function SearchForm({ loading, onSubmit }: Props) {
   const [count, setCount] = useState(5);
   const [popularity, setPopularity] = useState<Popularity>("all");
   const [highRated, setHighRated] = useState(false);
-  const [selectedMedia, setSelectedMedia] = useState<Media[]>([]);
+  const [selectedMedia, setSelectedMedia] = useState<Media[]>(["TV"]);
 
   const yearFrom = parseYear(yearFromText);
   const yearTo = parseYear(yearToText);
