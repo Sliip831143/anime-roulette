@@ -128,3 +128,248 @@
     @apply font-sans;
   }
 }
+
+/* ============================================================
+   ガチャモード（ブルアカ風）
+   ============================================================ */
+
+/* シンプルモード時はガチャ専用要素を非表示 */
+.gacha-halo,
+.gacha-rarity-badge {
+  display: none;
+}
+
+[data-mode="gacha"] .gacha-halo {
+  display: block;
+}
+
+[data-mode="gacha"] .gacha-rarity-badge {
+  display: inline-block;
+}
+
+[data-mode="gacha"] {
+  --gacha-sky-1: oklch(0.97 0.02 230);
+  --gacha-sky-2: oklch(0.92 0.06 230);
+  --gacha-sky-3: oklch(0.96 0.03 250);
+  --gacha-accent: oklch(0.62 0.18 230);
+  --rarity-r1: oklch(0.65 0.18 240); /* 青: common */
+  --rarity-r2: oklch(0.78 0.18 85); /* 金: rare */
+  /* r3 = 虹: ultra rare（CSSで多色グラデを直接描画） */
+}
+
+[data-mode="gacha"] body,
+body[data-mode="gacha"] {
+  background:
+    radial-gradient(ellipse at 20% 0%, oklch(0.95 0.06 230 / 0.7) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 100%, oklch(0.92 0.05 250 / 0.6) 0%, transparent 60%),
+    linear-gradient(180deg, var(--gacha-sky-1) 0%, var(--gacha-sky-3) 100%);
+  background-attachment: fixed;
+}
+
+/* 浮遊するドット粒子 */
+[data-mode="gacha"]::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    radial-gradient(circle at 15% 25%, oklch(1 0 0 / 0.6) 1px, transparent 1.5px),
+    radial-gradient(circle at 75% 60%, oklch(1 0 0 / 0.5) 1px, transparent 1.5px),
+    radial-gradient(circle at 45% 85%, oklch(1 0 0 / 0.4) 1px, transparent 1.5px),
+    radial-gradient(circle at 90% 15%, oklch(1 0 0 / 0.5) 1px, transparent 1.5px);
+  background-size: 200px 200px, 280px 280px, 240px 240px, 320px 320px;
+  animation: gacha-drift 30s linear infinite;
+}
+
+@keyframes gacha-drift {
+  from { background-position: 0 0, 0 0, 0 0, 0 0; }
+  to { background-position: 200px 200px, -280px 280px, 240px -240px, -320px -320px; }
+}
+
+[data-mode="gacha"] main {
+  position: relative;
+  z-index: 1;
+}
+
+/* ガチャモードのカード基本スタイル */
+[data-mode="gacha"] .gacha-card {
+  background: oklch(1 0 0 / 0.55);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  border-width: 2px;
+  border-style: solid;
+  position: relative;
+  transition: transform 200ms ease, box-shadow 300ms ease;
+}
+
+[data-mode="gacha"] .gacha-card:hover {
+  transform: translateY(-2px);
+}
+
+/* レアリティ別の枠と発光 */
+/* ★1: 青（common） — 大半 */
+[data-mode="gacha"] .gacha-card[data-rarity="r1"] {
+  border-color: var(--rarity-r1);
+  box-shadow:
+    0 4px 12px oklch(0.65 0.18 240 / 0.18),
+    inset 0 0 0 1px oklch(1 0 0 / 0.5);
+}
+
+/* ★2: 金（rare） */
+[data-mode="gacha"] .gacha-card[data-rarity="r2"] {
+  border-color: var(--rarity-r2);
+  box-shadow:
+    0 0 24px oklch(0.78 0.18 85 / 0.4),
+    0 4px 18px oklch(0.78 0.18 85 / 0.35),
+    inset 0 0 0 1px oklch(1 0 0 / 0.6);
+}
+
+/* ★3: 虹色（ultra rare） — 神域。borderを多色グラデで描画し、ゆっくり回転 */
+[data-mode="gacha"] .gacha-card[data-rarity="r3"] {
+  border-color: transparent;
+  background:
+    linear-gradient(oklch(1 0 0 / 0.55), oklch(1 0 0 / 0.55)) padding-box,
+    conic-gradient(
+      from var(--rainbow-angle, 0deg),
+      oklch(0.72 0.22 25),
+      oklch(0.78 0.18 85),
+      oklch(0.78 0.20 145),
+      oklch(0.72 0.20 220),
+      oklch(0.62 0.22 290),
+      oklch(0.72 0.22 355),
+      oklch(0.72 0.22 25)
+    ) border-box;
+  box-shadow:
+    0 0 32px oklch(0.78 0.20 145 / 0.35),
+    0 0 48px oklch(0.62 0.22 290 / 0.30),
+    0 4px 24px oklch(0.78 0.18 85 / 0.4),
+    inset 0 0 0 1px oklch(1 0 0 / 0.7);
+  animation: rainbow-spin 6s linear infinite;
+}
+
+@property --rainbow-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes rainbow-spin {
+  from { --rainbow-angle: 0deg; }
+  to { --rainbow-angle: 360deg; }
+}
+
+/* レアリティバッジ（カード上の★表示） */
+[data-mode="gacha"] .gacha-rarity-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  background: oklch(1 0 0 / 0.85);
+  backdrop-filter: blur(4px);
+  z-index: 2;
+}
+
+/* ★1: 青文字 */
+[data-mode="gacha"] .gacha-card[data-rarity="r1"] .gacha-rarity-badge {
+  color: var(--rarity-r1);
+}
+
+/* ★2: 金グラデ背景 */
+[data-mode="gacha"] .gacha-card[data-rarity="r2"] .gacha-rarity-badge {
+  color: oklch(0.55 0.18 70);
+  background: linear-gradient(135deg,
+    oklch(0.95 0.10 85) 0%,
+    oklch(0.85 0.18 85) 100%);
+}
+
+/* ★3: 虹グラデ背景 */
+[data-mode="gacha"] .gacha-card[data-rarity="r3"] .gacha-rarity-badge {
+  color: oklch(1 0 0);
+  background: linear-gradient(
+    135deg,
+    oklch(0.72 0.22 25) 0%,
+    oklch(0.78 0.18 85) 25%,
+    oklch(0.78 0.20 145) 50%,
+    oklch(0.72 0.20 220) 75%,
+    oklch(0.62 0.22 290) 100%
+  );
+  text-shadow: 0 1px 2px oklch(0 0 0 / 0.3);
+  box-shadow: 0 0 8px oklch(1 0 0 / 0.6);
+}
+
+/* 光輪（ヘイロー）— 画像左上に浮かぶ薄い楕円リング */
+[data-mode="gacha"] .gacha-halo {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 64px;
+  height: 16px;
+  border: 2px solid oklch(0.85 0.10 230 / 0.7);
+  border-radius: 50%;
+  background: transparent;
+  z-index: 2;
+  box-shadow: 0 0 8px oklch(0.9 0.08 230 / 0.5);
+  pointer-events: none;
+}
+
+/* ★2: 金色の光輪 */
+[data-mode="gacha"] .gacha-card[data-rarity="r2"] .gacha-halo {
+  border-color: oklch(0.85 0.18 85 / 0.85);
+  box-shadow: 0 0 12px oklch(0.85 0.18 85 / 0.7);
+}
+
+/* ★3: 虹色＋脈動の光輪 */
+[data-mode="gacha"] .gacha-card[data-rarity="r3"] .gacha-halo {
+  border: 2px solid transparent;
+  background:
+    conic-gradient(
+      from var(--rainbow-angle, 0deg),
+      oklch(0.78 0.22 25),
+      oklch(0.82 0.18 85),
+      oklch(0.78 0.20 145),
+      oklch(0.72 0.20 220),
+      oklch(0.65 0.22 290),
+      oklch(0.78 0.22 25)
+    ) border-box;
+  -webkit-mask:
+    linear-gradient(oklch(0 0 0 / 0) 0 0) content-box,
+    linear-gradient(oklch(0 0 0) 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  box-shadow: 0 0 14px oklch(0.78 0.18 60 / 0.7);
+  animation: rainbow-spin 6s linear infinite, halo-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes halo-pulse {
+  0%, 100% { transform: translateX(-50%) scale(1); opacity: 1; }
+  50% { transform: translateX(-50%) scale(1.08); opacity: 0.8; }
+}
+
+/* ヘッダーのSchale風タイトル装飾 */
+[data-mode="gacha"] .gacha-title {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg,
+    oklch(0.45 0.15 240) 0%,
+    oklch(0.55 0.18 230) 50%,
+    oklch(0.45 0.15 240) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ガチャモード時のフォーム背景もグラス化 */
+[data-mode="gacha"] .gacha-form {
+  background: oklch(1 0 0 / 0.6);
+  backdrop-filter: blur(10px);
+  border: 1px solid oklch(1 0 0 / 0.5);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 24px oklch(0.5 0.1 230 / 0.1);
+}

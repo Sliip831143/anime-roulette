@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { searchAnimeWorks, type AnnictWork } from "@/lib/annict";
+import { searchAnimeWorksPaginated, type AnnictWork } from "@/lib/annict";
 import { expandSeasons, SEASONS } from "@/lib/seasons";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const POOL_SIZE = 200;
+const POOL_PER_PAGE = 200;
+const POOL_PAGES = 5;
 
 const POPULARITY_THRESHOLDS = {
   all: 0,
@@ -23,7 +24,7 @@ const querySchema = z
     yearFrom: z.coerce.number().int().min(1900).max(2100).optional(),
     yearTo: z.coerce.number().int().min(1900).max(2100).optional(),
     seasons: z.array(z.enum(SEASONS)).optional(),
-    count: z.coerce.number().int().min(1).max(20).default(5),
+    count: z.coerce.number().int().min(1).max(10).default(5),
     popularity: z.enum(["all", "popular", "very_popular"]).default("all"),
     highRated: z
       .union([z.literal("true"), z.literal("false")])
@@ -102,9 +103,10 @@ export async function GET(request: Request) {
 
   try {
     const expandedSeasons = expandSeasons({ yearFrom, yearTo, seasons });
-    const pool = await searchAnimeWorks({
+    const pool = await searchAnimeWorksPaginated({
       seasons: expandedSeasons,
-      first: POOL_SIZE,
+      perPage: POOL_PER_PAGE,
+      pages: POOL_PAGES,
     });
     const filtered = applyFilters(pool, popularity, highRated, media);
     const picked = shuffle(filtered).slice(0, count);

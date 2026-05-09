@@ -208,7 +208,7 @@ export function SearchForm({ loading, onSubmit }: Props) {
         <Label>取得件数: {count}件</Label>
         <Slider
           min={1}
-          max={20}
+          max={10}
           step={1}
           value={[count]}
           onValueChange={(v) => {

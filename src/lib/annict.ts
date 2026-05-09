@@ -18,18 +18,25 @@ export type AnnictWork = {
   } | null;
 };
 
+type PageInfo = {
+  endCursor: string | null;
+  hasNextPage: boolean;
+};
+
 type SearchWorksResponse = {
   searchWorks: {
     nodes: AnnictWork[];
+    pageInfo: PageInfo;
   };
 };
 
 const SEARCH_WORKS_QUERY = gql`
-  query SearchWorks($seasons: [String!], $first: Int!) {
+  query SearchWorks($seasons: [String!], $first: Int!, $after: String) {
     searchWorks(
       seasons: $seasons
       orderBy: { field: WATCHERS_COUNT, direction: DESC }
       first: $first
+      after: $after
     ) {
       nodes {
         annictId
@@ -45,6 +52,10 @@ const SEARCH_WORKS_QUERY = gql`
         image {
           recommendedImageUrl
         }
+      }
+      pageInfo {
+        endCursor
+        hasNextPage
       }
     }
   }
@@ -63,18 +74,68 @@ function getClient(): GraphQLClient {
 export type SearchAnimeWorksInput = {
   seasons: string[];
   first: number;
+  after?: string | null;
 };
 
-export async function searchAnimeWorks({
+async function searchAnimeWorksPage({
   seasons,
   first,
-}: SearchAnimeWorksInput): Promise<AnnictWork[]> {
-  const variables: { first: number; seasons?: string[] } = { first };
+  after,
+}: SearchAnimeWorksInput): Promise<{
+  nodes: AnnictWork[];
+  pageInfo: PageInfo;
+}> {
+  const variables: {
+    first: number;
+    seasons?: string[];
+    after?: string | null;
+  } = { first };
   if (seasons.length > 0) variables.seasons = seasons;
+  if (after) variables.after = after;
 
   const data = await getClient().request<SearchWorksResponse>(
     SEARCH_WORKS_QUERY,
     variables,
   );
-  return data.searchWorks.nodes;
+  return data.searchWorks;
+}
+
+export async function searchAnimeWorks(
+  input: SearchAnimeWorksInput,
+): Promise<AnnictWork[]> {
+  const result = await searchAnimeWorksPage(input);
+  return result.nodes;
+}
+
+export type SearchAnimeWorksPaginatedInput = {
+  seasons: string[];
+  perPage: number;
+  pages: number;
+};
+
+/**
+ * after カーソルを逐次進めて最大 `pages` 回フェッチし、結合した nodes を返す。
+ * 途中で hasNextPage が false になったら早期終了する。
+ */
+export async function searchAnimeWorksPaginated({
+  seasons,
+  perPage,
+  pages,
+}: SearchAnimeWorksPaginatedInput): Promise<AnnictWork[]> {
+  const all: AnnictWork[] = [];
+  let cursor: string | null = null;
+
+  for (let i = 0; i < pages; i++) {
+    const { nodes, pageInfo } = await searchAnimeWorksPage({
+      seasons,
+      first: perPage,
+      after: cursor,
+    });
+    all.push(...nodes);
+    if (!pageInfo.hasNextPage) break;
+    cursor = pageInfo.endCursor;
+    if (cursor == null) break;
+  }
+
+  return all;
 }

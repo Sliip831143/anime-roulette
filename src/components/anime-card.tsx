@@ -1,5 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import type { AnnictWork } from "@/lib/annict";
+import { getRarity, RARITY_STARS } from "@/lib/rarity";
 
 const SEASON_LABEL: Record<NonNullable<AnnictWork["seasonName"]>, string> = {
   WINTER: "冬",
@@ -32,23 +33,28 @@ function formatSatisfaction(rate: number | null): string | null {
 
 export function AnimeCard({ work }: { work: AnnictWork }) {
   const annictUrl = `https://annict.com/works/${work.annictId}`;
+  const rarity = getRarity(work.watchersCount, work.satisfactionRate);
 
   return (
-    <Card className="overflow-hidden p-0">
+    <Card className="gacha-card overflow-hidden p-0" data-rarity={rarity}>
+      <span className="gacha-rarity-badge">{RARITY_STARS[rarity]}</span>
       <div className="flex gap-4">
-        {work.image?.recommendedImageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={work.image.recommendedImageUrl}
-            alt={work.title}
-            className="w-28 h-40 object-cover bg-muted shrink-0"
-            loading="lazy"
-          />
-        ) : (
-          <div className="w-28 h-40 flex items-center justify-center bg-muted text-xs text-muted-foreground shrink-0">
-            No image
-          </div>
-        )}
+        <div className="relative shrink-0">
+          <span className="gacha-halo" aria-hidden="true" />
+          {work.image?.recommendedImageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={work.image.recommendedImageUrl}
+              alt={work.title}
+              className="w-28 h-40 object-cover bg-muted"
+              loading="lazy"
+            />
+          ) : (
+            <div className="w-28 h-40 flex items-center justify-center bg-muted text-xs text-muted-foreground">
+              No image
+            </div>
+          )}
+        </div>
         <CardContent className="flex-1 p-4 flex flex-col gap-2">
           <h3 className="font-semibold leading-snug line-clamp-2">
             {work.title}

@@ -1,17 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { SearchForm, type SearchParams } from "@/components/search-form";
 import { AnimeCard } from "@/components/anime-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import type { AnnictWork } from "@/lib/annict";
+
+const MODE_STORAGE_KEY = "anime-roulette-mode";
 
 export default function Home() {
   const [results, setResults] = useState<AnnictWork[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [lastCount, setLastCount] = useState(5);
+  const [gachaMode, setGachaMode] = useState(true);
+
+  useEffect(() => {
+    const stored = localStorage.getItem(MODE_STORAGE_KEY);
+    if (stored === "simple") setGachaMode(false);
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.dataset.mode = gachaMode ? "gacha" : "simple";
+    localStorage.setItem(MODE_STORAGE_KEY, gachaMode ? "gacha" : "simple");
+  }, [gachaMode]);
 
   const handleSubmit = async (params: SearchParams) => {
     setLoading(true);
@@ -45,10 +59,27 @@ export default function Home() {
   return (
     <div className="flex flex-col flex-1 items-center px-4 py-10">
       <main className="w-full max-w-3xl space-y-8">
-        <header className="space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight">
-            Anime Roulette
-          </h1>
+        <header className="space-y-3">
+          <div className="flex items-center justify-between gap-4">
+            <h1
+              className={
+                gachaMode
+                  ? "gacha-title text-3xl tracking-tight"
+                  : "text-3xl font-semibold tracking-tight"
+              }
+            >
+              Anime Roulette
+            </h1>
+            <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
+              <span>シンプル</span>
+              <Switch
+                checked={gachaMode}
+                onCheckedChange={(checked) => setGachaMode(checked === true)}
+                aria-label="ガチャモード切り替え"
+              />
+              <span>ガチャ</span>
+            </label>
+          </div>
           <p className="text-sm text-muted-foreground">
             Annict APIから観るアニメの候補を抽出します。条件を指定して人気作からランダムに引きましょう。
           </p>
@@ -56,14 +87,20 @@ export default function Home() {
 
         <Separator />
 
-        <section>
+        <section className={gachaMode ? "gacha-form" : ""}>
           <SearchForm loading={loading} onSubmit={handleSubmit} />
         </section>
 
         <Separator />
 
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold">結果</h2>
+          <h2
+            className={
+              gachaMode ? "gacha-title text-xl" : "text-xl font-semibold"
+            }
+          >
+            結果
+          </h2>
           {loading ? (
             <div className="grid gap-4">
               {Array.from({ length: lastCount }).map((_, i) => (
