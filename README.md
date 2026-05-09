@@ -71,15 +71,15 @@ src/
 - `WorkOrderField` は `WATCHERS_COUNT` / `SEASON` / `CREATED_AT` の3種のみ。「人気アニメ」は `WATCHERS_COUNT DESC` で代用。
 - ランダム抽出は「人気上位50件をプール → サーバーでシャッフル → 指定件数を返却」で実現 (`src/app/api/anime/route.ts`)。
 
-## デプロイ（AWS Amplify Hosting）
+## デプロイ（Vercel）
 
 1. リポジトリを GitHub にプッシュ。
-2. Amplify Console で「Host web app」→ GitHub 連携でリポジトリを選択。
-3. ビルド設定は `amplify.yml` が自動検出されます。
-4. 環境変数 `ANNICT_TOKEN` を Amplify Console の「環境変数」に追加。
-5. デプロイ実行。
+2. https://vercel.com/new を開き、GitHub アカウントでサインイン。
+3. 該当リポジトリを Import。Framework は Next.js で自動検出されます。
+4. **Environment Variables** で `ANNICT_TOKEN` を追加（Production / Preview / Development 全環境にチェック推奨）。
+5. **Deploy** をクリック。
 
-`.next` を artifact として SSR/Route Handler が動作するよう Amplify がコンピュートを自動構成します。
+`vercel.json` で実行リージョンを東京（`hnd1`）に固定しているため、Annict API へのレイテンシが最小になります。
 
 ## ライセンス
 
