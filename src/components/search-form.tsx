@@ -6,13 +6,24 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { SEASONS, SEASON_LABELS_JA, type Season } from "@/lib/seasons";
+
+export type Popularity = "all" | "popular" | "very_popular";
+
+const POPULARITY_OPTIONS: { value: Popularity; label: string; hint: string }[] = [
+  { value: "all", label: "すべて", hint: "制限なし" },
+  { value: "popular", label: "人気のみ", hint: "視聴登録1,000人以上" },
+  { value: "very_popular", label: "超人気のみ", hint: "視聴登録5,000人以上" },
+];
 
 export type SearchParams = {
   yearFrom?: number;
   yearTo?: number;
   seasons: Season[];
   count: number;
+  popularity: Popularity;
+  highRated: boolean;
 };
 
 type Props = {
@@ -25,6 +36,8 @@ export function SearchForm({ loading, onSubmit }: Props) {
   const [yearToText, setYearToText] = useState("");
   const [selectedSeasons, setSelectedSeasons] = useState<Season[]>([]);
   const [count, setCount] = useState(5);
+  const [popularity, setPopularity] = useState<Popularity>("all");
+  const [highRated, setHighRated] = useState(false);
 
   const yearFrom = parseYear(yearFromText);
   const yearTo = parseYear(yearToText);
@@ -46,6 +59,8 @@ export function SearchForm({ loading, onSubmit }: Props) {
       yearTo: yearTo ?? undefined,
       seasons: seasonsEnabled ? selectedSeasons : [],
       count,
+      popularity,
+      highRated,
     });
   };
 
@@ -110,6 +125,45 @@ export function SearchForm({ loading, onSubmit }: Props) {
             </label>
           ))}
         </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label>人気度</Label>
+        <RadioGroup
+          value={popularity}
+          onValueChange={(v) =>
+            typeof v === "string" && setPopularity(v as Popularity)
+          }
+          className="grid grid-cols-1 gap-2 sm:grid-cols-3"
+        >
+          {POPULARITY_OPTIONS.map((opt) => (
+            <label
+              key={opt.value}
+              className="flex items-start gap-2 cursor-pointer"
+            >
+              <RadioGroupItem value={opt.value} className="mt-1" />
+              <span className="flex flex-col">
+                <span className="text-sm">{opt.label}</span>
+                <span className="text-xs text-muted-foreground">{opt.hint}</span>
+              </span>
+            </label>
+          ))}
+        </RadioGroup>
+      </div>
+
+      <div className="space-y-2">
+        <label className="flex items-center gap-2 cursor-pointer">
+          <Checkbox
+            checked={highRated}
+            onCheckedChange={(checked) => setHighRated(checked === true)}
+          />
+          <span className="text-sm">
+            高評価のみ
+            <span className="ml-2 text-xs text-muted-foreground">
+              満足度70%以上
+            </span>
+          </span>
+        </label>
       </div>
 
       <div className="space-y-2">

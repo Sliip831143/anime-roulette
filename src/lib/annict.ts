@@ -9,6 +9,8 @@ export type AnnictWork = {
   seasonName: "WINTER" | "SPRING" | "SUMMER" | "AUTUMN" | null;
   media: "TV" | "OVA" | "MOVIE" | "WEB" | "OTHER" | null;
   watchersCount: number;
+  reviewsCount: number;
+  satisfactionRate: number | null;
   officialSiteUrl: string | null;
   twitterHashtag: string | null;
   image: {
@@ -36,6 +38,8 @@ const SEARCH_WORKS_QUERY = gql`
         seasonName
         media
         watchersCount
+        reviewsCount
+        satisfactionRate
         officialSiteUrl
         twitterHashtag
         image {

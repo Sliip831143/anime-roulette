@@ -21,6 +21,8 @@ export default function Home() {
     if (params.yearTo != null) sp.set("yearTo", String(params.yearTo));
     for (const s of params.seasons) sp.append("seasons", s);
     sp.set("count", String(params.count));
+    sp.set("popularity", params.popularity);
+    sp.set("highRated", String(params.highRated));
 
     try {
       const res = await fetch(`/api/anime?${sp.toString()}`);

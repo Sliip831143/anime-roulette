@@ -24,6 +24,12 @@ function formatSeason(work: AnnictWork): string {
   return parts.join(" / ") || "情報なし";
 }
 
+function formatSatisfaction(rate: number | null): string | null {
+  if (rate == null) return null;
+  const percent = rate <= 1 ? rate * 100 : rate;
+  return `満足度${percent.toFixed(1)}%`;
+}
+
 export function AnimeCard({ work }: { work: AnnictWork }) {
   const annictUrl = `https://annict.com/works/${work.annictId}`;
 
@@ -48,9 +54,13 @@ export function AnimeCard({ work }: { work: AnnictWork }) {
             {work.title}
           </h3>
           <p className="text-sm text-muted-foreground">{formatSeason(work)}</p>
-          <p className="text-xs text-muted-foreground">
-            視聴登録: {work.watchersCount.toLocaleString()}人
-          </p>
+          <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+            <span>視聴登録 {work.watchersCount.toLocaleString()}人</span>
+            <span>レビュー {work.reviewsCount.toLocaleString()}件</span>
+            {formatSatisfaction(work.satisfactionRate) && (
+              <span>{formatSatisfaction(work.satisfactionRate)}</span>
+            )}
+          </div>
           <div className="mt-auto flex flex-wrap gap-3 text-xs">
             <a
               href={annictUrl}
