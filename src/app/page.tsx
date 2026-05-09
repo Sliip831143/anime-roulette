@@ -23,6 +23,7 @@ export default function Home() {
     sp.set("count", String(params.count));
     sp.set("popularity", params.popularity);
     sp.set("highRated", String(params.highRated));
+    for (const m of params.media) sp.append("media", m);
 
     try {
       const res = await fetch(`/api/anime?${sp.toString()}`);

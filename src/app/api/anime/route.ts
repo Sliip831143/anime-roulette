@@ -16,6 +16,8 @@ const POPULARITY_THRESHOLDS = {
 
 const HIGH_RATED_THRESHOLD_PERCENT = 70;
 
+const MEDIA_VALUES = ["TV", "OVA", "MOVIE", "WEB", "OTHER"] as const;
+
 const querySchema = z
   .object({
     yearFrom: z.coerce.number().int().min(1900).max(2100).optional(),
@@ -27,6 +29,7 @@ const querySchema = z
       .union([z.literal("true"), z.literal("false")])
       .default("false")
       .transform((v) => v === "true"),
+    media: z.array(z.enum(MEDIA_VALUES)).optional(),
   })
   .refine(
     (v) => v.yearFrom == null || v.yearTo == null || v.yearFrom <= v.yearTo,
@@ -56,14 +59,21 @@ function applyFilters(
   works: AnnictWork[],
   popularity: keyof typeof POPULARITY_THRESHOLDS,
   highRated: boolean,
+  media: readonly (typeof MEDIA_VALUES)[number][] | undefined,
 ): AnnictWork[] {
   const minWatchers = POPULARITY_THRESHOLDS[popularity];
+  // 未指定 or 全選択時は絞り込まない
+  const mediaFilter =
+    media && media.length > 0 && media.length < MEDIA_VALUES.length
+      ? new Set(media)
+      : null;
   return works.filter((w) => {
     if (w.watchersCount < minWatchers) return false;
     if (highRated) {
       const percent = normalizeSatisfactionPercent(w.satisfactionRate);
       if (percent == null || percent < HIGH_RATED_THRESHOLD_PERCENT) return false;
     }
+    if (mediaFilter && (w.media == null || !mediaFilter.has(w.media))) return false;
     return true;
   });
 }
@@ -77,6 +87,7 @@ export async function GET(request: Request) {
     count: searchParams.get("count") ?? undefined,
     popularity: searchParams.get("popularity") ?? undefined,
     highRated: searchParams.get("highRated") ?? undefined,
+    media: searchParams.getAll("media"),
   });
 
   if (!parsed.success) {
@@ -86,7 +97,8 @@ export async function GET(request: Request) {
     );
   }
 
-  const { yearFrom, yearTo, seasons, count, popularity, highRated } = parsed.data;
+  const { yearFrom, yearTo, seasons, count, popularity, highRated, media } =
+    parsed.data;
 
   try {
     const expandedSeasons = expandSeasons({ yearFrom, yearTo, seasons });
@@ -94,7 +106,7 @@ export async function GET(request: Request) {
       seasons: expandedSeasons,
       first: POOL_SIZE,
     });
-    const filtered = applyFilters(pool, popularity, highRated);
+    const filtered = applyFilters(pool, popularity, highRated, media);
     const picked = shuffle(filtered).slice(0, count);
     return NextResponse.json({
       works: picked,

@@ -17,6 +17,17 @@ const POPULARITY_OPTIONS: { value: Popularity; label: string; hint: string }[] =
   { value: "very_popular", label: "超人気のみ", hint: "視聴登録5,000人以上" },
 ];
 
+export const MEDIA_VALUES = ["TV", "OVA", "MOVIE", "WEB", "OTHER"] as const;
+export type Media = (typeof MEDIA_VALUES)[number];
+
+const MEDIA_LABELS_JA: Record<Media, string> = {
+  TV: "TV",
+  MOVIE: "映画",
+  OVA: "OVA",
+  WEB: "Web",
+  OTHER: "その他",
+};
+
 export type SearchParams = {
   yearFrom?: number;
   yearTo?: number;
@@ -24,6 +35,7 @@ export type SearchParams = {
   count: number;
   popularity: Popularity;
   highRated: boolean;
+  media: Media[];
 };
 
 type Props = {
@@ -38,6 +50,7 @@ export function SearchForm({ loading, onSubmit }: Props) {
   const [count, setCount] = useState(5);
   const [popularity, setPopularity] = useState<Popularity>("all");
   const [highRated, setHighRated] = useState(false);
+  const [selectedMedia, setSelectedMedia] = useState<Media[]>([]);
 
   const yearFrom = parseYear(yearFromText);
   const yearTo = parseYear(yearToText);
@@ -61,12 +74,19 @@ export function SearchForm({ loading, onSubmit }: Props) {
       count,
       popularity,
       highRated,
+      media: selectedMedia,
     });
   };
 
   const toggleSeason = (season: Season, checked: boolean) => {
     setSelectedSeasons((prev) =>
       checked ? [...prev, season] : prev.filter((s) => s !== season),
+    );
+  };
+
+  const toggleMedia = (m: Media, checked: boolean) => {
+    setSelectedMedia((prev) =>
+      checked ? [...prev, m] : prev.filter((v) => v !== m),
     );
   };
 
@@ -164,6 +184,24 @@ export function SearchForm({ loading, onSubmit }: Props) {
             </span>
           </span>
         </label>
+      </div>
+
+      <div className="space-y-2">
+        <Label>メディア種別</Label>
+        <div className="flex flex-wrap gap-4">
+          {MEDIA_VALUES.map((m) => (
+            <label key={m} className="flex items-center gap-2 cursor-pointer">
+              <Checkbox
+                checked={selectedMedia.includes(m)}
+                onCheckedChange={(checked) => toggleMedia(m, checked === true)}
+              />
+              <span className="text-sm">{MEDIA_LABELS_JA[m]}</span>
+            </label>
+          ))}
+        </div>
+        <p className="text-xs text-muted-foreground">
+          未選択ですべて対象。一部だけ選ぶと該当種別に絞り込みます。
+        </p>
       </div>
 
       <div className="space-y-2">
