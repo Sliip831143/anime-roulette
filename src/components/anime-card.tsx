@@ -34,15 +34,97 @@ function formatSatisfaction(rate: number | null): string | null {
   return `${percent.toFixed(1)}%`;
 }
 
-export function AnimeCard({ work }: { work: AnnictWork }) {
+export function AnimeCard({
+  work,
+  gachaMode = true,
+}: {
+  work: AnnictWork;
+  gachaMode?: boolean;
+}) {
   const annictUrl = `https://annict.com/works/${work.annictId}`;
   const rarity = getRarity(work.watchersCount, work.satisfactionRate);
   const satisfaction = formatSatisfaction(work.satisfactionRate);
   const [imageError, setImageError] = useState(false);
   const hasImage = !!work.image?.recommendedImageUrl && !imageError;
 
+  if (!gachaMode) {
+    return (
+      <Card
+        id={`work-${work.annictId}`}
+        className="overflow-hidden p-0 scroll-mt-4"
+      >
+        <div className="flex gap-4 p-4">
+          <div className="shrink-0 w-24 h-36 rounded-md overflow-hidden bg-muted">
+            {hasImage ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={work.image!.recommendedImageUrl!}
+                alt={work.title}
+                className="w-full h-full object-cover"
+                loading="lazy"
+                onError={() => setImageError(true)}
+              />
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-xs text-muted-foreground">
+                <svg
+                  viewBox="0 0 64 64"
+                  className="w-8 h-8"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <rect x="8" y="12" width="48" height="40" rx="3" />
+                  <circle cx="22" cy="26" r="4" />
+                  <path d="M8 44 L24 30 L36 40 L48 28 L56 36" />
+                </svg>
+                <span className="text-[10px]">No image</span>
+              </div>
+            )}
+          </div>
+          <div className="flex-1 min-w-0 flex flex-col gap-2">
+            <h3 className="font-semibold leading-snug line-clamp-2">
+              {work.title}
+            </h3>
+            <p className="text-sm text-muted-foreground">{formatSeason(work)}</p>
+            <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+              <span>視聴登録 {work.watchersCount.toLocaleString()}人</span>
+              {satisfaction && <span>満足度 {satisfaction}</span>}
+            </div>
+            <div className="mt-auto flex flex-wrap gap-3 text-xs">
+              <a
+                href={annictUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline"
+              >
+                Annictで見る
+              </a>
+              {work.officialSiteUrl && (
+                <a
+                  href={work.officialSiteUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  公式サイト
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
   return (
-    <Card className="gacha-card overflow-hidden p-0" data-rarity={rarity}>
+    <Card
+      id={`work-${work.annictId}`}
+      className="gacha-card overflow-hidden p-0 scroll-mt-4"
+      data-rarity={rarity}
+    >
       <div className="gacha-card-titlebar">
         <span className="gacha-card-rarity" aria-label={`レアリティ${RARITY_STARS[rarity]}`}>
           {RARITY_STARS[rarity]}

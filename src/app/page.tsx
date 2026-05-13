@@ -25,6 +25,28 @@ export default function Home() {
     resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [resultsVersion]);
 
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const [showResultsPanel, setShowResultsPanel] = useState(true);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 200);
+    };
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    if (resultsVersion > 0) setShowResultsPanel(true);
+  }, [resultsVersion]);
+
+  const scrollToWork = (id: number) => {
+    document
+      .getElementById(`work-${id}`)
+      ?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
+
   useEffect(() => {
     const stored = localStorage.getItem(MODE_STORAGE_KEY);
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -94,8 +116,8 @@ export default function Home() {
                 />
               </h1>
             ) : (
-              <h1 className="text-3xl font-semibold tracking-tight">
-                Anime Roulette
+              <h1 className="text-2xl font-semibold tracking-tight">
+                アニメルーレット
               </h1>
             )}
             <div
@@ -165,7 +187,11 @@ export default function Home() {
               className="grid gap-4 results-fade-in"
             >
               {results.map((work) => (
-                <AnimeCard key={work.annictId} work={work} />
+                <AnimeCard
+                  key={work.annictId}
+                  work={work}
+                  gachaMode={gachaMode}
+                />
               ))}
             </div>
           )}
@@ -173,6 +199,66 @@ export default function Home() {
       </main>
       {pendingWorks && (
         <GachaSequence works={pendingWorks} onClose={handleSequenceClose} />
+      )}
+      {results && results.length > 0 && showScrollTop && (
+        <button
+          type="button"
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          className="scroll-top-btn"
+          aria-label="ページトップへ戻る"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <polyline points="18 15 12 9 6 15" />
+          </svg>
+        </button>
+      )}
+      {results && results.length > 0 && showResultsPanel && (
+        <aside className="results-panel" aria-label="結果一覧">
+          <header className="results-panel-header">
+            <span>結果一覧</span>
+            <button
+              type="button"
+              className="results-panel-close"
+              onClick={() => setShowResultsPanel(false)}
+              aria-label="結果一覧を閉じる"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </header>
+          <ol className="results-panel-list">
+            {results.map((work, i) => (
+              <li key={work.annictId}>
+                <button
+                  type="button"
+                  onClick={() => scrollToWork(work.annictId)}
+                  title={work.title}
+                >
+                  <span className="results-panel-index">{i + 1}</span>
+                  <span className="results-panel-title">{work.title}</span>
+                </button>
+              </li>
+            ))}
+          </ol>
+        </aside>
       )}
     </div>
   );
