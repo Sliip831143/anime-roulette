@@ -41,9 +41,16 @@ export type SearchParams = {
 type Props = {
   loading: boolean;
   onSubmit: (params: SearchParams) => void;
+  submitLabel?: string;
+  loadingLabel?: string;
 };
 
-export function SearchForm({ loading, onSubmit }: Props) {
+export function SearchForm({
+  loading,
+  onSubmit,
+  submitLabel = "候補を取得",
+  loadingLabel = "取得中...",
+}: Props) {
   const [yearFromText, setYearFromText] = useState("");
   const [yearToText, setYearToText] = useState("");
   const [selectedSeasons, setSelectedSeasons] = useState<Season[]>([]);
@@ -225,7 +232,7 @@ export function SearchForm({ loading, onSubmit }: Props) {
       )}
 
       <Button type="submit" disabled={loading || error != null} className="w-full">
-        {loading ? "取得中..." : "候補を取得"}
+        {loading ? loadingLabel : submitLabel}
       </Button>
     </form>
   );

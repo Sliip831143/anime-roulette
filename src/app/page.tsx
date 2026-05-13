@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { SearchForm, type SearchParams } from "@/components/search-form";
 import { AnimeCard } from "@/components/anime-card";
+import { GachaSequence } from "@/components/gacha-sequence";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
@@ -13,12 +14,15 @@ const MODE_STORAGE_KEY = "anime-roulette-mode";
 
 export default function Home() {
   const [results, setResults] = useState<AnnictWork[] | null>(null);
+  const [resultsVersion, setResultsVersion] = useState(0);
+  const [pendingWorks, setPendingWorks] = useState<AnnictWork[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [lastCount, setLastCount] = useState(5);
   const [gachaMode, setGachaMode] = useState(true);
 
   useEffect(() => {
     const stored = localStorage.getItem(MODE_STORAGE_KEY);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (stored === "simple") setGachaMode(false);
   }, []);
 
@@ -43,9 +47,15 @@ export default function Home() {
       const res = await fetch(`/api/anime?${sp.toString()}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "取得に失敗しました");
-      setResults(data.works as AnnictWork[]);
-      if ((data.works as AnnictWork[]).length === 0) {
+      const works = data.works as AnnictWork[];
+      if (works.length === 0) {
+        setResults(works);
         toast.info("条件に合うアニメが見つかりませんでした");
+      } else if (gachaMode) {
+        setResults(null);
+        setPendingWorks(works);
+      } else {
+        setResults(works);
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : "不明なエラー";
@@ -54,6 +64,14 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSequenceClose = () => {
+    if (pendingWorks) {
+      setResults(pendingWorks);
+      setResultsVersion((v) => v + 1);
+    }
+    setPendingWorks(null);
   };
 
   return (
@@ -88,7 +106,12 @@ export default function Home() {
         <Separator />
 
         <section className={gachaMode ? "gacha-form" : ""}>
-          <SearchForm loading={loading} onSubmit={handleSubmit} />
+          <SearchForm
+            loading={loading}
+            onSubmit={handleSubmit}
+            submitLabel={gachaMode ? "ガチャを引く" : "候補を取得"}
+            loadingLabel={gachaMode ? "ガチャ準備中..." : "取得中..."}
+          />
         </section>
 
         <Separator />
@@ -116,7 +139,10 @@ export default function Home() {
               条件に合うアニメが見つかりませんでした。
             </p>
           ) : (
-            <div className="grid gap-4">
+            <div
+              key={resultsVersion}
+              className="grid gap-4 results-fade-in"
+            >
               {results.map((work) => (
                 <AnimeCard key={work.annictId} work={work} />
               ))}
@@ -124,6 +150,9 @@ export default function Home() {
           )}
         </section>
       </main>
+      {pendingWorks && (
+        <GachaSequence works={pendingWorks} onClose={handleSequenceClose} />
+      )}
     </div>
   );
 }
