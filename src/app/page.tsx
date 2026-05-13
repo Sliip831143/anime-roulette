@@ -1,13 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { SearchForm, type SearchParams } from "@/components/search-form";
 import { AnimeCard } from "@/components/anime-card";
 import { GachaSequence } from "@/components/gacha-sequence";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
 import type { AnnictWork } from "@/lib/annict";
 
 const MODE_STORAGE_KEY = "anime-roulette-mode";
@@ -19,6 +18,12 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [lastCount, setLastCount] = useState(5);
   const [gachaMode, setGachaMode] = useState(true);
+  const resultsRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (resultsVersion === 0) return;
+    resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [resultsVersion]);
 
   useEffect(() => {
     const stored = localStorage.getItem(MODE_STORAGE_KEY);
@@ -79,44 +84,60 @@ export default function Home() {
       <main className="w-full max-w-3xl space-y-8">
         <header className="space-y-3">
           <div className="flex items-center justify-between gap-4">
-            <h1
-              className={
-                gachaMode
-                  ? "gacha-title text-3xl tracking-tight"
-                  : "text-3xl font-semibold tracking-tight"
-              }
+            {gachaMode ? (
+              <h1 className="gacha-hero">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/logo.png"
+                  alt="アニメルーレット"
+                  className="gacha-hero-logo"
+                />
+              </h1>
+            ) : (
+              <h1 className="text-3xl font-semibold tracking-tight">
+                Anime Roulette
+              </h1>
+            )}
+            <div
+              className="mode-toggle"
+              role="group"
+              aria-label="モード切り替え"
             >
-              Anime Roulette
-            </h1>
-            <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
-              <span>シンプル</span>
-              <Switch
-                checked={gachaMode}
-                onCheckedChange={(checked) => setGachaMode(checked === true)}
-                aria-label="ガチャモード切り替え"
-              />
-              <span>ガチャ</span>
-            </label>
+              <button
+                type="button"
+                className={`mode-toggle-btn${!gachaMode ? " is-active" : ""}`}
+                onClick={() => setGachaMode(false)}
+                aria-pressed={!gachaMode}
+              >
+                簡易
+              </button>
+              <button
+                type="button"
+                className={`mode-toggle-btn${gachaMode ? " is-active" : ""}`}
+                onClick={() => setGachaMode(true)}
+                aria-pressed={gachaMode}
+              >
+                ガチャ
+              </button>
+            </div>
           </div>
-          <p className="text-sm text-muted-foreground">
-            Annict APIから観るアニメの候補を抽出します。条件を指定して人気作からランダムに引きましょう。
-          </p>
         </header>
 
-        <Separator />
-
         <section className={gachaMode ? "gacha-form" : ""}>
+          {gachaMode && (
+            <div className="gacha-form-header">SEARCH FORM</div>
+          )}
           <SearchForm
             loading={loading}
             onSubmit={handleSubmit}
             submitLabel={gachaMode ? "ガチャを引く" : "候補を取得"}
-            loadingLabel={gachaMode ? "ガチャ準備中..." : "取得中..."}
+            loadingLabel={gachaMode ? "Loading..." : "取得中..."}
           />
         </section>
 
         <Separator />
 
-        <section className="space-y-4">
+        <section ref={resultsRef} className="space-y-4 scroll-mt-4">
           <h2
             className={
               gachaMode ? "gacha-title text-xl" : "text-xl font-semibold"
@@ -132,7 +153,7 @@ export default function Home() {
             </div>
           ) : results == null ? (
             <p className="text-sm text-muted-foreground">
-              「候補を取得」ボタンを押すと結果が表示されます。
+              「{gachaMode ? "ガチャを引く" : "候補を取得"}」ボタンを押すと結果が表示されます。
             </p>
           ) : results.length === 0 ? (
             <p className="text-sm text-muted-foreground">

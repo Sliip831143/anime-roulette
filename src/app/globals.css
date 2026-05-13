@@ -7,7 +7,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -157,34 +157,63 @@
   /* r3 = 虹: ultra rare（CSSで多色グラデを直接描画） */
 }
 
+/* ガチャモード時の背景＋丸ゴシック（Zen Maru Gothic） */
 [data-mode="gacha"] body,
 body[data-mode="gacha"] {
+  font-family: var(--font-rounded), "Hiragino Maru Gothic ProN", "ヒラギノ丸ゴ ProN W3", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
   background:
-    radial-gradient(ellipse at 20% 0%, oklch(0.95 0.06 230 / 0.7) 0%, transparent 60%),
-    radial-gradient(ellipse at 80% 100%, oklch(0.92 0.05 250 / 0.6) 0%, transparent 60%),
-    linear-gradient(180deg, var(--gacha-sky-1) 0%, var(--gacha-sky-3) 100%);
+    radial-gradient(ellipse at 80% 8%, oklch(1 0 0 / 0.85) 0%, transparent 45%),
+    radial-gradient(ellipse at 20% 20%, oklch(0.98 0.02 220 / 0.7) 0%, transparent 55%),
+    radial-gradient(ellipse at 50% 92%, oklch(0.9 0.06 235 / 0.6) 0%, transparent 60%),
+    linear-gradient(180deg, oklch(0.97 0.02 225) 0%, oklch(0.93 0.05 230) 60%, oklch(0.9 0.06 235) 100%);
   background-attachment: fixed;
 }
 
-/* 浮遊するドット粒子 */
+/* 斜めライン（青系のみ・薄め） */
 [data-mode="gacha"]::before {
+  content: "";
+  position: fixed;
+  inset: -30%;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    repeating-linear-gradient(
+      118deg,
+      transparent 0px,
+      transparent 140px,
+      oklch(0.85 0.10 220 / 0.22) 140px,
+      oklch(0.85 0.10 220 / 0.22) 142px,
+      transparent 142px,
+      transparent 230px,
+      oklch(0.78 0.12 250 / 0.18) 230px,
+      oklch(0.78 0.12 250 / 0.18) 232px,
+      transparent 232px,
+      transparent 360px
+    );
+  animation: gacha-rays-drift 70s linear infinite;
+}
+
+/* 三角形シルエット（白〜薄水色のみ）＋薄シアン角丸フレーム */
+[data-mode="gacha"]::after {
   content: "";
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: 0;
-  background-image:
-    radial-gradient(circle at 15% 25%, oklch(1 0 0 / 0.6) 1px, transparent 1.5px),
-    radial-gradient(circle at 75% 60%, oklch(1 0 0 / 0.5) 1px, transparent 1.5px),
-    radial-gradient(circle at 45% 85%, oklch(1 0 0 / 0.4) 1px, transparent 1.5px),
-    radial-gradient(circle at 90% 15%, oklch(1 0 0 / 0.5) 1px, transparent 1.5px);
-  background-size: 200px 200px, 280px 280px, 240px 240px, 320px 320px;
-  animation: gacha-drift 30s linear infinite;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='820' height='820' viewBox='0 0 820 820'><path d='M90 70 L230 70 L160 200 Z' fill='%23ffffff' fill-opacity='0.55'/><path d='M580 180 L720 180 L650 320 Z' fill='%23ffffff' fill-opacity='0.42'/><path d='M180 470 L320 470 L250 600 Z' fill='%23b8d8ff' fill-opacity='0.4'/><path d='M620 600 L760 600 L690 740 Z' fill='%23ffffff' fill-opacity='0.45'/><path d='M30 280 L120 280 L75 360 Z' fill='%23b8e8ff' fill-opacity='0.45'/><path d='M400 60 L500 60 L450 150 Z' fill='%23ffffff' fill-opacity='0.35'/><rect x='540' y='420' width='180' height='180' rx='12' fill='none' stroke='%2393c8ff' stroke-opacity='0.4' stroke-width='2'/></svg>");
+  background-size: 820px 820px;
+  background-repeat: repeat;
+  animation: gacha-shapes-drift 90s linear infinite;
 }
 
-@keyframes gacha-drift {
-  from { background-position: 0 0, 0 0, 0 0, 0 0; }
-  to { background-position: 200px 200px, -280px 280px, 240px -240px, -320px -320px; }
+@keyframes gacha-rays-drift {
+  from { transform: translate(0, 0); }
+  to { transform: translate(-360px, 190px); }
+}
+
+@keyframes gacha-shapes-drift {
+  from { background-position: 0 0; }
+  to { background-position: 820px -410px; }
 }
 
 [data-mode="gacha"] main {
@@ -192,62 +221,7 @@ body[data-mode="gacha"] {
   z-index: 1;
 }
 
-/* ガチャモードのカード基本スタイル */
-[data-mode="gacha"] .gacha-card {
-  background: oklch(1 0 0 / 0.55);
-  backdrop-filter: blur(12px) saturate(140%);
-  -webkit-backdrop-filter: blur(12px) saturate(140%);
-  border-width: 2px;
-  border-style: solid;
-  position: relative;
-  transition: transform 200ms ease, box-shadow 300ms ease;
-}
-
-[data-mode="gacha"] .gacha-card:hover {
-  transform: translateY(-2px);
-}
-
-/* レアリティ別の枠と発光 */
-/* ★1: 青（common） — 大半 */
-[data-mode="gacha"] .gacha-card[data-rarity="r1"] {
-  border-color: var(--rarity-r1);
-  box-shadow:
-    0 4px 12px oklch(0.65 0.18 240 / 0.18),
-    inset 0 0 0 1px oklch(1 0 0 / 0.5);
-}
-
-/* ★2: 金（rare） */
-[data-mode="gacha"] .gacha-card[data-rarity="r2"] {
-  border-color: var(--rarity-r2);
-  box-shadow:
-    0 0 24px oklch(0.78 0.18 85 / 0.4),
-    0 4px 18px oklch(0.78 0.18 85 / 0.35),
-    inset 0 0 0 1px oklch(1 0 0 / 0.6);
-}
-
-/* ★3: 虹色（ultra rare） — 神域。borderを多色グラデで描画し、ゆっくり回転 */
-[data-mode="gacha"] .gacha-card[data-rarity="r3"] {
-  border-color: transparent;
-  background:
-    linear-gradient(oklch(1 0 0 / 0.55), oklch(1 0 0 / 0.55)) padding-box,
-    conic-gradient(
-      from var(--rainbow-angle, 0deg),
-      oklch(0.72 0.22 25),
-      oklch(0.78 0.18 85),
-      oklch(0.78 0.20 145),
-      oklch(0.72 0.20 220),
-      oklch(0.62 0.22 290),
-      oklch(0.72 0.22 355),
-      oklch(0.72 0.22 25)
-    ) border-box;
-  box-shadow:
-    0 0 32px oklch(0.78 0.20 145 / 0.35),
-    0 0 48px oklch(0.62 0.22 290 / 0.30),
-    0 4px 24px oklch(0.78 0.18 85 / 0.4),
-    inset 0 0 0 1px oklch(1 0 0 / 0.7);
-  animation: rainbow-spin 6s linear infinite;
-}
-
+/* レアリティ用変数の継続定義 */
 @property --rainbow-angle {
   syntax: "<angle>";
   initial-value: 0deg;
@@ -259,99 +233,240 @@ body[data-mode="gacha"] {
   to { --rainbow-angle: 360deg; }
 }
 
-/* レアリティバッジ（カード上の★表示） */
-[data-mode="gacha"] .gacha-rarity-badge {
+/* ガチャモード：結果カード（申請書ストライプ風） */
+[data-mode="gacha"] .gacha-card {
+  background: oklch(0.995 0.003 80);
+  border: none;
+  border-radius: 4px;
+  padding: 0;
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 4px 12px oklch(0 0 0 / 0.15),
+    inset 0 0 0 1px oklch(0.55 0.08 250 / 0.18);
+  transition: transform 200ms ease, box-shadow 300ms ease;
+}
+
+[data-mode="gacha"] .gacha-card:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 8px 18px oklch(0 0 0 / 0.18),
+    inset 0 0 0 1px oklch(0.55 0.08 250 / 0.22);
+}
+
+/* コーナーマーク */
+[data-mode="gacha"] .gacha-card::before,
+[data-mode="gacha"] .gacha-card::after {
+  content: "";
   position: absolute;
-  top: 8px;
-  right: 8px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  background: oklch(1 0 0 / 0.85);
-  backdrop-filter: blur(4px);
-  z-index: 2;
-}
-
-/* ★1: 青文字 */
-[data-mode="gacha"] .gacha-card[data-rarity="r1"] .gacha-rarity-badge {
-  color: var(--rarity-r1);
-}
-
-/* ★2: 金グラデ背景 */
-[data-mode="gacha"] .gacha-card[data-rarity="r2"] .gacha-rarity-badge {
-  color: oklch(0.55 0.18 70);
-  background: linear-gradient(135deg,
-    oklch(0.95 0.10 85) 0%,
-    oklch(0.85 0.18 85) 100%);
-}
-
-/* ★3: 虹グラデ背景 */
-[data-mode="gacha"] .gacha-card[data-rarity="r3"] .gacha-rarity-badge {
-  color: oklch(1 0 0);
-  background: linear-gradient(
-    135deg,
-    oklch(0.72 0.22 25) 0%,
-    oklch(0.78 0.18 85) 25%,
-    oklch(0.78 0.20 145) 50%,
-    oklch(0.72 0.20 220) 75%,
-    oklch(0.62 0.22 290) 100%
-  );
-  text-shadow: 0 1px 2px oklch(0 0 0 / 0.3);
-  box-shadow: 0 0 8px oklch(1 0 0 / 0.6);
-}
-
-/* 光輪（ヘイロー）— 画像左上に浮かぶ薄い楕円リング */
-[data-mode="gacha"] .gacha-halo {
-  position: absolute;
-  top: -10px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 64px;
-  height: 16px;
-  border: 2px solid oklch(0.85 0.10 230 / 0.7);
-  border-radius: 50%;
-  background: transparent;
-  z-index: 2;
-  box-shadow: 0 0 8px oklch(0.9 0.08 230 / 0.5);
+  width: 12px;
+  height: 12px;
+  border: 1.5px solid oklch(0.55 0.08 250 / 0.55);
   pointer-events: none;
+  z-index: 3;
 }
 
-/* ★2: 金色の光輪 */
-[data-mode="gacha"] .gacha-card[data-rarity="r2"] .gacha-halo {
-  border-color: oklch(0.85 0.18 85 / 0.85);
-  box-shadow: 0 0 12px oklch(0.85 0.18 85 / 0.7);
+[data-mode="gacha"] .gacha-card::before {
+  top: 6px;
+  left: 6px;
+  border-right: none;
+  border-bottom: none;
 }
 
-/* ★3: 虹色＋脈動の光輪 */
-[data-mode="gacha"] .gacha-card[data-rarity="r3"] .gacha-halo {
-  border: 2px solid transparent;
-  background:
-    conic-gradient(
-      from var(--rainbow-angle, 0deg),
-      oklch(0.78 0.22 25),
-      oklch(0.82 0.18 85),
-      oklch(0.78 0.20 145),
-      oklch(0.72 0.20 220),
-      oklch(0.65 0.22 290),
-      oklch(0.78 0.22 25)
-    ) border-box;
-  -webkit-mask:
-    linear-gradient(oklch(0 0 0 / 0) 0 0) content-box,
-    linear-gradient(oklch(0 0 0) 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  box-shadow: 0 0 14px oklch(0.78 0.18 60 / 0.7);
-  animation: rainbow-spin 6s linear infinite, halo-pulse 1.6s ease-in-out infinite;
+[data-mode="gacha"] .gacha-card::after {
+  bottom: 6px;
+  right: 6px;
+  border-left: none;
+  border-top: none;
 }
 
-@keyframes halo-pulse {
-  0%, 100% { transform: translateX(-50%) scale(1); opacity: 1; }
-  50% { transform: translateX(-50%) scale(1.08); opacity: 0.8; }
+/* 上端の濃紺タイトルバー */
+[data-mode="gacha"] .gacha-card-titlebar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  background: linear-gradient(135deg, oklch(0.22 0.05 255), oklch(0.28 0.06 250));
+  color: oklch(0.99 0 0);
+  position: relative;
 }
 
-/* ヘッダーのSchale風タイトル装飾 */
+[data-mode="gacha"] .gacha-card-titlebar::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 100%;
+  width: 3px;
+  background: oklch(0.5 0.18 230);
+}
+
+[data-mode="gacha"] .gacha-card-rarity {
+  color: oklch(0.88 0.18 90);
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-shadow: 0 0 8px oklch(0.88 0.18 90 / 0.6);
+  flex-shrink: 0;
+}
+
+[data-mode="gacha"] .gacha-card-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: oklch(0.99 0 0);
+  text-shadow: 0 1px 2px oklch(0 0 0 / 0.4);
+  line-height: 1.3;
+  margin: 0;
+  flex: 1;
+}
+
+/* レアリティ別アクセント */
+[data-mode="gacha"] .gacha-card[data-rarity="r2"] .gacha-card-titlebar::after {
+  background: oklch(0.78 0.18 85);
+}
+
+[data-mode="gacha"] .gacha-card[data-rarity="r2"] .gacha-card-rarity {
+  color: oklch(0.88 0.18 85);
+  text-shadow: 0 0 10px oklch(0.88 0.18 85 / 0.75);
+}
+
+[data-mode="gacha"] .gacha-card[data-rarity="r2"] {
+  box-shadow:
+    0 0 22px oklch(0.85 0.18 85 / 0.35),
+    0 4px 14px oklch(0 0 0 / 0.15),
+    inset 0 0 0 1px oklch(0.85 0.18 85 / 0.4);
+}
+
+[data-mode="gacha"] .gacha-card[data-rarity="r3"] .gacha-card-titlebar {
+  background: linear-gradient(135deg, oklch(0.22 0.05 255), oklch(0.3 0.08 280));
+}
+
+[data-mode="gacha"] .gacha-card[data-rarity="r3"] .gacha-card-titlebar::after {
+  background: linear-gradient(180deg,
+    oklch(0.72 0.22 25),
+    oklch(0.78 0.18 85),
+    oklch(0.78 0.20 145),
+    oklch(0.62 0.22 290));
+  width: 5px;
+}
+
+[data-mode="gacha"] .gacha-card[data-rarity="r3"] .gacha-card-rarity {
+  background: linear-gradient(135deg,
+    oklch(0.78 0.22 25),
+    oklch(0.85 0.18 85),
+    oklch(0.78 0.20 145),
+    oklch(0.72 0.22 290));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: none;
+  filter: drop-shadow(0 0 6px oklch(0.85 0.18 85 / 0.7));
+}
+
+[data-mode="gacha"] .gacha-card[data-rarity="r3"] {
+  box-shadow:
+    0 0 48px oklch(0.78 0.20 290 / 0.45),
+    0 0 72px oklch(0.78 0.18 60 / 0.36),
+    0 4px 14px oklch(0 0 0 / 0.15),
+    inset 0 0 0 1px oklch(1 0 0 / 0.7);
+}
+
+/* カード本体（画像＋ストライプ） */
+[data-mode="gacha"] .gacha-card-body {
+  display: flex;
+  gap: 14px;
+  padding: 14px 18px 12px;
+}
+
+[data-mode="gacha"] .gacha-card-image {
+  width: 96px;
+  height: 136px;
+  object-fit: cover;
+  background: oklch(0.95 0 0);
+  border-radius: 2px;
+  flex-shrink: 0;
+  box-shadow: inset 0 0 0 1px oklch(0.55 0.08 250 / 0.15);
+}
+
+[data-mode="gacha"] .gacha-card-image-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: linear-gradient(135deg, oklch(0.96 0.03 230), oklch(0.97 0.02 290));
+  border: 1px dashed oklch(0.7 0.06 250 / 0.45);
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  color: oklch(0.5 0.06 250);
+}
+
+[data-mode="gacha"] .gacha-card-image-empty svg {
+  width: 36px;
+  height: 36px;
+  color: oklch(0.62 0.06 250 / 0.7);
+}
+
+[data-mode="gacha"] .gacha-card-rows {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+[data-mode="gacha"] .gacha-card-row {
+  padding: 6px 0;
+}
+
+[data-mode="gacha"] .gacha-card-row + .gacha-card-row {
+  border-top: 1px dashed oklch(0.78 0.03 250 / 0.5);
+}
+
+[data-mode="gacha"] .gacha-card-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: oklch(0.55 0.05 250);
+  background: oklch(0.94 0.04 220 / 0.7);
+  padding: 1px 6px;
+  display: inline-block;
+  margin-bottom: 3px;
+}
+
+[data-mode="gacha"] .gacha-card-value {
+  font-size: 13px;
+  font-weight: 700;
+  color: oklch(0.25 0.04 250);
+  padding-left: 2px;
+}
+
+[data-mode="gacha"] .gacha-card-value-emph {
+  color: oklch(0.55 0.20 25);
+  font-style: italic;
+  font-size: 14px;
+}
+
+[data-mode="gacha"] .gacha-card-links {
+  display: flex;
+  gap: 14px;
+  padding: 8px 18px 10px;
+  border-top: 1px solid oklch(0.85 0.04 250 / 0.4);
+  background: oklch(0.97 0.02 230 / 0.55);
+  font-size: 11px;
+}
+
+[data-mode="gacha"] .gacha-card-links a {
+  color: oklch(0.4 0.15 250);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+}
+
+[data-mode="gacha"] .gacha-card-links a:hover {
+  text-decoration: underline;
+}
+
+/* ヘッダーのタイトル（h2 「結果」用） */
 [data-mode="gacha"] .gacha-title {
   font-weight: 800;
   letter-spacing: -0.02em;
@@ -364,14 +479,326 @@ body[data-mode="gacha"] {
   color: transparent;
 }
 
-/* ガチャモード時のフォーム背景もグラス化 */
+/* メインタイトル：ロゴ画像 */
+[data-mode="gacha"] .gacha-hero {
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+  line-height: 0;
+}
+
+[data-mode="gacha"] .gacha-hero-logo {
+  height: clamp(64px, 10vw, 112px);
+  width: auto;
+  display: block;
+}
+
+/* 検索フォーム（白紙の申請書） */
 [data-mode="gacha"] .gacha-form {
-  background: oklch(1 0 0 / 0.6);
-  backdrop-filter: blur(10px);
-  border: 1px solid oklch(1 0 0 / 0.5);
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 4px 24px oklch(0.5 0.1 230 / 0.1);
+  background: oklch(0.995 0.003 80);
+  backdrop-filter: none;
+  border: none;
+  border-radius: 4px;
+  padding: 22px 22px 26px;
+  position: relative;
+  box-shadow:
+    0 6px 18px oklch(0 0 0 / 0.14),
+    inset 0 0 0 1px oklch(0.55 0.08 250 / 0.15);
+}
+
+[data-mode="gacha"] .gacha-form::before,
+[data-mode="gacha"] .gacha-form::after {
+  content: "";
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid oklch(0.55 0.08 250 / 0.55);
+  pointer-events: none;
+}
+
+[data-mode="gacha"] .gacha-form::before {
+  top: 8px;
+  left: 8px;
+  border-right: none;
+  border-bottom: none;
+}
+
+[data-mode="gacha"] .gacha-form::after {
+  bottom: 8px;
+  right: 8px;
+  border-left: none;
+  border-top: none;
+}
+
+/* 申請書ヘッダー */
+[data-mode="gacha"] .gacha-form-header {
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: oklch(0.45 0.06 250);
+  text-align: center;
+  padding-bottom: 12px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid oklch(0.7 0.04 250 / 0.4);
+}
+
+/* フォーム内のラベル（見出し）を薄ブルー帯に */
+[data-mode="gacha"] .gacha-form label[data-slot="label"] {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: oklch(0.45 0.06 250);
+  background: oklch(0.94 0.04 220 / 0.7);
+  padding: 3px 10px;
+  margin-bottom: 6px;
+  display: inline-block;
+  border-radius: 0;
+}
+
+/* 「ガチャを引く」CTA ボタン */
+[data-mode="gacha"] .gacha-form button[type="submit"] {
+  width: 100%;
+  background: linear-gradient(135deg, oklch(0.22 0.05 255), oklch(0.32 0.08 280));
+  color: oklch(0.99 0 0);
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  font-size: 15px;
+  padding: 14px 24px;
+  position: relative;
+  border-radius: 4px;
+  border: none;
+  box-shadow:
+    0 4px 14px oklch(0 0 0 / 0.28),
+    inset 0 0 0 1px oklch(0.4 0.12 270 / 0.6);
+  transition: transform 150ms ease, box-shadow 150ms ease, filter 150ms ease;
+  overflow: hidden;
+}
+
+[data-mode="gacha"] .gacha-form button[type="submit"]::before {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 100%;
+  width: 4px;
+  background: linear-gradient(180deg,
+    oklch(0.72 0.22 25),
+    oklch(0.78 0.18 85),
+    oklch(0.78 0.20 145),
+    oklch(0.62 0.22 290));
+}
+
+[data-mode="gacha"] .gacha-form button[type="submit"]:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow:
+    0 6px 18px oklch(0 0 0 / 0.34),
+    inset 0 0 0 1px oklch(0.4 0.12 270 / 0.7);
+  filter: brightness(1.08);
+}
+
+[data-mode="gacha"] .gacha-form button[type="submit"]:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ============================================================
+   フォーム部品（ブルアカ風）
+   ============================================================ */
+
+/* テキストフィールド */
+[data-mode="gacha"] .gacha-form [data-slot="input"] {
+  height: 38px;
+  background: oklch(0.97 0.01 230);
+  border: 1px solid oklch(0.85 0.02 230);
+  border-radius: 4px;
+  padding: 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: oklch(0.22 0.05 250);
+  transition: border-color 150ms ease, box-shadow 150ms ease, background 150ms ease;
+  outline: none;
+}
+
+[data-mode="gacha"] .gacha-form [data-slot="input"]::placeholder {
+  color: oklch(0.7 0.04 250);
+  font-weight: 500;
+}
+
+[data-mode="gacha"] .gacha-form [data-slot="input"]:hover:not(:disabled) {
+  background: oklch(0.99 0 0);
+  border-color: oklch(0.75 0.06 230);
+}
+
+[data-mode="gacha"] .gacha-form [data-slot="input"]:focus-visible {
+  background: oklch(0.99 0 0);
+  border-color: oklch(0.62 0.16 230);
+  box-shadow: 0 0 0 3px oklch(0.62 0.16 230 / 0.18);
+}
+
+/* チェックボックス */
+[data-mode="gacha"] .gacha-form [data-slot="checkbox"] {
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid oklch(0.78 0.03 230);
+  border-radius: 4px;
+  background: oklch(0.99 0 0);
+  transition: border-color 150ms ease, background 150ms ease, box-shadow 150ms ease;
+}
+
+[data-mode="gacha"] .gacha-form [data-slot="checkbox"]:hover:not(:disabled) {
+  border-color: oklch(0.62 0.16 230);
+}
+
+[data-mode="gacha"] .gacha-form [data-slot="checkbox"][data-checked] {
+  background: oklch(0.62 0.16 230);
+  border-color: oklch(0.62 0.16 230);
+}
+
+[data-mode="gacha"] .gacha-form [data-slot="checkbox"][data-checked]:hover:not(:disabled) {
+  background: oklch(0.58 0.16 235);
+  border-color: oklch(0.58 0.16 235);
+}
+
+[data-mode="gacha"] .gacha-form [data-slot="checkbox"]:focus-visible {
+  box-shadow: 0 0 0 3px oklch(0.62 0.16 230 / 0.25);
+}
+
+[data-mode="gacha"] .gacha-form [data-slot="checkbox-indicator"] svg {
+  color: oklch(0.99 0 0);
+  width: 13px;
+  height: 13px;
+  stroke-width: 3;
+}
+
+/* ラジオボタン */
+[data-mode="gacha"] .gacha-form [data-slot="radio-group-item"] {
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid oklch(0.78 0.03 230);
+  background: oklch(0.99 0 0);
+  transition: border-color 150ms ease, background 150ms ease, box-shadow 150ms ease;
+}
+
+[data-mode="gacha"] .gacha-form [data-slot="radio-group-item"]:hover:not(:disabled) {
+  border-color: oklch(0.62 0.16 230);
+}
+
+[data-mode="gacha"] .gacha-form [data-slot="radio-group-item"][data-checked] {
+  background: oklch(0.62 0.16 230);
+  border-color: oklch(0.62 0.16 230);
+}
+
+[data-mode="gacha"] .gacha-form [data-slot="radio-group-item"]:focus-visible {
+  box-shadow: 0 0 0 3px oklch(0.62 0.16 230 / 0.25);
+}
+
+[data-mode="gacha"] .gacha-form [data-slot="radio-group-item"][data-checked] [data-slot="radio-group-indicator"] span {
+  background: oklch(0.99 0 0);
+  width: 7px;
+  height: 7px;
+}
+
+/* スライダー */
+[data-mode="gacha"] .gacha-form [data-slot="slider-track"] {
+  height: 6px !important;
+  background: oklch(0.9 0.02 230);
+  border-radius: 999px;
+}
+
+[data-mode="gacha"] .gacha-form [data-slot="slider-range"] {
+  background: linear-gradient(90deg, oklch(0.68 0.14 220), oklch(0.6 0.16 240));
+}
+
+[data-mode="gacha"] .gacha-form [data-slot="slider-thumb"] {
+  width: 18px !important;
+  height: 18px !important;
+  background: oklch(0.99 0 0);
+  border: 2px solid oklch(0.55 0.18 240);
+  box-shadow:
+    0 2px 6px oklch(0 0 0 / 0.18),
+    inset 0 0 0 2px oklch(1 0 0);
+  transition: box-shadow 150ms ease, transform 150ms ease;
+}
+
+[data-mode="gacha"] .gacha-form [data-slot="slider-thumb"]:hover {
+  box-shadow:
+    0 0 0 6px oklch(0.62 0.16 230 / 0.18),
+    0 2px 6px oklch(0 0 0 / 0.18),
+    inset 0 0 0 2px oklch(1 0 0);
+}
+
+[data-mode="gacha"] .gacha-form [data-slot="slider-thumb"]:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 6px oklch(0.62 0.16 230 / 0.25),
+    0 2px 6px oklch(0 0 0 / 0.18),
+    inset 0 0 0 2px oklch(1 0 0);
+}
+
+/* モード切替セグメントピル */
+.mode-toggle {
+  display: inline-flex;
+  border-radius: 999px;
+  border: 1px solid oklch(0.82 0.03 230);
+  background: oklch(0.97 0.01 230);
+  padding: 2px;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.mode-toggle-btn {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 14px;
+  border-radius: 999px;
+  color: oklch(0.5 0.04 250);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease, box-shadow 150ms ease;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.mode-toggle-btn:hover:not(.is-active) {
+  color: oklch(0.32 0.06 250);
+}
+
+.mode-toggle-btn.is-active {
+  background: linear-gradient(135deg, oklch(0.68 0.14 220), oklch(0.58 0.17 240));
+  color: oklch(0.99 0 0);
+  box-shadow: 0 1px 3px oklch(0 0 0 / 0.2);
+}
+
+.mode-toggle-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px oklch(0.62 0.16 230 / 0.25);
+}
+
+/* ヘッダーのモード切替スイッチ */
+[data-mode="gacha"] [data-slot="switch"] {
+  border: 1px solid oklch(0.75 0.04 230);
+  box-shadow: inset 0 1px 2px oklch(0 0 0 / 0.08);
+  transition: background 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
+}
+
+[data-mode="gacha"] [data-slot="switch"][data-unchecked] {
+  background: oklch(0.9 0.02 230);
+  border-color: oklch(0.78 0.04 230);
+}
+
+[data-mode="gacha"] [data-slot="switch"][data-checked] {
+  background: linear-gradient(135deg, oklch(0.68 0.14 220), oklch(0.58 0.17 240));
+  border-color: oklch(0.5 0.17 240);
+  box-shadow:
+    inset 0 1px 2px oklch(0 0 0 / 0.1),
+    0 0 8px oklch(0.62 0.16 230 / 0.35);
+}
+
+[data-mode="gacha"] [data-slot="switch-thumb"] {
+  background: oklch(0.99 0 0);
+  box-shadow: 0 1px 2px oklch(0 0 0 / 0.28);
 }
 
 /* ============================================================
@@ -387,12 +814,44 @@ body[data-mode="gacha"] {
   align-items: center;
   justify-content: center;
   background:
-    radial-gradient(ellipse at 82% 6%, oklch(1 0 0 / 0.88) 0%, transparent 42%),
-    radial-gradient(ellipse at 15% 30%, oklch(0.93 0.06 350 / 0.85) 0%, transparent 55%),
-    radial-gradient(ellipse at 80% 78%, oklch(0.93 0.06 290 / 0.7) 0%, transparent 55%),
-    radial-gradient(ellipse at 38% 92%, oklch(0.92 0.06 220 / 0.78) 0%, transparent 60%),
-    linear-gradient(135deg, oklch(0.94 0.05 220) 0%, oklch(0.95 0.04 290) 50%, oklch(0.96 0.04 345) 100%);
+    radial-gradient(ellipse at 80% 8%, oklch(1 0 0 / 0.88) 0%, transparent 45%),
+    radial-gradient(ellipse at 20% 20%, oklch(0.98 0.02 220 / 0.78) 0%, transparent 55%),
+    radial-gradient(ellipse at 50% 92%, oklch(0.9 0.06 235 / 0.68) 0%, transparent 60%),
+    linear-gradient(180deg, oklch(0.97 0.02 225) 0%, oklch(0.93 0.05 230) 60%, oklch(0.9 0.06 235) 100%);
   animation: stage-in 0.4s ease-out both;
+}
+
+/* ★3を含む場合：紫＋ピンクが混じったパステル背景 */
+.gacha-stage.has-rainbow {
+  background:
+    radial-gradient(ellipse at 88% 6%, oklch(1 0 0 / 0.75) 0%, transparent 38%),
+    radial-gradient(ellipse at 8% 70%, oklch(0.86 0.11 350 / 0.85) 0%, transparent 55%),
+    radial-gradient(ellipse at 92% 88%, oklch(0.85 0.12 295 / 0.78) 0%, transparent 55%),
+    radial-gradient(ellipse at 40% 30%, oklch(0.92 0.06 230 / 0.55) 0%, transparent 55%),
+    linear-gradient(135deg, oklch(0.9 0.08 240) 0%, oklch(0.88 0.10 295) 50%, oklch(0.91 0.08 340) 100%);
+}
+
+/* ★3時の斜めライン：シアン＋ピンクの2色 */
+.gacha-stage.has-rainbow .gacha-rays {
+  background:
+    repeating-linear-gradient(
+      118deg,
+      transparent 0px,
+      transparent 110px,
+      oklch(0.82 0.18 200 / 0.5) 110px,
+      oklch(0.82 0.18 200 / 0.5) 112px,
+      transparent 112px,
+      transparent 190px,
+      oklch(0.78 0.18 340 / 0.45) 190px,
+      oklch(0.78 0.18 340 / 0.45) 192px,
+      transparent 192px,
+      transparent 300px
+    );
+}
+
+/* ★3時の幾何模様：パープル/ピンク三角形＋黄ドット */
+.gacha-stage.has-rainbow .gacha-particles {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='820' height='820' viewBox='0 0 820 820'><path d='M90 70 L230 70 L160 200 Z' fill='%23ffffff' fill-opacity='0.55'/><path d='M580 180 L720 180 L650 320 Z' fill='%23c8b8ff' fill-opacity='0.5'/><path d='M180 470 L320 470 L250 600 Z' fill='%23ffffff' fill-opacity='0.42'/><path d='M620 600 L760 600 L690 740 Z' fill='%23ffd6e8' fill-opacity='0.55'/><path d='M30 280 L120 280 L75 360 Z' fill='%23b8e8ff' fill-opacity='0.45'/><path d='M430 720 L520 720 L475 800 Z' fill='%23ffffff' fill-opacity='0.4'/><path d='M400 60 L500 60 L450 150 Z' fill='%23ffffff' fill-opacity='0.42'/><rect x='540' y='420' width='180' height='180' rx='12' fill='none' stroke='%2393e0ff' stroke-opacity='0.55' stroke-width='2'/><rect x='720' y='380' width='14' height='14' fill='%23ffd84c' fill-opacity='0.8'/><rect x='760' y='540' width='10' height='10' fill='%23ffd84c' fill-opacity='0.7'/><rect x='60' y='620' width='12' height='12' fill='%23ffd84c' fill-opacity='0.7'/></svg>");
 }
 
 @keyframes stage-in {
@@ -421,7 +880,7 @@ body[data-mode="gacha"] {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* 斜めの細いライン（シアン/ピンク） */
+/* 斜めの細いライン（青系のみ） */
 .gacha-rays {
   position: absolute;
   inset: -30%;
@@ -429,19 +888,15 @@ body[data-mode="gacha"] {
     repeating-linear-gradient(
       118deg,
       transparent 0px,
-      transparent 90px,
-      oklch(0.82 0.18 200 / 0.5) 90px,
-      oklch(0.82 0.18 200 / 0.5) 92px,
-      transparent 92px,
-      transparent 150px,
-      oklch(0.78 0.18 340 / 0.42) 150px,
-      oklch(0.78 0.18 340 / 0.42) 152px,
-      transparent 152px,
-      transparent 250px,
-      oklch(0.82 0.18 200 / 0.32) 250px,
-      oklch(0.82 0.18 200 / 0.32) 251px,
-      transparent 251px,
-      transparent 360px
+      transparent 110px,
+      oklch(0.85 0.12 220 / 0.4) 110px,
+      oklch(0.85 0.12 220 / 0.4) 112px,
+      transparent 112px,
+      transparent 190px,
+      oklch(0.78 0.14 250 / 0.32) 190px,
+      oklch(0.78 0.14 250 / 0.32) 192px,
+      transparent 192px,
+      transparent 300px
     );
   pointer-events: none;
   animation: rays-drift 55s linear infinite;
@@ -452,12 +907,12 @@ body[data-mode="gacha"] {
   to { transform: translate(-360px, 190px); }
 }
 
-/* 三角形・黄色ドット・薄い四角フレーム */
+/* 三角形シルエット（青系のみ） */
 .gacha-particles {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='820' height='820' viewBox='0 0 820 820'><path d='M90 70 L230 70 L160 200 Z' fill='%23ffffff' fill-opacity='0.55'/><path d='M580 180 L720 180 L650 320 Z' fill='%23c8b8ff' fill-opacity='0.45'/><path d='M180 470 L320 470 L250 600 Z' fill='%23ffffff' fill-opacity='0.42'/><path d='M620 600 L760 600 L690 740 Z' fill='%23ffd6e8' fill-opacity='0.5'/><path d='M30 280 L120 280 L75 360 Z' fill='%23b8e8ff' fill-opacity='0.45'/><path d='M430 720 L520 720 L475 800 Z' fill='%23ffffff' fill-opacity='0.35'/><rect x='540' y='420' width='180' height='180' rx='12' fill='none' stroke='%2393e0ff' stroke-opacity='0.55' stroke-width='2'/><rect x='720' y='380' width='14' height='14' fill='%23ffd84c' fill-opacity='0.9'/><rect x='760' y='540' width='10' height='10' fill='%23ffd84c' fill-opacity='0.85'/><rect x='60' y='620' width='12' height='12' fill='%23ffd84c' fill-opacity='0.8'/><rect x='380' y='200' width='8' height='8' fill='%23ffd84c' fill-opacity='0.75'/></svg>");
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='820' height='820' viewBox='0 0 820 820'><path d='M90 70 L230 70 L160 200 Z' fill='%23ffffff' fill-opacity='0.6'/><path d='M580 180 L720 180 L650 320 Z' fill='%23ffffff' fill-opacity='0.45'/><path d='M180 470 L320 470 L250 600 Z' fill='%23b8d8ff' fill-opacity='0.45'/><path d='M620 600 L760 600 L690 740 Z' fill='%23ffffff' fill-opacity='0.5'/><path d='M30 280 L120 280 L75 360 Z' fill='%23b8e8ff' fill-opacity='0.5'/><path d='M430 720 L520 720 L475 800 Z' fill='%23ffffff' fill-opacity='0.38'/><path d='M400 60 L500 60 L450 150 Z' fill='%23ffffff' fill-opacity='0.4'/><rect x='540' y='420' width='180' height='180' rx='12' fill='none' stroke='%2393c8ff' stroke-opacity='0.5' stroke-width='2'/></svg>");
   background-size: 820px 820px;
   background-repeat: repeat;
   animation: shapes-float 70s linear infinite;
@@ -685,7 +1140,7 @@ body[data-mode="gacha"] {
   height: auto;
   object-fit: contain;
   transform: translate(-50%, -50%);
-  filter: drop-shadow(0 24px 40px oklch(0 0 0 / 0.5));
+  filter: drop-shadow(0 8px 14px oklch(0 0 0 / 0.18));
   animation: card-fly-in 0.55s cubic-bezier(0.2, 0.7, 0.3, 1.1) both;
   z-index: 6;
 }

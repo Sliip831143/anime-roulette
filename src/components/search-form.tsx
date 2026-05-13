@@ -179,14 +179,15 @@ export function SearchForm({
       </div>
 
       <div className="space-y-2">
-        <label className="flex items-center gap-2 cursor-pointer">
+        <label className="flex items-start gap-2 cursor-pointer">
           <Checkbox
             checked={highRated}
             onCheckedChange={(checked) => setHighRated(checked === true)}
+            className="mt-1"
           />
-          <span className="text-sm">
-            高評価のみ
-            <span className="ml-2 text-xs text-muted-foreground">
+          <span className="flex flex-col">
+            <span className="text-sm">高評価のみ</span>
+            <span className="text-xs text-muted-foreground">
               満足度70%以上
             </span>
           </span>

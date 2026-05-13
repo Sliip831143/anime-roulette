@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import type { AnnictWork } from "@/lib/annict";
 import { getRarity, RARITY_STARS } from "@/lib/rarity";
@@ -28,66 +31,90 @@ function formatSeason(work: AnnictWork): string {
 function formatSatisfaction(rate: number | null): string | null {
   if (rate == null) return null;
   const percent = rate <= 1 ? rate * 100 : rate;
-  return `満足度${percent.toFixed(1)}%`;
+  return `${percent.toFixed(1)}%`;
 }
 
 export function AnimeCard({ work }: { work: AnnictWork }) {
   const annictUrl = `https://annict.com/works/${work.annictId}`;
   const rarity = getRarity(work.watchersCount, work.satisfactionRate);
+  const satisfaction = formatSatisfaction(work.satisfactionRate);
+  const [imageError, setImageError] = useState(false);
+  const hasImage = !!work.image?.recommendedImageUrl && !imageError;
 
   return (
     <Card className="gacha-card overflow-hidden p-0" data-rarity={rarity}>
-      <span className="gacha-rarity-badge">{RARITY_STARS[rarity]}</span>
-      <div className="flex gap-4">
-        <div className="relative shrink-0">
-          <span className="gacha-halo" aria-hidden="true" />
-          {work.image?.recommendedImageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={work.image.recommendedImageUrl}
-              alt={work.title}
-              className="w-28 h-40 object-cover bg-muted"
-              loading="lazy"
-            />
-          ) : (
-            <div className="w-28 h-40 flex items-center justify-center bg-muted text-xs text-muted-foreground">
-              No image
+      <div className="gacha-card-titlebar">
+        <span className="gacha-card-rarity" aria-label={`レアリティ${RARITY_STARS[rarity]}`}>
+          {RARITY_STARS[rarity]}
+        </span>
+        <h3 className="gacha-card-title">{work.title}</h3>
+      </div>
+      <CardContent className="gacha-card-body p-0">
+        {hasImage ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={work.image!.recommendedImageUrl!}
+            alt={work.title}
+            className="gacha-card-image"
+            loading="lazy"
+            onError={() => setImageError(true)}
+          />
+        ) : (
+          <div className="gacha-card-image gacha-card-image-empty" aria-label="画像なし">
+            <svg
+              viewBox="0 0 64 64"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <rect x="8" y="12" width="48" height="40" rx="3" />
+              <circle cx="22" cy="26" r="4" />
+              <path d="M8 44 L24 30 L36 40 L48 28 L56 36" />
+            </svg>
+            <span>NO IMAGE</span>
+          </div>
+        )}
+        <div className="gacha-card-rows">
+          <div className="gacha-card-row">
+            <div className="gacha-card-label">放送</div>
+            <div className="gacha-card-value">{formatSeason(work)}</div>
+          </div>
+          <div className="gacha-card-row">
+            <div className="gacha-card-label">視聴登録</div>
+            <div className="gacha-card-value">
+              {work.watchersCount.toLocaleString()}人
+            </div>
+          </div>
+          {satisfaction && (
+            <div className="gacha-card-row">
+              <div className="gacha-card-label">満足度</div>
+              <div className="gacha-card-value gacha-card-value-emph">
+                {satisfaction}
+              </div>
             </div>
           )}
         </div>
-        <CardContent className="flex-1 p-4 flex flex-col gap-2">
-          <h3 className="font-semibold leading-snug line-clamp-2">
-            {work.title}
-          </h3>
-          <p className="text-sm text-muted-foreground">{formatSeason(work)}</p>
-          <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
-            <span>視聴登録 {work.watchersCount.toLocaleString()}人</span>
-            <span>レビュー {work.reviewsCount.toLocaleString()}件</span>
-            {formatSatisfaction(work.satisfactionRate) && (
-              <span>{formatSatisfaction(work.satisfactionRate)}</span>
-            )}
-          </div>
-          <div className="mt-auto flex flex-wrap gap-3 text-xs">
-            <a
-              href={annictUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary hover:underline"
-            >
-              Annictで見る
-            </a>
-            {work.officialSiteUrl && (
-              <a
-                href={work.officialSiteUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary hover:underline"
-              >
-                公式サイト
-              </a>
-            )}
-          </div>
-        </CardContent>
+      </CardContent>
+      <div className="gacha-card-links">
+        <a
+          href={annictUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Annictで見る
+        </a>
+        {work.officialSiteUrl && (
+          <a
+            href={work.officialSiteUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            公式サイト
+          </a>
+        )}
       </div>
     </Card>
   );

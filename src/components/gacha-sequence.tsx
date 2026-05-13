@@ -170,10 +170,13 @@ export function GachaSequence({ works, onClose }: Props) {
     : null;
   const showFlyCard =
     (phase === "reveal_fly" || phase === "reveal_burst") && currentRarity != null;
+  const hasRainbow = works.some(
+    (w) => getRarity(w.watchersCount, w.satisfactionRate) === "r3",
+  );
 
   return (
     <div
-      className={`gacha-stage${phase === "closing" ? " is-closing" : ""}`}
+      className={`gacha-stage${phase === "closing" ? " is-closing" : ""}${hasRainbow ? " has-rainbow" : ""}`}
       onClick={handleStageClick}
       role="dialog"
       aria-modal="true"
