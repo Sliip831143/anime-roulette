@@ -493,6 +493,21 @@ body[data-mode="gacha"] {
   display: block;
 }
 
+/* 簡易モードの検索フォーム（中央寄せのミニマルカード） */
+[data-mode="simple"] .simple-form {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px 26px;
+  background: var(--card);
+  box-shadow: 0 1px 3px oklch(0 0 0 / 0.04);
+}
+
+@media (max-width: 768px) {
+  [data-mode="simple"] .simple-form {
+    padding: 28px 24px;
+  }
+}
+
 /* 検索フォーム（白紙の申請書） */
 [data-mode="gacha"] .gacha-form {
   background: oklch(0.995 0.003 80);
@@ -992,6 +1007,29 @@ body[data-mode="gacha"] {
 }
 
 /* ============================================================
+   スマホ表示：トップ画面のフォームカードを画面内に収める
+   ============================================================ */
+@media (max-width: 768px) {
+  [data-mode="gacha"] .gacha-hero-logo {
+    height: 52px;
+  }
+
+  [data-mode="gacha"] .gacha-form {
+    padding: 14px 14px 18px;
+  }
+
+  [data-mode="gacha"] .gacha-form-header {
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+  }
+
+  [data-mode="gacha"] .gacha-form button[type="submit"] {
+    padding: 11px 20px;
+    font-size: 14px;
+  }
+}
+
+/* ============================================================
    スマホ表示：アニメ情報をシングルカラムに
    ============================================================ */
 @media (max-width: 768px) {
@@ -1004,20 +1042,21 @@ body[data-mode="gacha"] {
     flex-direction: column;
     align-items: stretch;
     width: 100%;
-    height: 100vh;
-    padding: 56px 16px 64px;
-    gap: 14px;
+    /* モバイル Chrome の 100vh はアドレスバー込みの最大高さになり下部が見切れるため dvh を使う */
+    height: 100dvh;
+    padding: 66px 14px 44px;
+    gap: 8px;
     overflow-y: auto;
     overflow-x: hidden;
   }
 
+  /* 進行表示：スキップボタンと同じ高さに中央固定配置（流れから外す） */
   .gacha-info.gacha-info .gacha-info-progress {
-    position: relative;
-    top: auto;
-    left: auto;
-    transform: none;
-    align-self: center;
-    order: 1;
+    position: absolute;
+    top: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 111;
   }
 
   .gacha-info.gacha-info .gacha-info-titlebar {
@@ -1026,8 +1065,8 @@ body[data-mode="gacha"] {
     bottom: auto;
     width: 100%;
     transform: none;
-    order: 2;
-    margin-top: 24px;
+    order: 1;
+    margin-top: 0;
     animation: gacha-info-mobile-in 0.45s ease-out both;
   }
 
@@ -1039,8 +1078,8 @@ body[data-mode="gacha"] {
     width: 100%;
     height: auto;
     aspect-ratio: 16 / 9;
-    max-height: 40vh;
-    order: 3;
+    max-height: 26vh;
+    order: 2;
     animation: gacha-info-mobile-in 0.45s ease-out 0.05s both;
   }
 
@@ -1050,8 +1089,19 @@ body[data-mode="gacha"] {
     right: auto;
     width: 100%;
     transform: none;
-    order: 4;
+    order: 3;
+    padding: 12px 14px 14px;
     animation: gacha-info-mobile-in 0.45s ease-out 0.1s both;
+  }
+
+  /* 申請書カード内の行間を圧縮 */
+  .gacha-info.gacha-info .gacha-info-paper-header {
+    padding-bottom: 7px;
+    margin-bottom: 7px;
+  }
+
+  .gacha-info.gacha-info .gacha-info-paper-row {
+    padding: 4px 0;
   }
 }
 

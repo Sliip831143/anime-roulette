@@ -98,7 +98,7 @@ export function SearchForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
       <div className="space-y-2">
         <Label>放送年（任意）</Label>
         <div className="flex items-center gap-2">

@@ -77,12 +77,14 @@ export default function Home() {
       const works = data.works as AnnictWork[];
       if (works.length === 0) {
         setResults(works);
+        setResultsVersion((v) => v + 1);
         toast.info("条件に合うアニメが見つかりませんでした");
       } else if (gachaMode) {
         setResults(null);
         setPendingWorks(works);
       } else {
         setResults(works);
+        setResultsVersion((v) => v + 1);
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : "不明なエラー";
@@ -102,8 +104,8 @@ export default function Home() {
   };
 
   return (
-    <div className="flex flex-col flex-1 items-center px-4 py-10">
-      <main className="w-full max-w-3xl space-y-8">
+    <div className="flex flex-col flex-1 items-center px-4 py-5 sm:py-10">
+      <main className="w-full max-w-3xl space-y-5 sm:space-y-8">
         <header className="space-y-3">
           <div className="flex items-center justify-between gap-4">
             {gachaMode ? (
@@ -116,7 +118,7 @@ export default function Home() {
                 />
               </h1>
             ) : (
-              <h1 className="text-2xl font-semibold tracking-tight">
+              <h1 className="text-xl font-semibold tracking-tight">
                 アニメルーレット
               </h1>
             )}
@@ -145,7 +147,7 @@ export default function Home() {
           </div>
         </header>
 
-        <section className={gachaMode ? "gacha-form" : ""}>
+        <section className={gachaMode ? "gacha-form" : "simple-form"}>
           {gachaMode && (
             <div className="gacha-form-header">SEARCH FORM</div>
           )}
@@ -157,9 +159,16 @@ export default function Home() {
           />
         </section>
 
-        <Separator />
+        <Separator
+          className={results != null ? "" : "hidden sm:block"}
+        />
 
-        <section ref={resultsRef} className="space-y-4 scroll-mt-4">
+        <section
+          ref={resultsRef}
+          className={`space-y-4 scroll-mt-4${
+            results != null ? "" : " hidden sm:block"
+          }`}
+        >
           <h2
             className={
               gachaMode ? "gacha-title text-xl" : "text-xl font-semibold"
