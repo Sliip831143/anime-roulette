@@ -759,14 +759,14 @@ body[data-mode="gacha"] {
   width: 44px;
   height: 44px;
   border-radius: 999px;
-  background: oklch(1 0 0);
-  color: oklch(0.25 0 0);
-  border: 1px solid oklch(0.88 0 0);
+  background: oklch(0.18 0 0);
+  color: oklch(0.99 0 0);
+  border: none;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 6px oklch(0 0 0 / 0.12);
+  box-shadow: 0 2px 6px oklch(0 0 0 / 0.18);
   z-index: 50;
   animation: scroll-top-in 0.25s ease-out both;
   transition: transform 150ms ease, box-shadow 150ms ease, filter 150ms ease;
@@ -814,11 +814,11 @@ body[data-mode="gacha"] {
     bottom: 76px;
     width: 260px;
     max-height: calc(100vh - 96px);
-    background: oklch(0.99 0 0);
-    border-radius: 4px;
+    background: oklch(1 0 0);
+    border-radius: 6px;
     overflow: hidden;
-    border: 1px solid oklch(0.85 0.04 230);
-    box-shadow: 0 6px 18px oklch(0 0 0 / 0.15);
+    border: 1px solid oklch(0.9 0 0);
+    box-shadow: 0 1px 2px oklch(0 0 0 / 0.04), 0 4px 12px oklch(0 0 0 / 0.06);
     z-index: 49;
     animation: results-panel-in 0.3s ease-out both;
   }
@@ -828,12 +828,12 @@ body[data-mode="gacha"] {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
-  background: linear-gradient(135deg, oklch(0.22 0.05 255), oklch(0.28 0.06 250));
+  padding: 10px 12px;
+  background: oklch(0.18 0 0);
   color: oklch(0.99 0 0);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
 }
 
 .results-panel-close {
@@ -844,14 +844,15 @@ body[data-mode="gacha"] {
   height: 22px;
   border: none;
   background: transparent;
-  color: oklch(0.99 0 0);
+  color: oklch(0.85 0 0);
   cursor: pointer;
   border-radius: 4px;
-  transition: background 150ms ease;
+  transition: background 150ms ease, color 150ms ease;
 }
 
 .results-panel-close:hover {
-  background: oklch(1 0 0 / 0.18);
+  background: oklch(1 0 0 / 0.15);
+  color: oklch(0.99 0 0);
 }
 
 .results-panel-close svg {
@@ -868,7 +869,7 @@ body[data-mode="gacha"] {
 }
 
 .results-panel-list li + li {
-  border-top: 1px dashed oklch(0.85 0.04 250 / 0.5);
+  border-top: 1px solid oklch(0.94 0 0);
 }
 
 .results-panel-list button {
@@ -881,27 +882,70 @@ body[data-mode="gacha"] {
   border: none;
   text-align: left;
   cursor: pointer;
-  color: oklch(0.32 0.05 250);
+  color: oklch(0.32 0 0);
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.4;
   transition: background 150ms ease, color 150ms ease;
 }
 
 .results-panel-list button:hover {
-  background: oklch(0.95 0.04 230);
-  color: oklch(0.4 0.15 250);
+  background: oklch(0.96 0 0);
+  color: oklch(0.15 0 0);
 }
 
 .results-panel-index {
   flex-shrink: 0;
   font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
   font-size: 10px;
-  color: oklch(0.55 0.05 250);
-  background: oklch(0.94 0.04 220 / 0.7);
+  color: oklch(0.45 0 0);
+  background: oklch(0.94 0 0);
   padding: 1px 5px;
   border-radius: 2px;
   margin-top: 1px;
+}
+
+/* ガチャモード時：青系の華やかなテーマで上書き */
+[data-mode="gacha"] .results-panel {
+  background: oklch(0.99 0 0);
+  border-color: oklch(0.85 0.04 230);
+  box-shadow: 0 6px 18px oklch(0 0 0 / 0.15);
+}
+
+[data-mode="gacha"] .results-panel-header {
+  background: linear-gradient(135deg, oklch(0.22 0.05 255), oklch(0.28 0.06 250));
+  color: oklch(0.99 0 0);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  border-bottom: none;
+}
+
+[data-mode="gacha"] .results-panel-close {
+  color: oklch(0.99 0 0);
+}
+
+[data-mode="gacha"] .results-panel-close:hover {
+  background: oklch(1 0 0 / 0.18);
+  color: oklch(0.99 0 0);
+}
+
+[data-mode="gacha"] .results-panel-list li + li {
+  border-top: 1px dashed oklch(0.85 0.04 250 / 0.5);
+}
+
+[data-mode="gacha"] .results-panel-list button {
+  color: oklch(0.32 0.05 250);
+  font-weight: 600;
+}
+
+[data-mode="gacha"] .results-panel-list button:hover {
+  background: oklch(0.95 0.04 230);
+  color: oklch(0.4 0.15 250);
+}
+
+[data-mode="gacha"] .results-panel-index {
+  color: oklch(0.55 0.05 250);
+  background: oklch(0.94 0.04 220 / 0.7);
 }
 
 .results-panel-title {
@@ -955,6 +999,13 @@ body[data-mode="gacha"] {
 .mode-toggle-btn:focus-visible {
   outline: none;
   box-shadow: 0 0 0 3px oklch(0.6 0 0 / 0.25);
+}
+
+/* 簡易モード × スマホ：ヘッダー上の余白を広めに */
+@media (max-width: 640px) {
+  [data-mode="simple"] .page-root {
+    padding-top: 2.5rem;
+  }
 }
 
 /* ガチャモード時：水色トーン */
@@ -1541,13 +1592,13 @@ body[data-mode="gacha"] {
 }
 
 @keyframes kb-vertical {
-  0% { transform: scale(1.4) translateY(20%); }
-  100% { transform: scale(1.4) translateY(-20%); }
+  0% { transform: scale(1.4) translateY(10%); }
+  100% { transform: scale(1.4) translateY(-10%); }
 }
 
 @keyframes kb-horizontal {
-  0% { transform: scale(1.4) translateX(-20%); }
-  100% { transform: scale(1.4) translateX(20%); }
+  0% { transform: scale(1.4) translateX(10%); }
+  100% { transform: scale(1.4) translateX(-10%); }
 }
 
 /* Ken Burns 上のキラキラフィルター */
@@ -1577,7 +1628,7 @@ body[data-mode="gacha"] {
 .gacha-info-inner {
   position: relative;
   width: min(1040px, 96vw);
-  height: min(760px, 92vh);
+  height: min(760px, 86vh);
 }
 
 @keyframes info-in {
@@ -1664,10 +1715,10 @@ body[data-mode="gacha"] {
   z-index: 1;
 }
 
-/* 進行表示（コンテナの上中央） */
+/* 進行表示（画面上中央・SKIP と同じ縦位置に固定） */
 .gacha-info-progress {
-  position: absolute;
-  top: -36px;
+  position: fixed;
+  top: 18px;
   left: 50%;
   transform: translateX(-50%);
   color: oklch(0.32 0.05 250);
@@ -1678,7 +1729,7 @@ body[data-mode="gacha"] {
   padding: 5px 16px;
   border-radius: 999px;
   box-shadow: 0 2px 6px oklch(0 0 0 / 0.15);
-  z-index: 11;
+  z-index: 110;
 }
 
 /* 申請書風カード（コンテナ右上、軽く傾き） */

@@ -18,11 +18,15 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [lastCount, setLastCount] = useState(5);
   const [gachaMode, setGachaMode] = useState(true);
+  const [mounted, setMounted] = useState(false);
   const resultsRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     if (resultsVersion === 0) return;
-    resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    const el = resultsRef.current;
+    if (!el) return;
+    const top = el.getBoundingClientRect().top + window.scrollY - 16;
+    window.scrollTo({ top, behavior: "smooth" });
   }, [resultsVersion]);
 
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -51,6 +55,7 @@ export default function Home() {
     const stored = localStorage.getItem(MODE_STORAGE_KEY);
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (stored === "simple") setGachaMode(false);
+    setMounted(true);
   }, []);
 
   useEffect(() => {
@@ -104,7 +109,10 @@ export default function Home() {
   };
 
   return (
-    <div className="flex flex-col flex-1 items-center px-4 py-5 sm:py-10">
+    <div
+      className="page-root flex flex-col flex-1 items-center px-4 py-5 sm:py-10"
+      style={!mounted ? { visibility: "hidden" } : undefined}
+    >
       <main className="w-full max-w-3xl space-y-5 sm:space-y-8">
         <header className="space-y-3">
           <div className="flex items-center justify-between gap-4">
@@ -160,13 +168,13 @@ export default function Home() {
         </section>
 
         <Separator
-          className={results != null ? "" : "hidden sm:block"}
+          className={results != null ? "" : "hidden"}
         />
 
         <section
           ref={resultsRef}
           className={`space-y-4 scroll-mt-4${
-            results != null ? "" : " hidden sm:block"
+            results != null ? "" : " hidden"
           }`}
         >
           <h2
@@ -182,15 +190,11 @@ export default function Home() {
                 <Skeleton key={i} className="h-40 w-full rounded-md" />
               ))}
             </div>
-          ) : results == null ? (
-            <p className="text-sm text-muted-foreground">
-              「{gachaMode ? "ガチャを引く" : "候補を取得"}」ボタンを押すと結果が表示されます。
-            </p>
-          ) : results.length === 0 ? (
+          ) : results && results.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               条件に合うアニメが見つかりませんでした。
             </p>
-          ) : (
+          ) : results && results.length > 0 ? (
             <div
               key={resultsVersion}
               className="grid gap-4 results-fade-in"
@@ -203,7 +207,7 @@ export default function Home() {
                 />
               ))}
             </div>
-          )}
+          ) : null}
         </section>
       </main>
       {pendingWorks && (
