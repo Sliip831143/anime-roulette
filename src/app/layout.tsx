@@ -42,6 +42,11 @@ export default function RootLayout({
             __html: `(function(){try{var m=localStorage.getItem('anime-roulette-mode');document.documentElement.dataset.mode=m==='simple'?'simple':'gacha';}catch(e){document.documentElement.dataset.mode='gacha';}})();`,
           }}
         />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `console.log("\\n    ██████  ███████\\n        ███  ███  ███\\n       ███  ███  ███\\n      ███  ███  ███\\n     ███  ███  ███\\n\\n      M I L L E N N I U M\\n");`,
+          }}
+        />
       </head>
       <body
         className="min-h-full flex flex-col bg-background text-foreground"
