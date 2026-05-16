@@ -1,7 +1,16 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Zen_Maru_Gothic } from "next/font/google";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Toaster } from "@/components/ui/sonner";
+import { ServiceWorkerRegister } from "@/components/sw-register";
 import "./globals.css";
+
+// 本番URL（Vercelデプロイ先）。デプロイ先が変わったらここを差し替え
+const SITE_URL = "https://anime-roulette-inky.vercel.app";
+const SITE_TITLE = "アニメルーレット — Anime Roulette";
+const SITE_DESCRIPTION =
+  "Annictで観るアニメをガチャで抽選するルーレットアプリ。レアリティ付きガチャ演出で次に観る作品を決めよう。";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -21,8 +30,43 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "アニメルーレット -Anime Roulette-",
-  description: "Annict APIで観るアニメの候補を抽出するアプリ",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: SITE_TITLE,
+    template: "%s | アニメルーレット",
+  },
+  description: SITE_DESCRIPTION,
+  applicationName: "アニメルーレット",
+  keywords: ["アニメ", "ガチャ", "ルーレット", "Annict", "観るアニメ"],
+  authors: [{ name: "Sliip831143", url: "https://github.com/Sliip831143" }],
+  creator: "Sliip831143",
+  openGraph: {
+    type: "website",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    siteName: "アニメルーレット",
+    locale: "ja_JP",
+    url: SITE_URL,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+  },
+  alternates: {
+    canonical: SITE_URL,
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#c9deef",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -37,6 +81,33 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        {/* 構造化データ (JSON-LD) — WebApplication schema */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebApplication",
+              name: "アニメルーレット",
+              alternateName: "Anime Roulette",
+              applicationCategory: "EntertainmentApplication",
+              operatingSystem: "Web",
+              description: SITE_DESCRIPTION,
+              url: SITE_URL,
+              inLanguage: "ja",
+              author: {
+                "@type": "Person",
+                name: "Sliip831143",
+                url: "https://github.com/Sliip831143",
+              },
+              offers: {
+                "@type": "Offer",
+                price: "0",
+                priceCurrency: "JPY",
+              },
+            }),
+          }}
+        />
         {/* ガチャ演出で使う画像を AVIF で先行読込（type が一致しないブラウザは preload しない） */}
         <link rel="preload" as="image" href="/gacha/arona_1.avif" type="image/avif" />
         <link rel="preload" as="image" href="/gacha/arona_2.avif" type="image/avif" />
@@ -77,6 +148,9 @@ export default function RootLayout({
       >
         {children}
         <Toaster />
+        <ServiceWorkerRegister />
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

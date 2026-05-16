@@ -520,7 +520,9 @@ export default function Home() {
       className="page-root flex flex-col flex-1 items-center px-4 py-5 sm:py-8"
       style={!mounted ? { visibility: "hidden" } : undefined}
     >
-      <main className="w-full max-w-3xl space-y-4 sm:space-y-6">
+      <main
+        className={`w-full max-w-3xl space-y-4 sm:space-y-6${mounted ? " page-fade-in" : ""}`}
+      >
         <header className="space-y-2">
           <div className="flex items-center justify-between gap-4">
             {gachaMode ? (
