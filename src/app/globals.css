@@ -514,7 +514,7 @@ body[data-mode="gacha"] {
   backdrop-filter: none;
   border: none;
   border-radius: 4px;
-  padding: 22px 22px 26px;
+  padding: 18px 26px 20px;
   position: relative;
   box-shadow:
     0 6px 18px oklch(0 0 0 / 0.14),
@@ -553,8 +553,8 @@ body[data-mode="gacha"] {
   letter-spacing: 0.22em;
   color: oklch(0.45 0.06 250);
   text-align: center;
-  padding-bottom: 12px;
-  margin-bottom: 18px;
+  padding-bottom: 8px;
+  margin-bottom: 14px;
   border-bottom: 1px solid oklch(0.7 0.04 250 / 0.4);
 }
 
@@ -1077,6 +1077,30 @@ body[data-mode="gacha"] {
   [data-mode="gacha"] .gacha-form button[type="submit"] {
     padding: 11px 20px;
     font-size: 14px;
+  }
+}
+
+/* ============================================================
+   SP (640px 以下) でさらに縦余白を詰める：放送年バッジ込みでも収まるよう
+   ============================================================ */
+@media (max-width: 640px) {
+  [data-mode="gacha"] .gacha-form {
+    padding: 12px 14px 14px;
+  }
+
+  [data-mode="gacha"] .gacha-form-header {
+    padding-bottom: 6px;
+    margin-bottom: 8px;
+  }
+
+  [data-mode="gacha"] .gacha-form button[type="submit"] {
+    padding: 9px 18px;
+    font-size: 13px;
+  }
+
+  /* 各セクション内のラベル↔コンテンツ間を 8px → 6px に詰める */
+  [data-mode="gacha"] .gacha-form .space-y-2 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 6px;
   }
 }
 

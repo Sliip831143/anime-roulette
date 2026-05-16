@@ -24,8 +24,9 @@ const querySchema = z
     yearFrom: z.coerce.number().int().min(1900).max(2100).optional(),
     yearTo: z.coerce.number().int().min(1900).max(2100).optional(),
     seasons: z.array(z.enum(SEASONS)).optional(),
-    count: z.coerce.number().int().min(1).max(10).default(5),
+    count: z.coerce.number().int().min(1).max(100).default(5),
     popularity: z.enum(["all", "popular", "very_popular"]).default("all"),
+    popularityThreshold: z.coerce.number().int().min(0).optional(),
     highRated: z
       .union([z.literal("true"), z.literal("false")])
       .default("false")
@@ -61,8 +62,12 @@ function applyFilters(
   popularity: keyof typeof POPULARITY_THRESHOLDS,
   highRated: boolean,
   media: readonly (typeof MEDIA_VALUES)[number][] | undefined,
+  popularityThreshold: number | undefined,
 ): AnnictWork[] {
-  const minWatchers = POPULARITY_THRESHOLDS[popularity];
+  const minWatchers =
+    popularity === "popular" && popularityThreshold != null
+      ? popularityThreshold
+      : POPULARITY_THRESHOLDS[popularity];
   // 未指定 or 全選択時は絞り込まない
   const mediaFilter =
     media && media.length > 0 && media.length < MEDIA_VALUES.length
@@ -87,6 +92,7 @@ export async function GET(request: Request) {
     seasons: searchParams.getAll("seasons"),
     count: searchParams.get("count") ?? undefined,
     popularity: searchParams.get("popularity") ?? undefined,
+    popularityThreshold: searchParams.get("popularityThreshold") ?? undefined,
     highRated: searchParams.get("highRated") ?? undefined,
     media: searchParams.getAll("media"),
   });
@@ -98,8 +104,16 @@ export async function GET(request: Request) {
     );
   }
 
-  const { yearFrom, yearTo, seasons, count, popularity, highRated, media } =
-    parsed.data;
+  const {
+    yearFrom,
+    yearTo,
+    seasons,
+    count,
+    popularity,
+    popularityThreshold,
+    highRated,
+    media,
+  } = parsed.data;
 
   try {
     const expandedSeasons = expandSeasons({ yearFrom, yearTo, seasons });
@@ -108,7 +122,13 @@ export async function GET(request: Request) {
       perPage: POOL_PER_PAGE,
       pages: POOL_PAGES,
     });
-    const filtered = applyFilters(pool, popularity, highRated, media);
+    const filtered = applyFilters(
+      pool,
+      popularity,
+      highRated,
+      media,
+      popularityThreshold,
+    );
     const picked = shuffle(filtered).slice(0, count);
     return NextResponse.json({
       works: picked,
