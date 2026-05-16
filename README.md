@@ -25,6 +25,7 @@
 - [セットアップ](#セットアップ)
 - [アーキテクチャ](#アーキテクチャ)
 - [スクリプト](#スクリプト)
+- [テスト](#テスト)
 - [デプロイ（Vercel）](#デプロイvercel)
 - [計測（Analytics / CI）](#計測analytics--ci)
 - [ライセンス](#ライセンス)
@@ -117,6 +118,7 @@
 - **sonner**（トースト）
 - **next/font**（Zen Maru Gothic / Geist / Geist Mono）
 - **@vercel/analytics** + **@vercel/speed-insights**
+- **Vitest**（単体テスト）
 - **sharp**（画像変換スクリプト用、devDependency）
 - **pnpm**（パッケージマネージャ）
 
@@ -218,6 +220,7 @@ src/
     ├── annict.ts                 # GraphQL クライアント / クエリ / ページネーション
     ├── seasons.ts                # 年→seasons 配列の展開
     ├── rarity.ts                 # レアリティ判定（watchersCount + satisfactionRate）
+    ├── rarity.test.ts            # レアリティ判定の単体テスト（Vitest、100% カバー）
     └── utils.ts                  # cn ヘルパ
 
 public/
@@ -262,8 +265,37 @@ scripts/
 | `pnpm build` | 本番ビルド |
 | `pnpm start` | 本番サーバ起動 |
 | `pnpm lint` | ESLint 実行 |
+| `pnpm test` | Vitest を Watch モードで起動 |
+| `pnpm test:run` | テストを1回実行（CI 向け） |
+| `pnpm test:coverage` | カバレッジレポート生成（`coverage/index.html`） |
 | `node scripts/convert-images.mjs` | `public/gacha/*.png` を AVIF + WebP に一括変換 |
 | `node scripts/generate-meta-assets.mjs` | OGP / Apple touch icon / PWA アイコンを再生成 |
+
+---
+
+## テスト
+
+[Vitest](https://vitest.dev/) による単体テストを整備。
+
+### カバー対象
+- **`src/lib/rarity.test.ts`**: レアリティ判定（`getRarity`）の境界値テスト
+  - ★3 虹／★2 金／★1 青それぞれの境界値（`watchersCount` 25000/12000/10000 周辺）
+  - `satisfactionRate` の 0-1 スケール／0-100 スケール両対応の正規化
+  - `null` 入力時の挙動
+  - **計 16 ケース、`getRarity` 関数を 100% カバー**
+
+### 実行
+
+```bash
+pnpm test           # Watch モード（ファイル変更で自動再実行）
+pnpm test:run       # 1回実行（CI 向け）
+pnpm test:coverage  # カバレッジレポート生成 → coverage/index.html
+```
+
+### 設計方針
+- **コロケーション**: テストファイルは対象ファイルと同じディレクトリに配置（`rarity.ts` の隣に `rarity.test.ts`）
+- **境界値・null・スケール変換** を重点的に確認し、回帰を防止
+- `src/components/ui/**` （shadcn）は外部ライブラリ扱いでカバレッジ対象外
 
 ---
 
