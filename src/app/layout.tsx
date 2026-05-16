@@ -60,6 +60,8 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
+  // Search Console 所有権確認：登録時に発行されたコードをここに貼り付け
+  // verification: { google: "xxxxxxxxxxxxxxxxxxxxxxxx" },
 };
 
 export const viewport: Viewport = {
