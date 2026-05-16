@@ -23,6 +23,7 @@ const DEFAULT_POPULAR_THRESHOLD = 1000;
 type CmdDef = { usage: string; desc: string };
 const CMD_DEFS: CmdDef[] = [
   { usage: 'cmd("/help")', desc: "利用可能コマンド一覧を表示" },
+  { usage: 'cmd("/state")', desc: "現在の各種設定を一覧表示" },
   {
     usage: 'cmd("/season"|"/season on"|"/season off")',
     desc: "季節フィルタの表示切替（デフォルト非表示）",
@@ -73,6 +74,8 @@ export default function Home() {
   const debugModeRef = useRef(false);
   const animDisabledRef = useRef(false);
   const gachaModeRef = useRef(true);
+  const seasonVisibleRef = useRef(false);
+  const extendedCountRef = useRef(false);
   const popularThresholdRef = useRef(DEFAULT_POPULAR_THRESHOLD);
   const resultsRef = useRef<HTMLElement>(null);
 
@@ -87,6 +90,14 @@ export default function Home() {
   useEffect(() => {
     gachaModeRef.current = gachaMode;
   }, [gachaMode]);
+
+  useEffect(() => {
+    seasonVisibleRef.current = seasonVisible;
+  }, [seasonVisible]);
+
+  useEffect(() => {
+    extendedCountRef.current = extendedCount;
+  }, [extendedCount]);
 
   useEffect(() => {
     popularThresholdRef.current = popularThreshold;
@@ -217,6 +228,42 @@ export default function Home() {
           console.log(
             `  %c${c.usage}%c  ${c.desc}`,
             "color:#3a7;font-weight:600",
+            "color:inherit",
+          );
+        });
+        console.groupEnd();
+        return;
+      }
+
+      if (head === "/state") {
+        const onOff = (b: boolean) => (b ? "ON" : "OFF");
+        const items: { label: string; value: string }[] = [
+          { label: "mode", value: gachaModeRef.current ? "gacha" : "simple" },
+          { label: "season filter", value: onOff(seasonVisibleRef.current) },
+          { label: "debug log", value: onOff(debugModeRef.current) },
+          {
+            label: "gacha anim",
+            value: animDisabledRef.current ? "OFF (skip)" : "ON",
+          },
+          {
+            label: "count UI",
+            value: extendedCountRef.current
+              ? "extended (number input, 1〜50)"
+              : "default (slider, 1〜10)",
+          },
+          {
+            label: "popular threshold",
+            value: `${popularThresholdRef.current.toLocaleString()} (default ${DEFAULT_POPULAR_THRESHOLD.toLocaleString()})`,
+          },
+        ];
+        console.group(
+          "%c[cmd] /state — 現在の設定",
+          "color:#7aa;font-weight:700",
+        );
+        items.forEach((it) => {
+          console.log(
+            `  %c${it.label.padEnd(20)}%c${it.value}`,
+            "color:#7aa;font-weight:600",
             "color:inherit",
           );
         });

@@ -1666,8 +1666,8 @@ body[data-mode="gacha"] {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: clamp(280px, 90%, 820px);
-  height: clamp(200px, 50%, 480px);
+  width: clamp(280px, 84%, 760px);
+  height: clamp(240px, 66%, 640px);
   object-fit: contain;
   background: oklch(0.99 0 0 / 0.5);
   border-radius: 4px;
