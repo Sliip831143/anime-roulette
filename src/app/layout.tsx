@@ -37,6 +37,12 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        {/* ガチャ演出で使う画像を AVIF で先行読込（type が一致しないブラウザは preload しない） */}
+        <link rel="preload" as="image" href="/gacha/arona_1.avif" type="image/avif" />
+        <link rel="preload" as="image" href="/gacha/arona_2.avif" type="image/avif" />
+        <link rel="preload" as="image" href="/gacha/card_1.avif" type="image/avif" />
+        <link rel="preload" as="image" href="/gacha/card_2.avif" type="image/avif" />
+        <link rel="preload" as="image" href="/gacha/card_3.avif" type="image/avif" />
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var m=localStorage.getItem('anime-roulette-mode');document.documentElement.dataset.mode=m==='simple'?'simple':'gacha';}catch(e){document.documentElement.dataset.mode='gacha';}})();`,

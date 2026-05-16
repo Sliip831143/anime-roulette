@@ -1383,6 +1383,7 @@ body[data-mode="gacha"] {
   filter: drop-shadow(0 8px 16px oklch(0 0 0 / 0.22));
   z-index: 5;
   pointer-events: none;
+  will-change: transform, opacity;
 }
 
 /* スマホ縦画面：cover で縦いっぱい表示（左右はクロップ） */
@@ -1487,14 +1488,16 @@ body[data-mode="gacha"] {
   animation: card-drop 0.55s cubic-bezier(0.3, 0.7, 0.3, 1.2) forwards;
   animation-delay: calc(var(--i) * 0.08s);
   filter: drop-shadow(0 4px 6px oklch(0 0 0 / 0.15));
+  will-change: transform, filter, opacity;
 }
 
 .gacha-card-back[data-rarity="r2"] {
   filter: drop-shadow(0 0 14px oklch(0.85 0.18 85 / 0.7)) drop-shadow(0 4px 6px oklch(0 0 0 / 0.15));
 }
 
+/* ★3虹：drop-shadow を 3→2 に削減して GPU 負荷を軽減、色相変化で虹感を担保 */
 .gacha-card-back[data-rarity="r3"] {
-  filter: drop-shadow(0 0 18px oklch(0.78 0.20 290 / 0.7)) drop-shadow(0 0 22px oklch(0.78 0.18 60 / 0.6)) drop-shadow(0 4px 6px oklch(0 0 0 / 0.15));
+  filter: drop-shadow(0 0 22px oklch(0.78 0.20 290 / 0.7)) drop-shadow(0 4px 6px oklch(0 0 0 / 0.15));
 }
 
 @keyframes card-drop {
@@ -1519,8 +1522,8 @@ body[data-mode="gacha"] {
 }
 
 @keyframes card-pulse-rainbow {
-  0%, 100% { filter: drop-shadow(0 0 18px oklch(0.78 0.20 290 / 0.7)) drop-shadow(0 0 22px oklch(0.78 0.18 60 / 0.6)) drop-shadow(0 4px 6px oklch(0 0 0 / 0.15)); }
-  50% { filter: drop-shadow(0 0 32px oklch(0.78 0.20 290 / 0.95)) drop-shadow(0 0 36px oklch(0.78 0.18 60 / 0.85)) drop-shadow(0 4px 6px oklch(0 0 0 / 0.15)); }
+  0%, 100% { filter: drop-shadow(0 0 22px oklch(0.78 0.20 290 / 0.7)) drop-shadow(0 4px 6px oklch(0 0 0 / 0.15)); }
+  50% { filter: drop-shadow(0 0 34px oklch(0.78 0.20 320 / 0.92)) drop-shadow(0 4px 6px oklch(0 0 0 / 0.15)); }
 }
 
 /* カード fly-in（左下→中央へ舞い込み、回転なし） */
@@ -1535,24 +1538,20 @@ body[data-mode="gacha"] {
   filter: drop-shadow(0 8px 14px oklch(0 0 0 / 0.18));
   animation: card-fly-in 0.55s cubic-bezier(0.2, 0.7, 0.3, 1.1) both;
   z-index: 6;
+  will-change: transform, opacity;
 }
 
+/* left/top を animate するとレイアウトが毎フレーム発生するため、transform のみで動かす */
 @keyframes card-fly-in {
   0% {
-    left: 0%;
-    top: 100%;
-    transform: translate(-50%, -50%) scale(0.4);
+    transform: translate(calc(-50% - 50vw), calc(-50% + 50vh)) scale(0.4);
     opacity: 0;
   }
   70% {
-    left: 50%;
-    top: 50%;
     transform: translate(-50%, -50%) scale(1.08);
     opacity: 1;
   }
   100% {
-    left: 50%;
-    top: 50%;
     transform: translate(-50%, -50%) scale(1);
     opacity: 1;
   }
@@ -1605,6 +1604,7 @@ body[data-mode="gacha"] {
   height: 100%;
   object-fit: cover;
   transform-origin: center;
+  will-change: transform;
 }
 
 .gacha-kenburns.kb-vertical img {
@@ -1676,6 +1676,7 @@ body[data-mode="gacha"] {
     inset 0 0 0 1px oklch(1 0 0 / 0.6);
   z-index: 7;
   animation: visual-in 0.5s cubic-bezier(0.2, 0.7, 0.3, 1.1) both;
+  will-change: transform, opacity;
 }
 
 @keyframes visual-in {
@@ -1770,6 +1771,7 @@ body[data-mode="gacha"] {
   padding: 18px 18px 22px;
   z-index: 10;
   animation: paper-in 0.6s cubic-bezier(0.2, 0.7, 0.3, 1.1) 0.1s both;
+  will-change: transform, opacity;
 }
 
 @keyframes paper-in {
@@ -1861,6 +1863,7 @@ body[data-mode="gacha"] {
   transform: rotate(-1deg);
   z-index: 10;
   animation: titlebar-in 0.55s cubic-bezier(0.2, 0.7, 0.3, 1.1) 0.15s both;
+  will-change: transform, opacity;
 }
 
 @keyframes titlebar-in {

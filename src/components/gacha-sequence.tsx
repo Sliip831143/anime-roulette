@@ -63,6 +63,32 @@ type Props = {
   onClose: () => void;
 };
 
+/* ローカル画像（public/gacha/*.png）を AVIF/WebP/PNG の <picture> で配信するヘルパー */
+type LocalPictureProps = Omit<
+  React.ImgHTMLAttributes<HTMLImageElement>,
+  "src"
+> & {
+  src: string;
+  alt: string;
+};
+
+function LocalPicture({ src, alt, ...imgProps }: LocalPictureProps) {
+  const base = src.replace(/\.png$/, "");
+  return (
+    <picture>
+      <source srcSet={`${base}.avif`} type="image/avif" />
+      <source srcSet={`${base}.webp`} type="image/webp" />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt={alt}
+        aria-hidden={alt === "" || undefined}
+        {...imgProps}
+      />
+    </picture>
+  );
+}
+
 export function GachaSequence({ works, onClose }: Props) {
   const [phase, setPhase] = useState<Phase>("intro_1");
   const [revealIndex, setRevealIndex] = useState(0);
@@ -201,33 +227,27 @@ export function GachaSequence({ works, onClose }: Props) {
       </button>
 
       {phase === "intro_1" && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <LocalPicture
           src="/gacha/arona_1.png"
           alt=""
           className="gacha-arona gacha-arona-1"
-          aria-hidden="true"
         />
       )}
 
       {phase === "intro_2" && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <LocalPicture
           src="/gacha/arona_2.png"
           alt=""
           className="gacha-arona gacha-arona-2"
-          aria-hidden="true"
         />
       )}
 
       {phase === "slam" && (
         <>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <LocalPicture
             src="/gacha/arona_2.png"
             alt=""
             className="gacha-arona gacha-arona-slam"
-            aria-hidden="true"
           />
           <span className="gacha-flash" aria-hidden="true" />
           <span className="gacha-shockwave" aria-hidden="true" />
@@ -242,15 +262,17 @@ export function GachaSequence({ works, onClose }: Props) {
             {works.map((w, i) => {
               const r = getRarity(w.watchersCount, w.satisfactionRate);
               return (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <LocalPicture
                   key={i}
                   src={CARD_IMG[r]}
                   alt=""
                   className="gacha-card-back idle"
                   data-rarity={r}
-                  style={{ ["--i" as string]: String(i) } as React.CSSProperties}
-                  aria-hidden="true"
+                  style={
+                    {
+                      ["--i" as string]: String(i),
+                    } as React.CSSProperties
+                  }
                 />
               );
             })}
@@ -260,12 +282,10 @@ export function GachaSequence({ works, onClose }: Props) {
       )}
 
       {showFlyCard && currentRarity && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <LocalPicture
           src={CARD_IMG[currentRarity]}
           alt=""
           className="gacha-fly-card"
-          aria-hidden="true"
         />
       )}
 
