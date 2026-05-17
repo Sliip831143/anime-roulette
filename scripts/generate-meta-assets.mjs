@@ -11,8 +11,6 @@ const APPLE_OUT = "src/app/apple-icon.png";
 const ICON_192_OUT = "public/icon-192.png";
 const ICON_512_OUT = "public/icon-512.png";
 
-const SITE_TAGLINE = "Annictで観るアニメを抽選するルーレット";
-
 const fmt = (n) => `${(n / 1024).toFixed(1)} KB`;
 
 /* ============== OGP / Twitter image (1200x630) ============== */
@@ -21,7 +19,21 @@ async function buildOgpImage(outPath) {
   const W = 1200;
   const H = 630;
 
-  // 背景 (薄ブルーグラデ + 装飾の三角)
+  // ロゴ画像 (738x192) を 横680px にリサイズ
+  const logoBuf = readFileSync(LOGO_PATH);
+  const logoResized = await sharp(logoBuf).resize({ width: 680 }).toBuffer();
+  const logoMeta = await sharp(logoResized).metadata();
+
+  // ロゴ + サブタイトル「Anime Roulette」(モノスペース・字間広め) をひとまとめに上下中央配置
+  const SUBTITLE = "Anime Roulette";
+  const SUBTITLE_FONT_SIZE = 28;
+  const GAP = 36;
+  const totalHeight = logoMeta.height + GAP + SUBTITLE_FONT_SIZE;
+  const logoY = Math.round((H - totalHeight) / 2);
+  const logoX = Math.round((W - logoMeta.width) / 2);
+  const subtitleY = logoY + logoMeta.height + GAP + SUBTITLE_FONT_SIZE;
+
+  // 背景 (薄ブルーグラデ + 装飾の三角) + サブタイトル
   const bgSvg = `
     <svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
       <defs>
@@ -31,22 +43,13 @@ async function buildOgpImage(outPath) {
         </linearGradient>
       </defs>
       <rect width="${W}" height="${H}" fill="url(#bg)"/>
-      <!-- 装飾の三角形 (右下) -->
+      <!-- 装飾の三角形 (右下・左下) -->
       <polygon points="${W},${H - 220} ${W},${H} ${W - 220},${H}" fill="#9dc1e0" opacity="0.35"/>
       <polygon points="0,${H - 140} 0,${H} 140,${H}" fill="#9dc1e0" opacity="0.25"/>
-      <!-- 中央右下にサブタイトル -->
-      <text x="${W / 2}" y="${H - 90}" font-family="Hiragino Sans, Yu Gothic, Meiryo, sans-serif" font-size="34" fill="#36527a" text-anchor="middle" font-weight="600">${SITE_TAGLINE}</text>
-      <text x="${W / 2}" y="${H - 50}" font-family="ui-monospace, Menlo, monospace" font-size="16" fill="#5a7290" text-anchor="middle" letter-spacing="6">M I L L E N N I U M</text>
+      <!-- ロゴ下のサブタイトル：モノスペースで字間広め -->
+      <text x="${W / 2}" y="${subtitleY}" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="${SUBTITLE_FONT_SIZE}" fill="#5a7290" text-anchor="middle" letter-spacing="10" font-weight="500">${SUBTITLE}</text>
     </svg>
   `;
-
-  // ロゴ画像 (738x192) を 横600px 程度にリサイズして中央上寄りに配置
-  const logoBuf = readFileSync(LOGO_PATH);
-  const logoResized = await sharp(logoBuf).resize({ width: 680 }).toBuffer();
-  const logoMeta = await sharp(logoResized).metadata();
-
-  const logoX = Math.round((W - logoMeta.width) / 2);
-  const logoY = Math.round((H - logoMeta.height) / 2 - 50); // 中央より少し上
 
   await sharp(Buffer.from(bgSvg))
     .composite([{ input: logoResized, top: logoY, left: logoX }])
