@@ -71,6 +71,25 @@ function getClient(): GraphQLClient {
   });
 }
 
+// Annict は一部の作品画像 URL を http:// で返してくるため、Mixed Content
+// 警告を防ぐためアプリ側で https に揃える（HTTPS 化に失敗するケースは
+// 既存の <img onError> で NO IMAGE にフォールバックされる）
+function ensureHttps(url: string | null): string | null {
+  if (!url) return null;
+  return url.replace(/^http:\/\//, "https://");
+}
+
+function normalizeWorkImage<T extends AnnictWork>(w: T): T {
+  if (!w.image) return w;
+  return {
+    ...w,
+    image: {
+      ...w.image,
+      recommendedImageUrl: ensureHttps(w.image.recommendedImageUrl),
+    },
+  };
+}
+
 export type SearchAnimeWorksInput = {
   seasons: string[];
   first: number;
@@ -97,7 +116,10 @@ async function searchAnimeWorksPage({
     SEARCH_WORKS_QUERY,
     variables,
   );
-  return data.searchWorks;
+  return {
+    nodes: data.searchWorks.nodes.map(normalizeWorkImage),
+    pageInfo: data.searchWorks.pageInfo,
+  };
 }
 
 export async function searchAnimeWorks(
@@ -231,9 +253,10 @@ export async function getWorkDetail(
   );
   const raw = data.searchWorks.nodes[0];
   if (!raw) return null;
-  // connection 形式 ({ nodes: [...] }) を配列に平坦化
+  // connection 形式 ({ nodes: [...] }) を配列に平坦化 + 画像 URL を https 化
+  const normalized = normalizeWorkImage(raw);
   return {
-    ...raw,
+    ...normalized,
     episodes: raw.episodes?.nodes ?? [],
     casts: raw.casts?.nodes ?? [],
     staffs: raw.staffs?.nodes ?? [],
