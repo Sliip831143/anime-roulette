@@ -2,32 +2,41 @@ import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
 
-const RARITY_STARS: Record<string, string> = {
-  r1: "★",
-  r2: "★★",
-  r3: "★★★",
-};
+// next/og のデフォルトフォントは ★ (U+2605) をカバーしないため、星は SVG で描く
+const RARITY_COUNT: Record<string, number> = { r1: 1, r2: 2, r3: 3 };
 
-const RARITY_LABEL: Record<string, string> = {
-  r1: "BRONZE",
-  r2: "SILVER",
-  r3: "GOLD",
-};
-
+// ガチャ演出のレアリティアクセントに揃える：青 / 黄 / ピンク紫
 const RARITY_ACCENT: Record<string, string> = {
-  r1: "#8b8b8b",
-  r2: "#7aa7c9",
-  r3: "#d9b65a",
+  r1: "#4a8fd9", // ★1 青
+  r2: "#e8c44d", // ★2 黄
+  r3: "#b572c8", // ★3 ピンク紫
 };
+
+function Star({ size, color }: { size: number; color: string }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <polygon
+        points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"
+        fill={color}
+      />
+    </svg>
+  );
+}
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const rawTitle = searchParams.get("title") ?? "次に観るアニメ";
   const rarity = searchParams.get("rarity") ?? "r1";
-  const stars = RARITY_STARS[rarity] ?? RARITY_STARS.r1;
-  const label = RARITY_LABEL[rarity] ?? RARITY_LABEL.r1;
+  const starCount = RARITY_COUNT[rarity] ?? 1;
   const accent = RARITY_ACCENT[rarity] ?? RARITY_ACCENT.r1;
   const title = rawTitle.length > 40 ? rawTitle.slice(0, 39) + "…" : rawTitle;
+  // dev は http://localhost:3000、prod は本番 origin から logo を読み込む
+  const logoUrl = new URL("/logo.png", request.url).toString();
 
   return new ImageResponse(
     (
@@ -47,42 +56,34 @@ export async function GET(request: Request) {
           position: "relative",
         }}
       >
-        {/* 上部：ブランド */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-            color: "#36527a",
-            fontSize: 32,
-            fontWeight: 700,
-            letterSpacing: 4,
-          }}
-        >
-          <span style={{ fontSize: 38 }}>🎲</span>
-          ANIME ROULETTE
-        </div>
+        {/* 上部：ロゴ（控えめに） */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={logoUrl}
+          alt=""
+          width={300}
+          height={78}
+          style={{ objectFit: "contain" }}
+        />
 
-        {/* 中央：レアリティバッジ */}
+        {/* 中央：レアリティバッジ（SVG の星を個数分） */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            gap: 14,
-            marginTop: 56,
-            padding: "10px 28px",
+            gap: 4,
+            marginTop: 44,
+            padding: "6px 18px",
             borderRadius: 999,
             backgroundColor: "#ffffff",
-            color: accent,
-            fontSize: 28,
-            fontWeight: 800,
-            border: `3px solid ${accent}`,
-            boxShadow: `0 4px 16px ${accent}40`,
+            border: `2px solid ${accent}`,
+            boxShadow: `0 3px 12px ${accent}40`,
           }}
         >
-          <span style={{ fontSize: 36, letterSpacing: 2 }}>{stars}</span>
-          <span style={{ letterSpacing: 6 }}>{label}</span>
+          {Array.from({ length: starCount }).map((_, i) => (
+            <Star key={i} size={28} color={accent} />
+          ))}
         </div>
 
         {/* タイトル */}
@@ -111,14 +112,14 @@ export async function GET(request: Request) {
             fontWeight: 600,
           }}
         >
-          が出ました ✨
+          が出ました
         </div>
 
-        {/* フッター URL */}
+        {/* フッター URL（中央配置の流れに含めて上下バランスを取る） */}
         <div
           style={{
-            position: "absolute",
-            bottom: 36,
+            display: "flex",
+            marginTop: 64,
             color: "#7a8aa3",
             fontSize: 20,
             letterSpacing: 1,
