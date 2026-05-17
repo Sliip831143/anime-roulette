@@ -611,6 +611,12 @@ body[data-mode="gacha"] {
   filter: brightness(1.08);
 }
 
+/* フォーム送信ボタン（両モード）：ホバー時のカーソルを pointer に */
+[data-mode="gacha"] .gacha-form button[type="submit"]:not(:disabled),
+[data-mode="simple"] .simple-form button[type="submit"]:not(:disabled) {
+  cursor: pointer;
+}
+
 /* キーボードフォーカス時：チェックボックス/ラジオと同色の薄青リングで縁取る */
 [data-mode="gacha"] .gacha-form button[type="submit"]:focus-visible {
   outline: none;
@@ -766,6 +772,14 @@ body[data-mode="gacha"] {
 [data-mode="simple"] .simple-form [data-slot="slider-thumb"]:focus-within {
   outline: 3px solid color-mix(in oklab, var(--ring) 50%, transparent);
   outline-offset: 0;
+}
+
+/* スライダー thumb（両モード）：ボタンと同じ pointer。
+   thumb 内には visually-hidden な input[type=range] があり、UA stylesheet で
+   cursor:default が当たって thumb の指定を上書きするため、input にも適用する。 */
+[data-slot="slider-thumb"],
+[data-slot="slider-thumb"] input {
+  cursor: pointer;
 }
 
 /* ページトップへ戻るボタン（デフォルト：ミニマル） */
