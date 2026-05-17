@@ -87,6 +87,7 @@
 - スクロール時、右下に「ページトップへ戻る」ボタンを表示
 - ガチャ演出終了時は結果セクションへ自動スクロール
 - **X (Twitter) シェアボタン**: 結果カード／ガチャ演出から作品単位でツイート。シェアされた URL（`/share`）は **動的 OGP**（next/og + Edge runtime）でレアリティ別の画像が表示される
+- **「結果をシェア」一括シェア**: 結果セクションの見出し横のボタンから、ガチャ結果一覧をひとつのツイートに整形。X 仕様の文字数（CJK 2 カウント・URL 23 固定 / 280 上限）を厳密にカウントし、超過分は末尾から削って「…他N件」に省略。シェア URL は `?from=x` で X 側の OGP キャッシュをバスト
 
 ### エラー体験
 - React **Error Boundary**（`app/error.tsx`）で予期しないエラーを捕捉し、「もう一度試す」「トップへ戻る」を提示
@@ -148,6 +149,8 @@
 - キーボード操作（ガチャ演出は `Enter` / `Space` で進行、`Esc` でスキップ）
 - `prefers-reduced-motion` 対応
 - レアリティを `aria-label` で読み上げ補助
+- **キーボードフォーカスリングの統一**: 全フォーム部品（input / checkbox / radio / slider / 送信ボタン）に同一トーンの薄青リング（簡易モードはグレー）を `:focus-visible` / `:focus-within` で適用
+- **カーソル統一**: 送信ボタン・スライダー thumb など操作可能要素はすべて `cursor: pointer` に揃え、Base UI の隠し input が UA stylesheet で `cursor:default` を上書きする問題にも対処
 
 ---
 
@@ -161,11 +164,11 @@
 
 ### SEO
 - `metadata` API で title template / description / keywords / authors / openGraph / twitter / robots.googleBot / formatDetection を網羅
-- `src/app/opengraph-image.png` / `twitter-image.png` を配置（Next.js が自動で OGP メタタグを生成）
+- **静的 OGP**: `src/app/opengraph-image.png` / `twitter-image.png`（ロゴ + 「Anime Roulette」サブタイトルを上下中央配置）を `scripts/generate-meta-assets.mjs` で生成
+- **動的 OGP**: `app/api/og/route.tsx`（Edge runtime + `next/og`）で「○○が出ました」シェア画像を動的生成。`/share?title=…&rarity=…&id=…` から参照。レアリティ別の色（★1 青 / ★2 黄 / ★3 ピンク紫）の SVG 星アイコンを描画
 - **JSON-LD 構造化データ**: WebApplication / **FAQPage** / **HowTo** schema の 3 種を `<head>` に注入。リッチリザルトテストで FAQ が「有効なアイテム」として検出済み
 - `src/app/sitemap.ts` / `robots.ts` で `/sitemap.xml` / `/robots.txt` を自動配信
 - **Google Search Console** に登録済み（meta verification + sitemap 送信）
-- **動的 OGP**: `app/api/og/route.tsx`（Edge runtime + `next/og`）で「○○が出ました」シェア画像を動的生成。`/share?title=…&rarity=…&id=…` から参照
 
 ---
 
@@ -237,7 +240,8 @@ src/
     ├── seasons.test.ts           # seasons 展開の境界値・順序保持テスト
     ├── rarity.ts                 # レアリティ判定（watchersCount + satisfactionRate）
     ├── rarity.test.ts            # レアリティ判定の単体テスト（100% カバー）
-    ├── share.ts                  # X (Twitter) シェア URL ビルダー
+    ├── share.ts                  # X (Twitter) シェア URL ビルダー（個別 + 一括、X カウント仕様準拠）
+    ├── share.test.ts             # 一括シェアテキスト生成の境界値・X カウント・省略ロジックのテスト
     └── utils.ts                  # cn ヘルパ
 
 public/
@@ -305,10 +309,11 @@ scripts/
 
 [Vitest](https://vitest.dev/) による単体テストを整備。
 
-### カバー対象（3 ファイル / 計 44 ケース）
+### カバー対象（4 ファイル / 計 53 ケース）
 - **`src/lib/rarity.test.ts`**: レアリティ判定（`getRarity`）の境界値テスト（16 ケース、100% カバー）
 - **`src/lib/seasons.test.ts`**: 年→seasons 展開ロジック (`expandSeasons`) と `isSeason` の境界・順序保持・エラー系
 - **`src/app/api/anime/schema.test.ts`**: API route の zod スキーマ（querySchema）の正常・異常系。デフォルト値、年範囲、count 上下限、enum 検証、`highRated` の boolean 変換まで
+- **`src/lib/share.test.ts`**: 一括シェアテキスト (`buildBatchTweetText`) の境界値。X 仕様のカウント（CJK 2 / URL 23 / 上限 280）、超過時の「…他N件」省略、ヘッダー/フッター整形を保証
 
 ### 実行
 
@@ -342,8 +347,8 @@ pnpm test:coverage  # カバレッジレポート生成 → coverage/index.html
 - **Vercel Web Analytics**: 実ユーザーのページビュー計測
 - **Vercel Speed Insights**: Core Web Vitals（LCP / FID / CLS）の継続モニタリング
 - **Google Search Console**: 検索パフォーマンス・構造化データ・インデックス状況のモニタリング（meta verification 済み）
-- **Lighthouse CI**（`.github/workflows/lighthouse.yml`）: PR/push ごとに Lighthouse スコアを自動計測。閾値: パフォーマンス 85% / アクセシビリティ 90% / ベストプラクティス 90% / SEO 90%
-- **CI / verify**（`.github/workflows/ci.yml`）: PR/push ごとに `pnpm lint` → `pnpm typecheck` → `pnpm test:run` を実行。Node バージョンは `.nvmrc` から取得
+- **Lighthouse CI**（`.github/workflows/lighthouse.yml`）: PR/push ごとに Lighthouse スコアを自動計測。アサートは **カテゴリスコア (performance / accessibility / best-practices / seo) のみ・すべて `warn` 判定**で運用（個別 audit は無視し、CI を緑のまま継続モニタリング）
+- **CI / verify**（`.github/workflows/ci.yml`）: PR/push ごとに `pnpm lint` → `pnpm typecheck` → `pnpm test:run` を実行。Node バージョンは `.nvmrc` から取得（**Node 22 LTS**）
 
 ## 開発体験（DX）
 
