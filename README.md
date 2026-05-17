@@ -1,5 +1,7 @@
 # アニメルーレット — Anime Roulette
 
+[![CI](https://github.com/Sliip831143/anime-roulette/actions/workflows/ci.yml/badge.svg)](https://github.com/Sliip831143/anime-roulette/actions/workflows/ci.yml)
+[![Lighthouse CI](https://github.com/Sliip831143/anime-roulette/actions/workflows/lighthouse.yml/badge.svg)](https://github.com/Sliip831143/anime-roulette/actions/workflows/lighthouse.yml)
 [![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=next.js&logoColor=white)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=000)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
@@ -28,6 +30,7 @@
 - [テスト](#テスト)
 - [デプロイ（Vercel）](#デプロイvercel)
 - [計測（Analytics / CI）](#計測analytics--ci)
+- [開発体験（DX）](#開発体験dx)
 - [ライセンス](#ライセンス)
 
 ---
@@ -83,6 +86,12 @@
 - **PC（1024px〜）のみ**: 右下に折り畳み可能な「結果一覧パネル」。タイトルクリックで該当カードへスムーズスクロール
 - スクロール時、右下に「ページトップへ戻る」ボタンを表示
 - ガチャ演出終了時は結果セクションへ自動スクロール
+- **X (Twitter) シェアボタン**: 結果カード／ガチャ演出から作品単位でツイート。シェアされた URL（`/share`）は **動的 OGP**（next/og + Edge runtime）でレアリティ別の画像が表示される
+
+### エラー体験
+- React **Error Boundary**（`app/error.tsx`）で予期しないエラーを捕捉し、「もう一度試す」「トップへ戻る」を提示
+- **オフライン検知**（`navigator.onLine` + online/offline イベント）で接続喪失を toast 通知
+- API 取得失敗時は結果セクション上部に **「もう一度引く」リトライ UI** を表示（直前の検索条件を保持）
 
 ### レスポンシブ
 - スマホ（〜768px）: ガチャ演出のアニメ情報画面はシングルカラム（タイトル → サムネ → 申請書 → リンクの順）
@@ -151,10 +160,12 @@
 - 開発時は SW を登録しない（HMR 競合回避）
 
 ### SEO
-- `metadata` API で title template / description / keywords / authors / openGraph / twitter を網羅
+- `metadata` API で title template / description / keywords / authors / openGraph / twitter / robots.googleBot / formatDetection を網羅
 - `src/app/opengraph-image.png` / `twitter-image.png` を配置（Next.js が自動で OGP メタタグを生成）
-- **JSON-LD 構造化データ**（WebApplication schema）を `<head>` に注入
+- **JSON-LD 構造化データ**: WebApplication / **FAQPage** / **HowTo** schema の 3 種を `<head>` に注入。リッチリザルトテストで FAQ が「有効なアイテム」として検出済み
 - `src/app/sitemap.ts` / `robots.ts` で `/sitemap.xml` / `/robots.txt` を自動配信
+- **Google Search Console** に登録済み（meta verification + sitemap 送信）
+- **動的 OGP**: `app/api/og/route.tsx`（Edge runtime + `next/og`）で「○○が出ました」シェア画像を動的生成。`/share?title=…&rarity=…&id=…` から参照
 
 ---
 
@@ -199,28 +210,34 @@ pnpm dev
 ```
 src/
 ├── app/
-│   ├── api/anime/route.ts        # Annict GraphQL を呼ぶ Route Handler
+│   ├── api/anime/route.ts        # Annict GraphQL を呼ぶ Route Handler（zod 検証付き）
+│   ├── api/anime/schema.test.ts  # 入力 zod スキーマの境界値テスト
+│   ├── api/og/route.tsx          # 動的 OGP 画像生成（next/og + Edge runtime）
+│   ├── share/page.tsx            # シェアランディング（generateMetadata で動的 OGP）
+│   ├── error.tsx                 # Error Boundary（リトライ / トップへ戻る）
 │   ├── globals.css               # Tailwind + ガチャモード・演出・レスポンシブ用 CSS
-│   ├── layout.tsx                # metadata / JSON-LD / preload / FOUC 抑制
-│   ├── page.tsx                  # メイン画面 + 隠しコマンドハンドラ
+│   ├── layout.tsx                # metadata / JSON-LD（WebApplication / FAQ / HowTo） / preload / FOUC 抑制
+│   ├── page.tsx                  # メイン画面 + 隠しコマンドハンドラ + オフライン検知 + リトライ UI
 │   ├── manifest.ts               # PWA manifest（自動配信）
 │   ├── sitemap.ts                # /sitemap.xml（自動配信）
 │   ├── robots.ts                 # /robots.txt（自動配信）
 │   ├── icon.png                  # ファビコン
 │   ├── apple-icon.png            # iOS ホーム画面アイコン
-│   ├── opengraph-image.png       # OGP 画像
-│   └── twitter-image.png         # Twitter Card 画像
+│   ├── opengraph-image.png       # OGP 画像（静的フォールバック）
+│   └── twitter-image.png         # Twitter Card 画像（静的フォールバック）
 ├── components/
 │   ├── search-form.tsx           # 検索フォーム（layout prop で stack/two-column 切替）
-│   ├── anime-card.tsx            # 結果カード（モード別デザイン）
-│   ├── gacha-sequence.tsx        # ガチャ演出のフルスクリーンオーバーレイ
+│   ├── anime-card.tsx            # 結果カード（モード別デザイン + X シェアボタン）
+│   ├── gacha-sequence.tsx        # ガチャ演出のフルスクリーンオーバーレイ + シェアボタン
 │   ├── sw-register.tsx           # Service Worker 登録（本番のみ）
 │   └── ui/                       # shadcn/ui プリミティブ
 └── lib/
     ├── annict.ts                 # GraphQL クライアント / クエリ / ページネーション
     ├── seasons.ts                # 年→seasons 配列の展開
+    ├── seasons.test.ts           # seasons 展開の境界値・順序保持テスト
     ├── rarity.ts                 # レアリティ判定（watchersCount + satisfactionRate）
-    ├── rarity.test.ts            # レアリティ判定の単体テスト（Vitest、100% カバー）
+    ├── rarity.test.ts            # レアリティ判定の単体テスト（100% カバー）
+    ├── share.ts                  # X (Twitter) シェア URL ビルダー
     └── utils.ts                  # cn ヘルパ
 
 public/
@@ -233,10 +250,18 @@ scripts/
 ├── convert-images.mjs            # PNG → AVIF + WebP 一括変換
 └── generate-meta-assets.mjs      # OGP / apple-icon / PWA アイコン生成
 
-.github/workflows/
-└── lighthouse.yml                # PR/push ごとに Lighthouse 計測
+.github/
+├── workflows/
+│   ├── ci.yml                    # PR/push ごとに lint → typecheck → test:run
+│   └── lighthouse.yml            # PR/push ごとに Lighthouse 計測
+└── dependabot.yml                # npm / GitHub Actions の週次自動更新 PR
+
+.husky/pre-commit                 # pnpm exec lint-staged を実行（pre-commit hook）
 
 .lighthouserc.json                # Lighthouse 閾値（perf 85% / a11y 90% / etc.）
+.editorconfig                     # エディタ統一（utf-8 / LF / 2スペ）
+.nvmrc                            # Node 20
+.vscode/{settings,extensions}.json  # ワークスペース推奨設定・推奨拡張
 ```
 
 ### Annict API の制約と対処
@@ -265,9 +290,12 @@ scripts/
 | `pnpm build` | 本番ビルド |
 | `pnpm start` | 本番サーバ起動 |
 | `pnpm lint` | ESLint 実行 |
+| `pnpm lint:fix` | ESLint で自動修正 |
+| `pnpm typecheck` | `tsc --noEmit` で型チェック |
 | `pnpm test` | Vitest を Watch モードで起動 |
 | `pnpm test:run` | テストを1回実行（CI 向け） |
 | `pnpm test:coverage` | カバレッジレポート生成（`coverage/index.html`） |
+| `pnpm analyze` | `@next/bundle-analyzer` でバンドルサイズの HTML レポートを生成 |
 | `node scripts/convert-images.mjs` | `public/gacha/*.png` を AVIF + WebP に一括変換 |
 | `node scripts/generate-meta-assets.mjs` | OGP / Apple touch icon / PWA アイコンを再生成 |
 
@@ -277,12 +305,10 @@ scripts/
 
 [Vitest](https://vitest.dev/) による単体テストを整備。
 
-### カバー対象
-- **`src/lib/rarity.test.ts`**: レアリティ判定（`getRarity`）の境界値テスト
-  - ★3 虹／★2 金／★1 青それぞれの境界値（`watchersCount` 25000/12000/10000 周辺）
-  - `satisfactionRate` の 0-1 スケール／0-100 スケール両対応の正規化
-  - `null` 入力時の挙動
-  - **計 16 ケース、`getRarity` 関数を 100% カバー**
+### カバー対象（3 ファイル / 計 44 ケース）
+- **`src/lib/rarity.test.ts`**: レアリティ判定（`getRarity`）の境界値テスト（16 ケース、100% カバー）
+- **`src/lib/seasons.test.ts`**: 年→seasons 展開ロジック (`expandSeasons`) と `isSeason` の境界・順序保持・エラー系
+- **`src/app/api/anime/schema.test.ts`**: API route の zod スキーマ（querySchema）の正常・異常系。デフォルト値、年範囲、count 上下限、enum 検証、`highRated` の boolean 変換まで
 
 ### 実行
 
@@ -315,7 +341,15 @@ pnpm test:coverage  # カバレッジレポート生成 → coverage/index.html
 
 - **Vercel Web Analytics**: 実ユーザーのページビュー計測
 - **Vercel Speed Insights**: Core Web Vitals（LCP / FID / CLS）の継続モニタリング
+- **Google Search Console**: 検索パフォーマンス・構造化データ・インデックス状況のモニタリング（meta verification 済み）
 - **Lighthouse CI**（`.github/workflows/lighthouse.yml`）: PR/push ごとに Lighthouse スコアを自動計測。閾値: パフォーマンス 85% / アクセシビリティ 90% / ベストプラクティス 90% / SEO 90%
+- **CI / verify**（`.github/workflows/ci.yml`）: PR/push ごとに `pnpm lint` → `pnpm typecheck` → `pnpm test:run` を実行。Node バージョンは `.nvmrc` から取得
+
+## 開発体験（DX）
+
+- **Husky + lint-staged**: pre-commit でステージしたファイルのみ `eslint --fix` を実行
+- **Dependabot**（`.github/dependabot.yml`）: npm 依存と GitHub Actions の週次自動 PR。マイナー/パッチはまとめて 1 PR
+- **`.editorconfig`** / **`.nvmrc`** / **`.vscode/{settings,extensions}.json`**: エディタ・Node バージョンを統一、保存時 ESLint 自動修正、推奨拡張を共有
 
 ---
 

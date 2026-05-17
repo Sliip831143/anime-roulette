@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import bundleAnalyzer from "@next/bundle-analyzer";
 
 // 開発時に同一LAN内の別端末（スマホ・別Mac等）からアクセスする場合に許可する Origin。
 // .env.local の ALLOWED_DEV_ORIGINS にカンマ区切りで指定（例: "192.168.1.7,192.168.1.8"）。
@@ -13,4 +14,9 @@ const nextConfig: NextConfig = {
     : {}),
 };
 
-export default nextConfig;
+// `pnpm analyze` で ANALYZE=true となり、ビルド時にバンドルサイズのレポートが生成される
+const withBundleAnalyzer = bundleAnalyzer({
+  enabled: process.env.ANALYZE === "true",
+});
+
+export default withBundleAnalyzer(nextConfig);
