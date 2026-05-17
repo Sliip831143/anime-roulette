@@ -260,7 +260,7 @@ scripts/
 
 .lighthouserc.json                # Lighthouse 閾値（perf 85% / a11y 90% / etc.）
 .editorconfig                     # エディタ統一（utf-8 / LF / 2スペ）
-.nvmrc                            # Node 20
+.nvmrc                            # Node 22 (LTS)
 .vscode/{settings,extensions}.json  # ワークスペース推奨設定・推奨拡張
 ```
 
