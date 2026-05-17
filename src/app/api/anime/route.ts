@@ -19,7 +19,7 @@ const HIGH_RATED_THRESHOLD_PERCENT = 70;
 
 const MEDIA_VALUES = ["TV", "OVA", "MOVIE", "WEB", "OTHER"] as const;
 
-const querySchema = z
+export const querySchema = z
   .object({
     yearFrom: z.coerce.number().int().min(1900).max(2100).optional(),
     yearTo: z.coerce.number().int().min(1900).max(2100).optional(),
