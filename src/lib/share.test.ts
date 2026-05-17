@@ -6,7 +6,7 @@ const make = (title: string, rarity: BatchShareTarget["rarity"] = "r1") => ({
   rarity,
 });
 
-const SHARE_URL = "https://anime-roulette-inky.vercel.app/";
+const SHARE_URL = "https://anime-roulette-inky.vercel.app/?from=x";
 const HASHTAG = "#アニメルーレット";
 
 /** X 仕様の文字数カウント（テスト側でも同じロジックを再現） */

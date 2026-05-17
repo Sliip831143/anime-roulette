@@ -54,7 +54,9 @@ export type BatchShareTarget = {
 const X_MAX = 280;
 const X_URL_COUNT = 23;
 const HEADER = "アニメルーレットを回しました\n\n";
-const SHARE_URL = `${SITE_URL}/`;
+// クエリパラメータを付けて X の OGP キャッシュをバストする（流入元の識別も兼ねる）。
+// X は URL 違いを「別 URL」として扱うため、初回クロール時に最新 OGP が取得される。
+const SHARE_URL = `${SITE_URL}/?from=x`;
 const HASHTAG = "#アニメルーレット";
 // 末尾は空行を挟んで URL → ハッシュタグの順に並べる
 const FOOTER = `\n\n${SHARE_URL}\n${HASHTAG}`;
