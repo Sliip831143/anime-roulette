@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Dices, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -90,9 +90,12 @@ export function SearchForm({
     [popularThreshold],
   );
 
-  useEffect(() => {
-    if (count > currentMaxCount) setCount(currentMaxCount);
-  }, [currentMaxCount, count]);
+  // extendedCount モードが切り替わって max が下がったときに count をクランプ。
+  // React 19 では「レンダリング中の setState」が正式に許容されており、
+  // useEffect 経由よりも cascading render を避けられる。
+  if (count > currentMaxCount) {
+    setCount(currentMaxCount);
+  }
 
   const error = useMemo(() => {
     if (yearFromText && yearFrom == null) return "開始年は1900〜2100の整数で入力してください";

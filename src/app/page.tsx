@@ -123,10 +123,6 @@ export default function Home() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  useEffect(() => {
-    if (resultsVersion > 0) setShowResultsPanel(true);
-  }, [resultsVersion]);
-
   const scrollToWork = (id: number) => {
     document
       .getElementById(`work-${id}`)
@@ -134,27 +130,25 @@ export default function Home() {
   };
 
   useEffect(() => {
+    // localStorage はクライアント限定なので、ハイドレーション直後に effect で読み込んで
+    // state へ反映する必要がある（典型的なハイドレーション例外）。
+    /* eslint-disable react-hooks/set-state-in-effect */
     const stored = localStorage.getItem(MODE_STORAGE_KEY);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (stored === "simple") setGachaMode(false);
     const storedSeason = localStorage.getItem(SEASON_VISIBLE_KEY);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (storedSeason === "1") setSeasonVisible(true);
     const storedDebug = localStorage.getItem(DEBUG_MODE_KEY);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (storedDebug === "1") setDebugMode(true);
     const storedAnim = localStorage.getItem(ANIM_DISABLED_KEY);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (storedAnim === "1") setAnimDisabled(true);
     const storedExtended = localStorage.getItem(EXTENDED_COUNT_KEY);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (storedExtended === "1") setExtendedCount(true);
     const storedPopular = Number(localStorage.getItem(POPULAR_THRESHOLD_KEY));
     if (Number.isInteger(storedPopular) && storedPopular >= 0) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPopularThreshold(storedPopular);
     }
     setMounted(true);
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
 
   useEffect(() => {
@@ -495,6 +489,7 @@ export default function Home() {
       } else {
         setResults(works);
         setResultsVersion((v) => v + 1);
+        setShowResultsPanel(true);
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : "不明なエラー";
@@ -511,6 +506,7 @@ export default function Home() {
     if (pendingWorks) {
       setResults(pendingWorks);
       setResultsVersion((v) => v + 1);
+      setShowResultsPanel(true);
     }
     setPendingWorks(null);
   };

@@ -11,7 +11,6 @@ const APPLE_OUT = "src/app/apple-icon.png";
 const ICON_192_OUT = "public/icon-192.png";
 const ICON_512_OUT = "public/icon-512.png";
 
-const SITE_TITLE = "アニメルーレット";
 const SITE_TAGLINE = "Annictで観るアニメを抽選するルーレット";
 
 const fmt = (n) => `${(n / 1024).toFixed(1)} KB`;

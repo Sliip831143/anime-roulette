@@ -78,7 +78,6 @@ function LocalPicture({ src, alt, ...imgProps }: LocalPictureProps) {
     <picture>
       <source srcSet={`${base}.avif`} type="image/avif" />
       <source srcSet={`${base}.webp`} type="image/webp" />
-      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={src}
         alt={alt}
@@ -92,15 +91,17 @@ function LocalPicture({ src, alt, ...imgProps }: LocalPictureProps) {
 export function GachaSequence({ works, onClose }: Props) {
   const [phase, setPhase] = useState<Phase>("intro_1");
   const [revealIndex, setRevealIndex] = useState(0);
-  const [imageError, setImageError] = useState(false);
+  // 画像エラーは「失敗した index」で保持し、imageError は現在の revealIndex と比較した派生値。
+  // これで revealIndex 更新時に setState で reset する必要がなくなり、cascading render を避けられる。
+  const [errorIndex, setErrorIndex] = useState<number | null>(null);
+  const imageError = errorIndex === revealIndex;
 
-  // revealIndex が進むたびに画像エラー状態をリセットし、次の画像を preload して有効性を確認
+  // revealIndex が進むたびに次の画像を preload して有効性を確認
   useEffect(() => {
-    setImageError(false);
     const url = works[revealIndex]?.image?.recommendedImageUrl;
     if (!url) return;
     const probe = new Image();
-    probe.onerror = () => setImageError(true);
+    probe.onerror = () => setErrorIndex(revealIndex);
     probe.src = url;
   }, [revealIndex, works]);
 
@@ -312,7 +313,7 @@ export function GachaSequence({ works, onClose }: Props) {
               src={currentWork.image.recommendedImageUrl}
               alt={currentWork.title}
               onError={() => {
-                setImageError(true);
+                setErrorIndex(revealIndex);
                 setPhase("reveal_info");
               }}
             />
@@ -329,7 +330,7 @@ export function GachaSequence({ works, onClose }: Props) {
                 src={currentWork.image.recommendedImageUrl}
                 alt={currentWork.title}
                 className="gacha-info-bg"
-                onError={() => setImageError(true)}
+                onError={() => setErrorIndex(revealIndex)}
               />
             ) : (
               <div
