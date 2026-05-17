@@ -611,6 +611,15 @@ body[data-mode="gacha"] {
   filter: brightness(1.08);
 }
 
+/* キーボードフォーカス時：チェックボックス/ラジオと同色の薄青リングで縁取る */
+[data-mode="gacha"] .gacha-form button[type="submit"]:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 3px oklch(0.62 0.16 230 / 0.25),
+    0 6px 18px oklch(0 0 0 / 0.34),
+    inset 0 0 0 1px oklch(0.4 0.12 270 / 0.7);
+}
+
 [data-mode="gacha"] .gacha-form button[type="submit"]:disabled {
   opacity: 0.55;
   cursor: not-allowed;
@@ -742,12 +751,21 @@ body[data-mode="gacha"] {
     inset 0 0 0 2px oklch(1 0 0);
 }
 
-[data-mode="gacha"] .gacha-form [data-slot="slider-thumb"]:focus-visible {
-  outline: none;
+/* Base UI の Slider Thumb は内部 input がフォーカスを受けるため :focus-within で拾う。
+   隠し input はマウスでフォーカスされないので、実質キーボード時のみ反応する。
+   outline を使うのは Tailwind の focus-visible:ring-3 が box-shadow を奪うため。 */
+[data-mode="gacha"] .gacha-form [data-slot="slider-thumb"]:focus-within {
+  outline: 3px solid oklch(0.62 0.16 230 / 0.25);
+  outline-offset: 0;
   box-shadow:
-    0 0 0 6px oklch(0.62 0.16 230 / 0.25),
     0 2px 6px oklch(0 0 0 / 0.18),
     inset 0 0 0 2px oklch(1 0 0);
+}
+
+/* 簡易モードのスライダー：他フォーム部品と同じグレーリング (shadcn --ring / 50%) */
+[data-mode="simple"] .simple-form [data-slot="slider-thumb"]:focus-within {
+  outline: 3px solid color-mix(in oklab, var(--ring) 50%, transparent);
+  outline-offset: 0;
 }
 
 /* ページトップへ戻るボタン（デフォルト：ミニマル） */

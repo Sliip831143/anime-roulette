@@ -37,9 +37,20 @@ export const metadata: Metadata = {
   },
   description: SITE_DESCRIPTION,
   applicationName: "アニメルーレット",
-  keywords: ["アニメ", "ガチャ", "ルーレット", "Annict", "観るアニメ"],
+  category: "entertainment",
+  keywords: [
+    "アニメ",
+    "ガチャ",
+    "ルーレット",
+    "Annict",
+    "観るアニメ",
+    "アニメ抽選",
+    "次に観るアニメ",
+    "ランダム",
+  ],
   authors: [{ name: "Sliip831143", url: "https://github.com/Sliip831143" }],
   creator: "Sliip831143",
+  publisher: "Sliip831143",
   openGraph: {
     type: "website",
     title: SITE_TITLE,
@@ -52,16 +63,34 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
+    creator: "@Sliip831143",
   },
   alternates: {
     canonical: SITE_URL,
+    languages: {
+      "ja-JP": SITE_URL,
+      "x-default": SITE_URL,
+    },
   },
   robots: {
     index: true,
     follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-snippet": -1,
+      "max-image-preview": "large",
+      "max-video-preview": -1,
+    },
   },
-  // Search Console 所有権確認：登録時に発行されたコードをここに貼り付け
-  // verification: { google: "xxxxxxxxxxxxxxxxxxxxxxxx" },
+  formatDetection: {
+    telephone: false,
+    email: false,
+    address: false,
+  },
+  verification: {
+    google: "jLXjp_mB17mnm3SQ7gp7G4bjl1jJT5OGdsdkUD6_nnQ",
+  },
 };
 
 export const viewport: Viewport = {
@@ -97,6 +126,8 @@ export default function RootLayout({
               description: SITE_DESCRIPTION,
               url: SITE_URL,
               inLanguage: "ja",
+              isAccessibleForFree: true,
+              browserRequirements: "Requires JavaScript. Modern browser recommended.",
               author: {
                 "@type": "Person",
                 name: "Sliip831143",
@@ -107,6 +138,110 @@ export default function RootLayout({
                 price: "0",
                 priceCurrency: "JPY",
               },
+            }),
+          }}
+        />
+        {/* 構造化データ (JSON-LD) — FAQPage schema */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "FAQPage",
+              mainEntity: [
+                {
+                  "@type": "Question",
+                  name: "アニメルーレットとはどんなアプリですか？",
+                  acceptedAnswer: {
+                    "@type": "Answer",
+                    text: "Annict のアニメデータベースから、放送年・季節・人気度・満足度・メディア種別などの条件に合った作品をランダムに抽選するガチャ風のWebアプリです。",
+                  },
+                },
+                {
+                  "@type": "Question",
+                  name: "利用にユーザー登録や Annict のログインは必要ですか？",
+                  acceptedAnswer: {
+                    "@type": "Answer",
+                    text: "不要です。アカウント作成やログインなしで、すぐにガチャを引いて観るアニメを抽選できます。",
+                  },
+                },
+                {
+                  "@type": "Question",
+                  name: "料金はかかりますか？",
+                  acceptedAnswer: {
+                    "@type": "Answer",
+                    text: "無料でご利用いただけます。広告も表示しません。",
+                  },
+                },
+                {
+                  "@type": "Question",
+                  name: "どんな条件でアニメを絞り込めますか？",
+                  acceptedAnswer: {
+                    "@type": "Answer",
+                    text: "放送年（範囲指定・ランダム抽選可）、季節、人気度（視聴登録数の閾値）、高評価（満足度70%以上）、メディア種別（TV/映画/OVA/Web/その他）で絞り込めます。",
+                  },
+                },
+                {
+                  "@type": "Question",
+                  name: "個人情報や視聴履歴は保存されますか？",
+                  acceptedAnswer: {
+                    "@type": "Answer",
+                    text: "個人情報や視聴履歴は一切保存しません。モードや表示設定など、UIの状態のみブラウザの localStorage に保存されます。",
+                  },
+                },
+                {
+                  "@type": "Question",
+                  name: "結果のレアリティ（★1〜★3）はどう決まりますか？",
+                  acceptedAnswer: {
+                    "@type": "Answer",
+                    text: "Annict 上の視聴登録数と満足度を組み合わせて判定します。視聴登録が多く満足度も高い作品ほど高レアリティ（★★★）になります。",
+                  },
+                },
+              ],
+            }),
+          }}
+        />
+        {/* 構造化データ (JSON-LD) — HowTo schema */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "HowTo",
+              name: "アニメルーレットで観るアニメを決める方法",
+              description:
+                "アニメルーレットを使って、次に観るアニメをガチャ感覚で決める手順。",
+              totalTime: "PT1M",
+              step: [
+                {
+                  "@type": "HowToStep",
+                  position: 1,
+                  name: "モードを選ぶ",
+                  text: "画面右上で「ガチャ」または「簡易」モードを選択します。演出を楽しみたい場合はガチャモード、結果のみ確認したい場合は簡易モードがおすすめです。",
+                  url: `${SITE_URL}/#mode`,
+                },
+                {
+                  "@type": "HowToStep",
+                  position: 2,
+                  name: "条件を指定する",
+                  text: "放送年・人気度・高評価・メディア種別など、抽選に使う条件を入力します。すべて未指定でも全期間から抽選可能です。",
+                  url: `${SITE_URL}/#filters`,
+                },
+                {
+                  "@type": "HowToStep",
+                  position: 3,
+                  name: "ガチャを引く",
+                  text: "「ガチャを引く」ボタンを押すと、Annict から条件に合う作品を取得し、レアリティ付きのカード演出で発表します。",
+                  url: `${SITE_URL}/#gacha`,
+                },
+                {
+                  "@type": "HowToStep",
+                  position: 4,
+                  name: "気になる作品を確認する",
+                  text: "結果一覧から気になる作品をクリックし、Annict や公式サイトで詳細・配信情報を確認します。気に入らなければ何度でも引き直せます。",
+                  url: `${SITE_URL}/#result`,
+                },
+              ],
             }),
           }}
         />
