@@ -5,9 +5,11 @@ import { toast } from "sonner";
 import { SearchForm, type SearchParams } from "@/components/search-form";
 import { AnimeCard } from "@/components/anime-card";
 import { GachaSequence } from "@/components/gacha-sequence";
+import { Share2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
+import { openBatchTweetIntent } from "@/lib/share";
 import type { AnnictWork } from "@/lib/annict";
 import { getRarity, RARITY_STARS } from "@/lib/rarity";
 
@@ -634,13 +636,33 @@ export default function Home() {
             results != null ? "" : " hidden"
           }`}
         >
-          <h2
-            className={
-              gachaMode ? "gacha-title text-xl" : "text-xl font-semibold"
-            }
-          >
-            結果
-          </h2>
+          <div className="flex items-center justify-between gap-3">
+            <h2
+              className={
+                gachaMode ? "gacha-title text-xl" : "text-xl font-semibold"
+              }
+            >
+              結果
+            </h2>
+            {results && results.length > 0 && (
+              <button
+                type="button"
+                onClick={() =>
+                  openBatchTweetIntent(
+                    results.map((w) => ({
+                      title: w.title,
+                      rarity: getRarity(w.watchersCount, w.satisfactionRate),
+                    })),
+                  )
+                }
+                className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                aria-label="結果一覧を X でシェア"
+              >
+                <Share2 className="size-3.5" aria-hidden />
+                結果をシェア
+              </button>
+            )}
+          </div>
           {loading ? (
             <div className="grid gap-4">
               {Array.from({ length: lastCount }).map((_, i) => (
