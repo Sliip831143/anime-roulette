@@ -1,11 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Share2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import type { AnnictWork } from "@/lib/annict";
 import { getRarity, RARITY_STARS } from "@/lib/rarity";
-import { openTweetIntent } from "@/lib/share";
+import { AnimeDetailDialog } from "@/components/anime-detail-dialog";
 
 const SEASON_LABEL: Record<NonNullable<AnnictWork["seasonName"]>, string> = {
   WINTER: "冬",
@@ -43,103 +42,91 @@ export function AnimeCard({
   work: AnnictWork;
   gachaMode?: boolean;
 }) {
-  const annictUrl = `https://annict.com/works/${work.annictId}`;
   const rarity = getRarity(work.watchersCount, work.satisfactionRate);
   const satisfaction = formatSatisfaction(work.satisfactionRate);
   const [imageError, setImageError] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const hasImage = !!work.image?.recommendedImageUrl && !imageError;
-  const handleShare = () =>
-    openTweetIntent({ annictId: work.annictId, title: work.title, rarity });
 
-  if (!gachaMode) {
-    return (
-      <Card
-        id={`work-${work.annictId}`}
-        className="overflow-hidden p-0 scroll-mt-4"
-      >
-        <div className="flex gap-4 p-4">
-          <div className="shrink-0 w-24 h-36 rounded-md overflow-hidden bg-muted">
-            {hasImage ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={work.image!.recommendedImageUrl!}
-                alt={work.title}
-                className="w-full h-full object-cover"
-                loading="lazy"
-                onError={() => setImageError(true)}
-              />
-            ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-xs text-muted-foreground">
-                <svg
-                  viewBox="0 0 64 64"
-                  className="w-8 h-8"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <rect x="8" y="12" width="48" height="40" rx="3" />
-                  <circle cx="22" cy="26" r="4" />
-                  <path d="M8 44 L24 30 L36 40 L48 28 L56 36" />
-                </svg>
-                <span className="text-[10px]">No image</span>
-              </div>
-            )}
-          </div>
-          <div className="flex-1 min-w-0 flex flex-col gap-2">
-            <h3 className="font-semibold leading-snug line-clamp-2">
-              {work.title}
-            </h3>
-            <p className="text-sm text-muted-foreground">{formatSeason(work)}</p>
-            <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
-              <span>視聴登録 {work.watchersCount.toLocaleString()}人</span>
-              {satisfaction && <span>満足度 {satisfaction}</span>}
-            </div>
-            <div className="mt-auto flex flex-wrap items-center gap-3 text-xs">
-              <a
-                href={annictUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary hover:underline"
-              >
-                Annictで見る
-              </a>
-              {work.officialSiteUrl && (
-                <a
-                  href={work.officialSiteUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline"
-                >
-                  公式サイト
-                </a>
-              )}
-              <button
-                type="button"
-                onClick={handleShare}
-                className="ml-auto inline-flex cursor-pointer items-center gap-1 text-muted-foreground hover:text-primary"
-                aria-label={`「${work.title}」を X でシェア`}
-              >
-                <Share2 className="size-3.5" aria-hidden />
-                シェア
-              </button>
-            </div>
-          </div>
-        </div>
-      </Card>
-    );
-  }
+  const handleKey = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      setDialogOpen(true);
+    }
+  };
 
-  return (
+  const card = !gachaMode ? (
     <Card
       id={`work-${work.annictId}`}
-      className="gacha-card overflow-hidden p-0 scroll-mt-4"
+      role="button"
+      tabIndex={0}
+      onClick={() => setDialogOpen(true)}
+      onKeyDown={handleKey}
+      aria-label={`「${work.title}」の詳細を見る`}
+      className="cursor-pointer overflow-hidden p-0 scroll-mt-4 transition-shadow focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+    >
+      <div className="flex gap-4 p-4">
+        <div className="shrink-0 w-24 h-36 rounded-md overflow-hidden bg-muted">
+          {hasImage ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={work.image!.recommendedImageUrl!}
+              alt={work.title}
+              className="w-full h-full object-cover"
+              loading="lazy"
+              onError={() => setImageError(true)}
+            />
+          ) : (
+            <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-xs text-muted-foreground">
+              <svg
+                viewBox="0 0 64 64"
+                className="w-8 h-8"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <rect x="8" y="12" width="48" height="40" rx="3" />
+                <circle cx="22" cy="26" r="4" />
+                <path d="M8 44 L24 30 L36 40 L48 28 L56 36" />
+              </svg>
+              <span className="text-[10px]">No image</span>
+            </div>
+          )}
+        </div>
+        <div className="flex-1 min-w-0 flex flex-col gap-2">
+          <h3 className="font-semibold leading-snug line-clamp-2">
+            {work.title}
+          </h3>
+          <p className="text-sm text-muted-foreground">{formatSeason(work)}</p>
+          <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+            <span>視聴登録 {work.watchersCount.toLocaleString()}人</span>
+            {satisfaction && <span>満足度 {satisfaction}</span>}
+          </div>
+          <p className="mt-auto text-xs text-muted-foreground">
+            クリックで詳細を表示
+          </p>
+        </div>
+      </div>
+    </Card>
+  ) : (
+    <Card
+      id={`work-${work.annictId}`}
+      role="button"
+      tabIndex={0}
+      onClick={() => setDialogOpen(true)}
+      onKeyDown={handleKey}
+      aria-label={`「${work.title}」の詳細を見る`}
+      className="gacha-card cursor-pointer overflow-hidden p-0 scroll-mt-4 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
       data-rarity={rarity}
     >
       <div className="gacha-card-titlebar">
-        <span className="gacha-card-rarity" aria-label={`レアリティ${RARITY_STARS[rarity]}`}>
+        <span
+          className="gacha-card-rarity"
+          aria-label={`レアリティ${RARITY_STARS[rarity]}`}
+        >
           {RARITY_STARS[rarity]}
         </span>
         <h3 className="gacha-card-title">{work.title}</h3>
@@ -155,7 +142,10 @@ export function AnimeCard({
             onError={() => setImageError(true)}
           />
         ) : (
-          <div className="gacha-card-image gacha-card-image-empty" aria-label="画像なし">
+          <div
+            className="gacha-card-image gacha-card-image-empty"
+            aria-label="画像なし"
+          >
             <svg
               viewBox="0 0 64 64"
               fill="none"
@@ -193,33 +183,26 @@ export function AnimeCard({
           )}
         </div>
       </CardContent>
-      <div className="gacha-card-links">
-        <a
-          href={annictUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Annictで見る
-        </a>
-        {work.officialSiteUrl && (
-          <a
-            href={work.officialSiteUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            公式サイト
-          </a>
-        )}
-        <button
-          type="button"
-          onClick={handleShare}
-          className="gacha-card-share"
-          aria-label={`「${work.title}」を X でシェア`}
-        >
-          <Share2 className="size-3.5" aria-hidden />
-          シェア
-        </button>
-      </div>
+      <p className="border-t border-[oklch(0.85_0.04_250/0.4)] bg-[oklch(0.97_0.02_230/0.55)] px-4 py-1.5 text-center text-[10px] tracking-widest text-[oklch(0.5_0.04_250)]">
+        クリックで詳細を表示
+      </p>
     </Card>
+  );
+
+  return (
+    <>
+      {card}
+      {dialogOpen && (
+        <AnimeDetailDialog
+          annictId={work.annictId}
+          initial={{
+            title: work.title,
+            watchersCount: work.watchersCount,
+            satisfactionRate: work.satisfactionRate,
+          }}
+          onClose={() => setDialogOpen(false)}
+        />
+      )}
+    </>
   );
 }
