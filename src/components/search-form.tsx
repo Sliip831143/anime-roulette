@@ -219,7 +219,7 @@ export function SearchForm({
               type="button"
               onClick={() => setPickedYear(null)}
               aria-label="抽選結果をクリア"
-              className="ml-0.5 inline-flex size-4 items-center justify-center rounded-full text-primary/70 hover:bg-primary/20 hover:text-primary"
+              className="ml-0.5 inline-flex size-4 cursor-pointer items-center justify-center rounded-full text-primary/70 hover:bg-primary/20 hover:text-primary"
             >
               <X className="size-3" aria-hidden />
             </button>
