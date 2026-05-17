@@ -7,6 +7,7 @@ import { AnimeCard } from "@/components/anime-card";
 import { GachaSequence } from "@/components/gacha-sequence";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
 import type { AnnictWork } from "@/lib/annict";
 import { getRarity, RARITY_STARS } from "@/lib/rarity";
 
@@ -71,6 +72,8 @@ export default function Home() {
   const [popularThreshold, setPopularThreshold] = useState(
     DEFAULT_POPULAR_THRESHOLD,
   );
+  const [lastError, setLastError] = useState<string | null>(null);
+  const [lastParams, setLastParams] = useState<SearchParams | null>(null);
   const debugModeRef = useRef(false);
   const animDisabledRef = useRef(false);
   const gachaModeRef = useRef(true);
@@ -121,6 +124,22 @@ export default function Home() {
     handleScroll();
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // オフライン検知：起動時にオフラインなら一度通知、復帰時にも通知
+  useEffect(() => {
+    if (typeof navigator !== "undefined" && navigator.onLine === false) {
+      toast.error("オフラインです。ネットワーク接続を確認してください");
+    }
+    const handleOnline = () => toast.success("オンラインに戻りました");
+    const handleOffline = () =>
+      toast.error("オフラインになりました。接続を確認してください");
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
   }, []);
 
   const scrollToWork = (id: number) => {
@@ -427,6 +446,8 @@ export default function Home() {
   const handleSubmit = async (params: SearchParams) => {
     setLoading(true);
     setLastCount(params.count);
+    setLastParams(params);
+    setLastError(null);
     const sp = new URLSearchParams();
     if (params.yearFrom != null) sp.set("yearFrom", String(params.yearFrom));
     if (params.yearTo != null) sp.set("yearTo", String(params.yearTo));
@@ -496,6 +517,7 @@ export default function Home() {
       if (debug) console.log("error:", e);
       toast.error(`エラー: ${msg}`);
       setResults(null);
+      setLastError(msg);
     } finally {
       if (debug) console.groupEnd();
       setLoading(false);
@@ -575,6 +597,32 @@ export default function Home() {
             popularThreshold={popularThreshold}
           />
         </section>
+
+        {lastError && !loading && (
+          <section
+            role="alert"
+            aria-live="polite"
+            className="space-y-3 rounded-md border border-destructive/40 bg-destructive/5 p-4"
+          >
+            <div className="flex flex-col gap-1">
+              <p className="text-sm font-medium text-destructive">
+                取得に失敗しました
+              </p>
+              <p className="text-xs text-muted-foreground break-all">
+                {lastError}
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={!lastParams || loading}
+              onClick={() => lastParams && handleSubmit(lastParams)}
+            >
+              もう一度引く
+            </Button>
+          </section>
+        )}
 
         <Separator
           className={results != null ? "" : "hidden"}
