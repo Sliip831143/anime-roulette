@@ -466,6 +466,27 @@ body[data-mode="gacha"] {
   text-decoration: underline;
 }
 
+[data-mode="gacha"] .gacha-card-share,
+.gacha-info-share {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: oklch(0.5 0.04 250);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+[data-mode="gacha"] .gacha-card-share:hover,
+.gacha-info-share:hover {
+  color: oklch(0.4 0.15 250);
+}
+
 /* ヘッダーのタイトル（h2 「結果」用） */
 [data-mode="gacha"] .gacha-title {
   font-weight: 800;

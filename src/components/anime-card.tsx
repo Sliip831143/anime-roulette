@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { Share2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import type { AnnictWork } from "@/lib/annict";
 import { getRarity, RARITY_STARS } from "@/lib/rarity";
+import { openTweetIntent } from "@/lib/share";
 
 const SEASON_LABEL: Record<NonNullable<AnnictWork["seasonName"]>, string> = {
   WINTER: "冬",
@@ -46,6 +48,8 @@ export function AnimeCard({
   const satisfaction = formatSatisfaction(work.satisfactionRate);
   const [imageError, setImageError] = useState(false);
   const hasImage = !!work.image?.recommendedImageUrl && !imageError;
+  const handleShare = () =>
+    openTweetIntent({ annictId: work.annictId, title: work.title, rarity });
 
   if (!gachaMode) {
     return (
@@ -93,7 +97,7 @@ export function AnimeCard({
               <span>視聴登録 {work.watchersCount.toLocaleString()}人</span>
               {satisfaction && <span>満足度 {satisfaction}</span>}
             </div>
-            <div className="mt-auto flex flex-wrap gap-3 text-xs">
+            <div className="mt-auto flex flex-wrap items-center gap-3 text-xs">
               <a
                 href={annictUrl}
                 target="_blank"
@@ -112,6 +116,15 @@ export function AnimeCard({
                   公式サイト
                 </a>
               )}
+              <button
+                type="button"
+                onClick={handleShare}
+                className="ml-auto inline-flex cursor-pointer items-center gap-1 text-muted-foreground hover:text-primary"
+                aria-label={`「${work.title}」を X でシェア`}
+              >
+                <Share2 className="size-3.5" aria-hidden />
+                シェア
+              </button>
             </div>
           </div>
         </div>
@@ -197,6 +210,15 @@ export function AnimeCard({
             公式サイト
           </a>
         )}
+        <button
+          type="button"
+          onClick={handleShare}
+          className="gacha-card-share"
+          aria-label={`「${work.title}」を X でシェア`}
+        >
+          <Share2 className="size-3.5" aria-hidden />
+          シェア
+        </button>
       </div>
     </Card>
   );
