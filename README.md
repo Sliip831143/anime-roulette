@@ -1,4 +1,4 @@
-# アニメルーレット — Anime Roulette
+# アニメルーレット -Anime Roulette-
 
 [![CI](https://github.com/Sliip831143/anime-roulette/actions/workflows/ci.yml/badge.svg)](https://github.com/Sliip831143/anime-roulette/actions/workflows/ci.yml)
 [![Lighthouse CI](https://github.com/Sliip831143/anime-roulette/actions/workflows/lighthouse.yml/badge.svg)](https://github.com/Sliip831143/anime-roulette/actions/workflows/lighthouse.yml)

@@ -8,7 +8,7 @@ import "./globals.css";
 
 // 本番URL（Vercelデプロイ先）。デプロイ先が変わったらここを差し替え
 const SITE_URL = "https://anime-roulette-inky.vercel.app";
-const SITE_TITLE = "アニメルーレット — Anime Roulette";
+const SITE_TITLE = "アニメルーレット -Anime Roulette-";
 const SITE_DESCRIPTION =
   "Annictで観るアニメをガチャで抽選するルーレットアプリ。レアリティ付きガチャ演出で次に観る作品を決めよう。";
 
