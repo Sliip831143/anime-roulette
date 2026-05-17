@@ -86,8 +86,19 @@
 - **PC（1024px〜）のみ**: 右下に折り畳み可能な「結果一覧パネル」。タイトルクリックで該当カードへスムーズスクロール
 - スクロール時、右下に「ページトップへ戻る」ボタンを表示
 - ガチャ演出終了時は結果セクションへ自動スクロール
-- **X (Twitter) シェアボタン**: 結果カード／ガチャ演出から作品単位でツイート。シェアされた URL（`/share`）は **動的 OGP**（next/og + Edge runtime）でレアリティ別の画像が表示される
-- **「結果をシェア」一括シェア**: 結果セクションの見出し横のボタンから、ガチャ結果一覧をひとつのツイートに整形。X 仕様の文字数（CJK 2 カウント・URL 23 固定 / 280 上限）を厳密にカウントし、超過分は末尾から削って「…他N件」に省略。シェア URL は `?from=x` で X 側の OGP キャッシュをバスト
+- **結果カードクリックで詳細ダイアログを開く**: タップ／クリック／Tab + Enter で
+  モーダル表示。エピソード一覧（折りたたみ）／キャスト／スタッフ／放送局・開始日／
+  Annict・公式サイト・Wikipedia・公式 X・ハッシュタグ検索の各外部リンク／X シェア
+  ボタンを集約。Esc キー・背景クリック・×ボタンで閉じる。React Portal で `document.body`
+  直下にレンダリングして、結果エリアのスタッキングコンテキストに引きずられず viewport
+  全体に表示
+- **X (Twitter) シェアボタン**: 詳細ダイアログとガチャ演出の双方から作品単位でツイート。
+  シェアされた URL（`/share`）は **動的 OGP**（next/og + Edge runtime）でレアリティ別の
+  画像が表示される
+- **「結果をシェア」一括シェア**: 結果セクションの見出し横のボタンから、ガチャ結果一覧を
+  ひとつのツイートに整形。X 仕様の文字数（CJK 2 カウント・URL 23 固定 / 280 上限）を
+  厳密にカウントし、超過分は末尾から削って「…他N件」に省略。シェア URL は `?from=x` で
+  X 側の OGP キャッシュをバスト
 
 ### エラー体験
 - React **Error Boundary**（`app/error.tsx`）で予期しないエラーを捕捉し、「もう一度試す」「トップへ戻る」を提示
@@ -150,7 +161,8 @@
 - `prefers-reduced-motion` 対応
 - レアリティを `aria-label` で読み上げ補助
 - **キーボードフォーカスリングの統一**: 全フォーム部品（input / checkbox / radio / slider / 送信ボタン）に同一トーンの薄青リング（簡易モードはグレー）を `:focus-visible` / `:focus-within` で適用
-- **カーソル統一**: 送信ボタン・スライダー thumb など操作可能要素はすべて `cursor: pointer` に揃え、Base UI の隠し input が UA stylesheet で `cursor:default` を上書きする問題にも対処
+- **カーソル統一**: 送信ボタン・スライダー thumb・結果バッジの ×ボタンなど操作可能要素はすべて `cursor: pointer` に揃え、Base UI の隠し input が UA stylesheet で `cursor:default` を上書きする問題にも対処
+- **結果カードのキーボード操作**: `role="button"` + `tabIndex={0}` で Tab フォーカス可能化、Enter / Space で詳細ダイアログを開く。ダイアログは `role="dialog"` + `aria-modal="true"` でセマンティクスを明示し、Esc で閉じる
 
 ---
 
@@ -215,11 +227,12 @@ src/
 ├── app/
 │   ├── api/anime/route.ts        # Annict GraphQL を呼ぶ Route Handler（zod 検証付き）
 │   ├── api/anime/schema.test.ts  # 入力 zod スキーマの境界値テスト
+│   ├── api/anime/[id]/route.ts   # 単一作品の詳細取得 API（モーダル表示用）
 │   ├── api/og/route.tsx          # 動的 OGP 画像生成（next/og + Edge runtime）
 │   ├── share/page.tsx            # シェアランディング（generateMetadata で動的 OGP）
 │   ├── error.tsx                 # Error Boundary（リトライ / トップへ戻る）
 │   ├── globals.css               # Tailwind + ガチャモード・演出・レスポンシブ用 CSS
-│   ├── layout.tsx                # metadata / JSON-LD（WebApplication / FAQ / HowTo） / preload / FOUC 抑制
+│   ├── layout.tsx                # metadata / JSON-LD（WebApplication / FAQ / HowTo） / prefetch / FOUC 抑制
 │   ├── page.tsx                  # メイン画面 + 隠しコマンドハンドラ + オフライン検知 + リトライ UI
 │   ├── manifest.ts               # PWA manifest（自動配信）
 │   ├── sitemap.ts                # /sitemap.xml（自動配信）
@@ -230,7 +243,8 @@ src/
 │   └── twitter-image.png         # Twitter Card 画像（静的フォールバック）
 ├── components/
 │   ├── search-form.tsx           # 検索フォーム（layout prop で stack/two-column 切替）
-│   ├── anime-card.tsx            # 結果カード（モード別デザイン + X シェアボタン）
+│   ├── anime-card.tsx            # 結果カード（モード別デザイン、クリックで詳細ダイアログ）
+│   ├── anime-detail-dialog.tsx   # 結果カード詳細モーダル（Portal + Esc クローズ、外部リンク集約）
 │   ├── gacha-sequence.tsx        # ガチャ演出のフルスクリーンオーバーレイ + シェアボタン
 │   ├── sw-register.tsx           # Service Worker 登録（本番のみ）
 │   └── ui/                       # shadcn/ui プリミティブ
@@ -274,6 +288,8 @@ scripts/
 - `WorkOrderField` は `WATCHERS_COUNT` / `SEASON` / `CREATED_AT` の3種のみ。「人気アニメ」は `WATCHERS_COUNT DESC` で代用
 - **ランダム抽出は「上位最大1,000件（200件×5ページのカーソルページネーション）をプール → サーバーでフィルタ → シャッフル → 指定件数を返却」で実現**（`src/app/api/anime/route.ts`、`searchAnimeWorksPaginated`）
   - 200件のみだとプールが人気作偏重になり、ガチャの低レアが出ないため深掘りしている
+- **`Work` には `organizations` / `ratingsCount` フィールドが存在しない**（GraphQL introspection で確認済み）。詳細ダイアログでは取得しない
+- **`Staff.roleOther` はスキーマ宣言が non-nullable だが実データで null が返る**ことがあり、GraphQL の error propagation で staff レコード全体が消失する。詳細取得クエリでは `roleOther` を含めず、職位は `roleText` のみで運用
 
 ### satisfactionRate の単位
 
