@@ -57,6 +57,7 @@ export function AnimeDetailDialog({ annictId, initial, onClose }: Props) {
   // 初期値を true にして effect 内では set しない（annictId はマウント中変わらない前提）
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [imageFailed, setImageFailed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -101,7 +102,7 @@ export function AnimeDetailDialog({ annictId, initial, onClose }: Props) {
 
   const work = detail;
   const rarity = getRarity(initial.watchersCount, initial.satisfactionRate);
-  const hasImage = !!work?.image?.recommendedImageUrl;
+  const hasImage = !!work?.image?.recommendedImageUrl && !imageFailed;
   const annictUrl = `https://annict.com/works/${annictId}`;
 
   // SSR ガード（document が無い環境ではレンダーしない）
@@ -118,7 +119,7 @@ export function AnimeDetailDialog({ annictId, initial, onClose }: Props) {
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-2xl rounded-lg bg-card shadow-xl"
+        className="relative w-full max-w-2xl rounded-[6px] bg-card shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -157,7 +158,7 @@ export function AnimeDetailDialog({ annictId, initial, onClose }: Props) {
             <>
               {/* メイン情報 + 画像 */}
               <div className="flex gap-4">
-                <div className="aspect-[3/4] w-28 shrink-0 overflow-hidden rounded-md bg-muted sm:w-36">
+                <div className="aspect-[3/4] w-28 shrink-0 overflow-hidden rounded-[6px] bg-muted sm:w-36">
                   {hasImage ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -165,6 +166,7 @@ export function AnimeDetailDialog({ annictId, initial, onClose }: Props) {
                       alt={work.title}
                       className="h-full w-full object-cover"
                       loading="lazy"
+                      onError={() => setImageFailed(true)}
                     />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center text-[10px] text-muted-foreground">
