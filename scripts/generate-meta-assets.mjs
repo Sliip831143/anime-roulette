@@ -1,9 +1,10 @@
-// OGP画像 / favicon / apple-icon / PWA icon を public/logo.png から生成
+// OGP画像 / favicon / apple-icon / PWA icon を生成
 // 使い方: node scripts/generate-meta-assets.mjs
 import { readFileSync, statSync } from "node:fs";
 import sharp from "sharp";
 
 const LOGO_PATH = "public/logo.png";
+const FAVICON_PATH = "public/favicon.png";
 const OGP_OUT = "src/app/opengraph-image.png";
 const TWITTER_OUT = "src/app/twitter-image.png";
 const ICON_OUT = "src/app/icon.png";
@@ -57,7 +58,19 @@ async function buildOgpImage(outPath) {
     .toFile(outPath);
 }
 
-/* ============== Square icon (favicon / apple-touch / PWA) ============== */
+/* ============== Favicon (browser tab) ============== */
+// ブラウザタブ用の favicon は背景透過のロゴ単体（public/favicon.png）から書き出す。
+// apple-touch / PWA はホーム画面でマスク・角丸が掛かるため別途グラデ背景つきで生成。
+
+async function buildFaviconIcon(size, outPath) {
+  const faviconBuf = readFileSync(FAVICON_PATH);
+  await sharp(faviconBuf)
+    .resize({ width: size, height: size, fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
+    .png({ compressionLevel: 9 })
+    .toFile(outPath);
+}
+
+/* ============== Square icon (apple-touch / PWA) ============== */
 // OG画像と同じ「青系グラデ背景 + ロゴ」を正方形で書き出す。
 // 共有時のサムネとブックマーク/ホーム画面アイコンの意匠を統一する目的。
 // 短辺が小さいサイズではサブタイトルが潰れるため、ロゴのみを中央に配置する。
@@ -101,7 +114,7 @@ console.log(`✓ ${OGP_OUT}  (${fmt(statSync(OGP_OUT).size)})`);
 await buildOgpImage(TWITTER_OUT);
 console.log(`✓ ${TWITTER_OUT}  (${fmt(statSync(TWITTER_OUT).size)})`);
 
-await buildSquareIcon(512, ICON_OUT);
+await buildFaviconIcon(512, ICON_OUT);
 console.log(`✓ ${ICON_OUT}  (${fmt(statSync(ICON_OUT).size)})`);
 
 await buildSquareIcon(180, APPLE_OUT);
