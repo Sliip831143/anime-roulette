@@ -1,14 +1,14 @@
 // アニメルーレット Service Worker
 // - 静的アセットのプリキャッシュ
-// - 同一オリジン GET のキャッシュファースト
-// - /api/* は常にネットワーク優先（Annict検索結果は毎回フレッシュ）
+// - HTML ナビゲーションはネットワーク優先（最新デプロイの JS バンドルを確実に参照させる）
+// - その他の同一オリジン GET（ハッシュ付き /_next/static など）はキャッシュファースト
+// - /api/* と /_next/data/* は常にネットワーク優先（毎回フレッシュ）
 // - 外部リクエスト（Annict CDN等）はパススルー
 
-const CACHE_VERSION = "v1";
+const CACHE_VERSION = "v2";
 const CACHE_NAME = `anime-roulette-${CACHE_VERSION}`;
 
 const PRECACHE_URLS = [
-  "/",
   "/icon-192.png",
   "/icon-512.png",
   "/logo.png",
@@ -49,16 +49,20 @@ self.addEventListener("fetch", (event) => {
   // 外部オリジン（Annict CDN, Google Fonts等）はSW介入しない
   if (url.origin !== self.location.origin) return;
 
-  // /api/* は常にネットワーク優先（検索結果は毎回新規）
+  // /api/* と /_next/data/* は常にネットワーク優先（毎回新規）
   if (url.pathname.startsWith("/api/")) return;
+  if (url.pathname.startsWith("/_next/data/")) return;
 
   // Next.js の HMR/dev サーバ系も介入しない
   if (url.pathname.startsWith("/_next/webpack-hmr")) return;
 
-  event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(event.request)
+  // HTML ナビゲーションはネットワーク優先：常に最新 HTML を取得し、
+  // 失敗時のみキャッシュ／オフラインフォールバックする。
+  // これをしないと旧 HTML が cache-first で固定化され、古いハッシュの JS が
+  // 読み込まれ続けて新機能が反映されない。
+  if (event.request.mode === "navigate") {
+    event.respondWith(
+      fetch(event.request)
         .then((response) => {
           if (response.status === 200) {
             const clone = response.clone();
@@ -68,12 +72,26 @@ self.addEventListener("fetch", (event) => {
           }
           return response;
         })
-        .catch(() => {
-          // オフライン時、ナビゲーション要求なら "/" にフォールバック
-          if (event.request.mode === "navigate") {
-            return caches.match("/");
-          }
-        });
+        .catch(() =>
+          caches.match(event.request).then((cached) => cached ?? caches.match("/")),
+        ),
+    );
+    return;
+  }
+
+  // それ以外の同一オリジン GET（ハッシュ付き /_next/static, 画像など）は cache-first
+  event.respondWith(
+    caches.match(event.request).then((cached) => {
+      if (cached) return cached;
+      return fetch(event.request).then((response) => {
+        if (response.status === 200) {
+          const clone = response.clone();
+          caches
+            .open(CACHE_NAME)
+            .then((cache) => cache.put(event.request, clone));
+        }
+        return response;
+      });
     }),
   );
 });
