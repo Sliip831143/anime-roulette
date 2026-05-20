@@ -5,9 +5,44 @@ import { expandSeasons, SEASONS } from "@/lib/seasons";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+// プール拡大によりキャッシュミス時の取得が長くなるため、関数タイムアウトを延長。
+export const maxDuration = 30;
 
 const POOL_PER_PAGE = 200;
-const POOL_PAGES = 5;
+const POOL_PAGES = 13;
+
+// プール（視聴登録数の上位N件）のサーバーサイドキャッシュ。
+// プールの中身は日単位でしか変動しないため一定時間使い回し、2回目以降の
+// ガチャは Annict 取得ゼロ（フィルタ＋シャッフルのみ）で即応答させる。
+// module スコープのため、ウォームなインスタンス／dev サーバ内では永続する。
+const POOL_CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24時間（プール内容は週単位でしか変動しない）
+const POOL_CACHE_MAX_KEYS = 16;
+
+type PoolCacheEntry = { works: AnnictWork[]; fetchedAt: number };
+const poolCache = new Map<string, PoolCacheEntry>();
+
+/** expandedSeasons をキーにプールを取得する（キャッシュ有効ならそれを返す）。 */
+async function getPool(expandedSeasons: string[]): Promise<AnnictWork[]> {
+  // seasons 集合をキー化（順序非依存）。条件未指定は "" がキーになる。
+  const key = [...expandedSeasons].sort().join(",");
+  const cached = poolCache.get(key);
+  if (cached && Date.now() - cached.fetchedAt < POOL_CACHE_TTL_MS) {
+    return cached.works;
+  }
+  const works = await searchAnimeWorksPaginated({
+    seasons: expandedSeasons,
+    perPage: POOL_PER_PAGE,
+    pages: POOL_PAGES,
+  });
+  poolCache.set(key, { works, fetchedAt: Date.now() });
+  // 季節指定の組み合わせが増えても肥大化しないよう、古いキーから上限内に収める
+  while (poolCache.size > POOL_CACHE_MAX_KEYS) {
+    const oldest = poolCache.keys().next().value;
+    if (oldest === undefined) break;
+    poolCache.delete(oldest);
+  }
+  return works;
+}
 
 const POPULARITY_THRESHOLDS = {
   all: 0,
@@ -117,11 +152,7 @@ export async function GET(request: Request) {
 
   try {
     const expandedSeasons = expandSeasons({ yearFrom, yearTo, seasons });
-    const pool = await searchAnimeWorksPaginated({
-      seasons: expandedSeasons,
-      perPage: POOL_PER_PAGE,
-      pages: POOL_PAGES,
-    });
+    const pool = await getPool(expandedSeasons);
     const filtered = applyFilters(
       pool,
       popularity,
