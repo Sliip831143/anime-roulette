@@ -67,11 +67,13 @@
 5. **reveal**（カード枚数分繰り返し）
    - カードが左下から中央へ舞い込む（550ms）
    - 画面全体がホワイトアウト（300ms、フェードイン後維持）
-   - ★3 かつ画像ありの場合のみ、画像を縦→横の Ken Burns で全画面演出（各 1.5s）
+   - ★3 かつ画像ありの場合のみ、画像を縦→横の Ken Burns で全画面演出（各 1.5s）。前半（縦パン）・後半（横パン）の開始時に一瞬の白フラッシュを挟み、光の中から画像が現れる
    - 白フェードアウトとシームレスにアニメ情報をフェードイン、クリック／タップ／Enter で次へ
 6. **closing**: 最後のクリックでステージごとフェードアウト → 結果一覧がフェードイン
 
 右上の `SKIP »` ボタンまたは Esc キーで演出を即時終了。
+
+> **開発用デモ**: dev サーバで URL に `?gachatest=1` を付けてアクセスすると（例: `http://localhost:3000/?gachatest=1`）、検索を経由せずモックの ★3 作品でガチャ演出を即再生できます。出現頻度の低い「★3＋サムネイルあり」の Ken Burns 演出を素早く確認するための開発用導線で、リロードのたびに再実行できます。`NODE_ENV=production` のビルドでは fixture ごと読み込まれず無効化されます（`src/lib/gacha-test-fixture.ts`）。
 
 ### レアリティ
 | ティア | 条件 | 視覚 |
@@ -92,7 +94,7 @@
   ボタンを集約。Esc キー・背景クリック・×ボタンで閉じる。React Portal で `document.body`
   直下にレンダリングして、結果エリアのスタッキングコンテキストに引きずられず viewport
   全体に表示
-- **X (Twitter) シェアボタン**: 詳細ダイアログとガチャ演出の双方から作品単位でツイート。
+- **X (Twitter) シェアボタン**: 詳細ダイアログから作品単位でツイート。
   シェアされた URL（`/share`）は **動的 OGP**（next/og + Edge runtime）でレアリティ別の
   画像が表示される
 - **「結果をシェア」一括シェア**: 結果セクションの見出し横のボタンから、ガチャ結果一覧を
@@ -170,7 +172,10 @@
 
 ### PWA
 - `manifest.json` / 192px・512px アイコン / Apple touch icon を完備
-- Service Worker（`public/sw.js`）でプリキャッシュ + 同一オリジン GET キャッシュファースト戦略
+- Service Worker（`public/sw.js`）: 静的アセットのプリキャッシュ + 用途別キャッシュ戦略
+  - HTML ナビゲーションは**ネットワーク優先**（最新デプロイの JS バンドルを確実に参照させ、旧 HTML 固定化を防止）
+  - ハッシュ付き `/_next/static`・画像など同一オリジン GET は**キャッシュファースト**
+  - `/api/*`・`/_next/data/*` は常にネットワーク優先、外部オリジン（Annict CDN 等）は介入せずパススルー
 - ホーム画面追加対応、Android はスプラッシュ画面も自動生成
 - 開発時は SW を登録しない（HMR 競合回避）
 
@@ -245,7 +250,7 @@ src/
 │   ├── search-form.tsx           # 検索フォーム（layout prop で stack/two-column 切替）
 │   ├── anime-card.tsx            # 結果カード（モード別デザイン、クリックで詳細ダイアログ）
 │   ├── anime-detail-dialog.tsx   # 結果カード詳細モーダル（Portal + Esc クローズ、外部リンク集約）
-│   ├── gacha-sequence.tsx        # ガチャ演出のフルスクリーンオーバーレイ + シェアボタン
+│   ├── gacha-sequence.tsx        # ガチャ演出のフルスクリーンオーバーレイ（intro〜reveal〜closing）
 │   ├── sw-register.tsx           # Service Worker 登録（本番のみ）
 │   └── ui/                       # shadcn/ui プリミティブ
 └── lib/
@@ -256,6 +261,7 @@ src/
     ├── rarity.test.ts            # レアリティ判定の単体テスト（100% カバー）
     ├── share.ts                  # X (Twitter) シェア URL ビルダー（個別 + 一括、X カウント仕様準拠）
     ├── share.test.ts             # 一括シェアテキスト生成の境界値・X カウント・省略ロジックのテスト
+    ├── gacha-test-fixture.ts     # 開発用ガチャ演出デモ（?gachatest=1）のモック★3作品
     └── utils.ts                  # cn ヘルパ
 
 public/
