@@ -78,8 +78,8 @@
 ### レアリティ
 | ティア | 条件 | 視覚 |
 |---|---|---|
-| ★3 虹 | `watchersCount >= 22,000` または (`watchersCount >= 12,000` AND `satisfactionRate >= 83%`) | 虹色アクセント、結果カードの虹色発光、ガチャ画面背景もパープル／ピンク基調へ |
-| ★2 金 | `watchersCount >= 8,500`（虹に該当しない） | 金色アクセント、金光発光 |
+| ★3 虹 | `watchersCount >= 22,000` または (`watchersCount >= 10,500` AND `satisfactionRate >= 83%`) | 虹色アクセント、結果カードの虹色発光、ガチャ画面背景もパープル／ピンク基調へ |
+| ★2 金 | `watchersCount >= 5,800`（虹に該当しない） | 金色アクセント、金光発光 |
 | ★1 青 | それ以外（大半） | 青色アクセント |
 
 > [!NOTE]
@@ -297,8 +297,9 @@ CLAUDE.md                         # プロジェクト固有の Claude 指示（
 
 - API には年単独・年範囲のフィルタが存在せず `seasons: [String!]`（例 `"2024-spring"`）のみ。クライアント側で年×季節を展開して送る（`src/lib/seasons.ts`）
 - `WorkOrderField` は `WATCHERS_COUNT` / `SEASON` / `CREATED_AT` の3種のみ。「人気アニメ」は `WATCHERS_COUNT DESC` で代用
-- **ランダム抽出は「上位最大1,000件（200件×5ページのカーソルページネーション）をプール → サーバーでフィルタ → シャッフル → 指定件数を返却」で実現**（`src/app/api/anime/route.ts`、`searchAnimeWorksPaginated`）
+- **ランダム抽出は「上位最大2,600件（200件×13ページのカーソルページネーション）をプール → サーバーでフィルタ → シャッフル → 指定件数を返却」で実現**（`src/app/api/anime/route.ts`、`searchAnimeWorksPaginated`）
   - 200件のみだとプールが人気作偏重になり、ガチャの低レアが出ないため深掘りしている
+  - プールは seasons の組み合わせごとに module スコープでキャッシュ（TTL 24時間）。カーソルページネーションは直列のためページ数に比例して取得が遅くなるが、2回目以降のガチャはキャッシュ命中で Annict 取得ゼロ（フィルタ＋シャッフルのみ）で即応答する
 - **`Work` には `organizations` / `ratingsCount` フィールドが存在しない**（GraphQL introspection で確認済み）。詳細ダイアログでは取得しない
 - **`Staff.roleOther` はスキーマ宣言が non-nullable だが実データで null が返る**ことがあり、GraphQL の error propagation で staff レコード全体が消失する。詳細取得クエリでは `roleOther` を含めず、職位は `roleText` のみで運用
 
