@@ -10,7 +10,8 @@ import { Slider } from "@/components/ui/slider";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { SEASONS, SEASON_LABELS_JA, type Season } from "@/lib/seasons";
 
-const YEAR_RANDOM_DEFAULT_MIN = 1990;
+// Annict に放送年データが存在する最古の年。これ未満を指定しても結果が出ない。
+const MIN_YEAR = 1991;
 const DEFAULT_POPULAR_THRESHOLD = 1000;
 
 export type Popularity = "all" | "popular" | "very_popular";
@@ -82,6 +83,7 @@ export function SearchForm({
 
   const yearFrom = parseYear(yearFromText);
   const yearTo = parseYear(yearToText);
+  const currentYear = new Date().getFullYear();
   const seasonsEnabled = yearFrom != null || yearTo != null;
   const twoColumn = layout === "two-column";
   const currentMaxCount = extendedCount ? EXTENDED_MAX_COUNT : SLIDER_MAX_COUNT;
@@ -98,12 +100,14 @@ export function SearchForm({
   }
 
   const error = useMemo(() => {
-    if (yearFromText && yearFrom == null) return "開始年は1900〜2100の整数で入力してください";
-    if (yearToText && yearTo == null) return "終了年は1900〜2100の整数で入力してください";
+    if (yearFromText && yearFrom == null)
+      return `開始年は${MIN_YEAR}〜${currentYear}の整数で入力してください`;
+    if (yearToText && yearTo == null)
+      return `終了年は${MIN_YEAR}〜${currentYear}の整数で入力してください`;
     if (yearFrom != null && yearTo != null && yearFrom > yearTo)
       return "開始年は終了年以下にしてください";
     return null;
-  }, [yearFromText, yearToText, yearFrom, yearTo]);
+  }, [yearFromText, yearToText, yearFrom, yearTo, currentYear]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -135,7 +139,6 @@ export function SearchForm({
   };
 
   const handleRandomYear = () => {
-    const currentYear = new Date().getFullYear();
     let lo: number;
     let hi: number;
     if (yearFrom != null && yearTo != null) {
@@ -145,10 +148,10 @@ export function SearchForm({
       lo = yearFrom;
       hi = currentYear;
     } else if (yearTo != null) {
-      lo = YEAR_RANDOM_DEFAULT_MIN;
+      lo = MIN_YEAR;
       hi = yearTo;
     } else {
-      lo = YEAR_RANDOM_DEFAULT_MIN;
+      lo = MIN_YEAR;
       hi = currentYear;
     }
     if (lo > hi) [lo, hi] = [hi, lo];
@@ -176,8 +179,8 @@ export function SearchForm({
           type="number"
           inputMode="numeric"
           placeholder="開始年"
-          min={1900}
-          max={2100}
+          min={MIN_YEAR}
+          max={currentYear}
           value={yearFromText}
           onChange={(e) => handleYearFromChange(e.target.value)}
           className="w-28 sm:w-32"
@@ -187,8 +190,8 @@ export function SearchForm({
           type="number"
           inputMode="numeric"
           placeholder="終了年"
-          min={1900}
-          max={2100}
+          min={MIN_YEAR}
+          max={currentYear}
           value={yearToText}
           onChange={(e) => handleYearToChange(e.target.value)}
           className="w-28 sm:w-32"
@@ -409,6 +412,7 @@ export function SearchForm({
 function parseYear(text: string): number | null {
   if (!text.trim()) return null;
   const n = Number(text);
-  if (!Number.isInteger(n) || n < 1900 || n > 2100) return null;
+  const maxYear = new Date().getFullYear();
+  if (!Number.isInteger(n) || n < MIN_YEAR || n > maxYear) return null;
   return n;
 }
