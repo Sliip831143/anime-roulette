@@ -8,10 +8,10 @@ function normalizePercent(rate: number | null): number | null {
 
 /**
  * レアリティ判定
- * - ★3 虹: 視聴登録 >= 25,000 OR (視聴登録 >= 12,000 AND 満足度 >= 85%)
+ * - ★3 虹: 視聴登録 >= 22,000 OR (視聴登録 >= 12,000 AND 満足度 >= 83%)
  *   満足度データが無いメジャー古典作品も視聴登録のみで虹に昇格できる設計。
  *   ハイブリッド条件を厳しめにすることで、中堅人気作の金色レンジを確保。
- * - ★2 金: 視聴登録 >= 10,000（虹に該当しないもの）
+ * - ★2 金: 視聴登録 >= 8,500（虹に該当しないもの）
  * - ★1 青: それ以外（大半）
  */
 export function getRarity(
@@ -20,10 +20,10 @@ export function getRarity(
 ): Rarity {
   const sat = normalizePercent(satisfactionRate);
   const isRainbow =
-    watchersCount >= 25000 ||
-    (watchersCount >= 12000 && sat != null && sat >= 85);
+    watchersCount >= 22000 ||
+    (watchersCount >= 12000 && sat != null && sat >= 83);
   if (isRainbow) return "r3";
-  if (watchersCount >= 10000) return "r2";
+  if (watchersCount >= 8500) return "r2";
   return "r1";
 }
 

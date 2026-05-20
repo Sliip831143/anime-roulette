@@ -9,7 +9,7 @@ import type { AnnictWork } from "@/lib/annict";
  * ガチャ演出を即起動できるようにしている（page.tsx 側で参照）。
  *
  * - 本番ビルドでは page.tsx 側の NODE_ENV ガードにより読み込まれない。
- * - watchersCount を 25,000 以上にしてあるので getRarity() は必ず "r3"。
+ * - watchersCount を ★3 閾値（22,000）より十分高くしてあるので getRarity() は必ず "r3"。
  * - 画像は picsum.photos の固定 seed を使い、毎回同じ絵が出るので
  *   アニメーションのイテレーション間で見た目を比較しやすい。
  */
