@@ -578,7 +578,7 @@ export default function Home() {
                 />
               </h1>
             ) : (
-              <h1 className="text-xl font-semibold tracking-tight">
+              <h1 className="text-xl md:text-[1.375rem] font-semibold tracking-tight">
                 アニメルーレット
               </h1>
             )}

@@ -507,7 +507,7 @@ body[data-mode="gacha"] {
 }
 
 [data-mode="gacha"] .gacha-hero-logo {
-  height: clamp(64px, 10vw, 112px);
+  height: clamp(64px, 10vw, 88px);
   width: auto;
   display: block;
 }
@@ -1051,10 +1051,10 @@ body[data-mode="gacha"] {
   box-shadow: 0 0 0 3px oklch(0.6 0 0 / 0.25);
 }
 
-/* 簡易モード × スマホ：ヘッダー上の余白を広めに */
+/* 簡易モード × スマホ：ヘッダー上の余白 */
 @media (max-width: 640px) {
   [data-mode="simple"] .page-root {
-    padding-top: 2.5rem;
+    padding-top: 24px;
   }
 }
 
