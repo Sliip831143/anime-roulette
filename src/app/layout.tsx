@@ -10,7 +10,7 @@ import "./globals.css";
 const SITE_URL = "https://anime-roulette-inky.vercel.app";
 const SITE_TITLE = "アニメルーレット -Anime Roulette-";
 const SITE_DESCRIPTION =
-  "Annictで観るアニメをガチャで抽選するルーレットアプリ。レアリティ付きガチャ演出で次に観る作品を決めよう。";
+  "次に観るアニメをガチャ演出で楽しく抽選するルーレットアプリ。";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

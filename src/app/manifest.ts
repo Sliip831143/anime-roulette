@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "アニメルーレット",
     short_name: "アニメルーレット",
-    description: "Annictで観るアニメをガチャで抽選するルーレットアプリ",
+    description: "次に観るアニメをガチャ演出で楽しく抽選するルーレットアプリ",
     start_url: "/",
     display: "standalone",
     orientation: "portrait",

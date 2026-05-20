@@ -37,14 +37,14 @@ export async function generateMetadata({
     description,
     openGraph: {
       title: description,
-      description: "次に観るアニメをガチャで抽選するルーレットアプリ",
+      description: "次に観るアニメをガチャ演出で楽しく抽選するルーレットアプリ",
       type: "website",
       images: [{ url: ogImage, width: 1200, height: 630, alt: description }],
     },
     twitter: {
       card: "summary_large_image",
       title: description,
-      description: "次に観るアニメをガチャで抽選するルーレットアプリ",
+      description: "次に観るアニメをガチャ演出で楽しく抽選するルーレットアプリ",
       images: [ogImage],
     },
     alternates: {
