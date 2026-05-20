@@ -1,10 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Share2 } from "lucide-react";
 import type { AnnictWork } from "@/lib/annict";
 import { getRarity, type Rarity } from "@/lib/rarity";
-import { openTweetIntent } from "@/lib/share";
 
 type Phase =
   | "intro_1"
@@ -187,7 +185,6 @@ export function GachaSequence({ works, onClose }: Props) {
   const handleStageClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement;
     if (target.closest(".gacha-skip")) return;
-    if (target.closest(".gacha-info-share")) return;
     if (target.closest("a")) return;
     advance();
   };
@@ -299,6 +296,12 @@ export function GachaSequence({ works, onClose }: Props) {
 
       {(phase === "reveal_info" || phase === "reveal_kb_v") && (
         <span className="gacha-white-fade" aria-hidden="true" />
+      )}
+
+      {/* 縦パン/横パンそれぞれの開始時に一瞬の光を挟む。
+          key を phase にして再マウントさせ、フェーズ切替ごとにアニメを再生する。 */}
+      {(phase === "reveal_kb_v" || phase === "reveal_kb_h") && (
+        <span key={phase} className="gacha-kb-flash" aria-hidden="true" />
       )}
 
       {(phase === "reveal_kb_v" || phase === "reveal_kb_h") &&
@@ -436,22 +439,6 @@ export function GachaSequence({ works, onClose }: Props) {
                     </a>
                   </>
                 )}
-                <button
-                  type="button"
-                  className="gacha-info-share"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    openTweetIntent({
-                      annictId: currentWork.annictId,
-                      title: currentWork.title,
-                      rarity: currentRarity,
-                    });
-                  }}
-                  aria-label={`「${currentWork.title}」を X でシェア`}
-                >
-                  <Share2 className="size-3.5" aria-hidden />
-                  シェア
-                </button>
               </div>
             </div>
            </div>

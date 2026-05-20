@@ -466,8 +466,7 @@ body[data-mode="gacha"] {
   text-decoration: underline;
 }
 
-[data-mode="gacha"] .gacha-card-share,
-.gacha-info-share {
+[data-mode="gacha"] .gacha-card-share {
   margin-left: auto;
   display: inline-flex;
   align-items: center;
@@ -482,8 +481,7 @@ body[data-mode="gacha"] {
   letter-spacing: 0.04em;
 }
 
-[data-mode="gacha"] .gacha-card-share:hover,
-.gacha-info-share:hover {
+[data-mode="gacha"] .gacha-card-share:hover {
   color: oklch(0.4 0.15 250);
 }
 
@@ -1645,6 +1643,22 @@ body[data-mode="gacha"] {
 }
 
 @keyframes white-out {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Ken Burns 前半（縦パン）・後半（横パン）の開始時に挟む一瞬の光。
+   フェーズ開始と同時に全白 → フェードアウトし、光の中から画像が現れる。 */
+.gacha-kb-flash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+  background: oklch(1 0 0);
+  animation: gacha-kb-flash 0.4s ease-out forwards;
+}
+
+@keyframes gacha-kb-flash {
   0% { opacity: 1; }
   100% { opacity: 0; }
 }

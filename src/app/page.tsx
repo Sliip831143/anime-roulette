@@ -172,6 +172,29 @@ export default function Home() {
     /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
 
+  // 開発用：?gachatest=1 でモック★3作品のガチャ演出を即起動する。
+  // 「★3かつサムネイルあり」の Ken Burns 演出は実データだと出現頻度が低く
+  // 確認しづらいため、検索を飛ばしてリロードだけで再実行できるようにしている。
+  // 本番ビルドでは NODE_ENV ガードにより fixture ごと読み込まれない。
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("gachatest") !== "1") return;
+    let cancelled = false;
+    import("@/lib/gacha-test-fixture").then(({ GACHA_TEST_WORKS }) => {
+      if (cancelled) return;
+      setResults(null);
+      setPendingWorks(GACHA_TEST_WORKS);
+      console.log(
+        "%c[gachatest] モック★3作品でガチャ演出を起動しました",
+        "color:#7aa;font-weight:700",
+      );
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   useEffect(() => {
     document.documentElement.dataset.mode = gachaMode ? "gacha" : "simple";
     localStorage.setItem(MODE_STORAGE_KEY, gachaMode ? "gacha" : "simple");
