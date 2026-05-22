@@ -31,6 +31,7 @@
 - [デプロイ（Vercel）](#デプロイvercel)
 - [計測（Analytics / CI）](#計測analytics--ci)
 - [開発体験（DX）](#開発体験dx)
+- [Claude Code との協働](#claude-code-との協働)
 - [ライセンス](#ライセンス)
 
 ---
@@ -286,7 +287,12 @@ scripts/
 
 .husky/pre-commit                 # pnpm exec lint-staged を実行（pre-commit hook）
 
-CLAUDE.md                         # プロジェクト固有の Claude 指示（コミット時の README 同期ワークフロー等）
+.claude/
+├── settings.json                 # Claude Code 共通設定（安全コマンドの許可リスト + README 同期フック）
+└── hooks/
+    └── readme-sync-reminder.mjs   # git commit 前に README 同期を促す PreToolUse フック
+
+CLAUDE.md                         # プロジェクト固有の Claude 指示（開発リファレンス + README 同期ワークフロー）
 .lighthouserc.json                # Lighthouse 閾値（perf 85% / a11y 90% / etc.）
 .editorconfig                     # エディタ統一（utf-8 / LF / 2スペ）
 .nvmrc                            # Node 22 (LTS)
@@ -383,6 +389,24 @@ pnpm test:coverage  # カバレッジレポート生成 → coverage/index.html
 - **Husky + lint-staged**: pre-commit でステージしたファイルのみ `eslint --fix` を実行
 - **Dependabot**（`.github/dependabot.yml`）: npm 依存と GitHub Actions の週次自動 PR。マイナー/パッチはまとめて 1 PR
 - **`.editorconfig`** / **`.nvmrc`** / **`.vscode/{settings,extensions}.json`**: エディタ・Node バージョンを統一、保存時 ESLint 自動修正、推奨拡張を共有
+
+---
+
+## Claude Code との協働
+
+本プロジェクトは Anthropic の CLI コーディングエージェント **Claude Code** との二人三脚で開発しています。
+「実装とドキュメントを乖離させない」ことを重視し、AI 協働のための仕組みをリポジトリに組み込んでいます。
+
+- **`CLAUDE.md`**: プロジェクト固有の指示書。Claude が毎セッション参照する。
+  Git アカウント運用、検証フロー（lint / typecheck / test）、Annict API の既知の落とし穴、
+  レアリティ閾値の注意、README 同期ワークフローを集約
+- **`.claude/settings.json`**（コミット対象）: Claude Code の権限設定。`pnpm` スクリプトや型チェックなど
+  安全なコマンドを許可リスト化して確認プロンプトを削減。ローカル固有の許可は `.claude/settings.local.json`
+  （Git 管理外）に分離
+- **README 同期フック**（`.claude/hooks/readme-sync-reminder.mjs`）: `git commit` の実行直前に発火する
+  PreToolUse フック。「今回の差分が README の記載に影響しないか」を機械的にリマインドし、
+  ドキュメントの取りこぼしを防ぐ
+- **コミット粒度**: コード変更と README 更新は別コミットに分離（例: 「README を現行実装に合わせて更新」）
 
 ---
 
