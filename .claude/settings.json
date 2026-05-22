@@ -1,0 +1,44 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm install *)",
+      "Bash(pnpm dev *)",
+      "Bash(pnpm build *)",
+      "Bash(pnpm start *)",
+      "Bash(pnpm lint *)",
+      "Bash(pnpm lint:fix *)",
+      "Bash(pnpm typecheck *)",
+      "Bash(pnpm test:run *)",
+      "Bash(pnpm test:coverage *)",
+      "Bash(pnpm analyze *)",
+      "Bash(npx tsc *)",
+      "Bash(node scripts/convert-images.mjs)",
+      "Bash(node scripts/generate-meta-assets.mjs)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git fetch *)",
+      "Bash(git check-ignore *)",
+      "Bash(git rev-list *)",
+      "Bash(git config *)",
+      "WebSearch",
+      "WebFetch(domain:developers.annict.com)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/readme-sync-reminder.mjs",
+            "if": "Bash(git *)",
+            "timeout": 10,
+            "statusMessage": "README 同期チェック"
+          }
+        ]
+      }
+    ]
+  }
+}

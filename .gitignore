@@ -41,5 +41,10 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# claude code (ローカル権限キャッシュ)
-.claude/
+# claude code
+# settings.json（プロジェクト共通の権限・フック）と hooks/ はコミットし、
+# settings.local.json などローカル固有のものは無視する
+.claude/*
+!.claude/settings.json
+!.claude/hooks/
+!.claude/hooks/**
