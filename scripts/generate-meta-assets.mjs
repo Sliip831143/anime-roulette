@@ -71,8 +71,8 @@ async function buildFaviconIcon(size, outPath) {
 }
 
 /* ============== Square icon (apple-touch / PWA) ============== */
-// OG画像と同じ「青系グラデ背景 + ロゴ」を正方形で書き出す。
-// 共有時のサムネとブックマーク/ホーム画面アイコンの意匠を統一する目的。
+// 白背景 + ロゴを正方形で書き出す。
+// ブックマーク/ホーム画面アイコンの意匠を統一する目的。
 // 短辺が小さいサイズではサブタイトルが潰れるため、ロゴのみを中央に配置する。
 
 async function buildSquareIcon(size, outPath) {
@@ -87,16 +87,10 @@ async function buildSquareIcon(size, outPath) {
   const logoX = Math.round((W - logoMeta.width) / 2);
   const logoY = Math.round((H - logoMeta.height) / 2);
 
-  // 背景：OGPと同色の青系グラデ
+  // 背景：白
   const bgSvg = `
     <svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="#eaf2fb"/>
-          <stop offset="100%" stop-color="#c9deef"/>
-        </linearGradient>
-      </defs>
-      <rect width="${W}" height="${H}" fill="url(#bg)"/>
+      <rect width="${W}" height="${H}" fill="#ffffff"/>
     </svg>
   `;
 
