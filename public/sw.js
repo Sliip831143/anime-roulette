@@ -5,7 +5,7 @@
 // - /api/* と /_next/data/* は常にネットワーク優先（毎回フレッシュ）
 // - 外部リクエスト（Annict CDN等）はパススルー
 
-const CACHE_VERSION = "v2";
+const CACHE_VERSION = "v3";
 const CACHE_NAME = `anime-roulette-${CACHE_VERSION}`;
 
 const PRECACHE_URLS = [
@@ -55,6 +55,15 @@ self.addEventListener("fetch", (event) => {
 
   // Next.js の HMR/dev サーバ系も介入しない
   if (url.pathname.startsWith("/_next/webpack-hmr")) return;
+
+  // App Router の RSC プリフェッチ／RSC payload リクエストは SW を通さない。
+  // 同一 URL でも HTML と RSC ペイロード（multipart）が返り得るため、cache-first だと
+  // RSC リクエストに対して HTML を返してしまい、multipart 境界が画面に露出したり
+  // React #418（hydration mismatch）が発生する。
+  if (event.request.headers.get("rsc") === "1") return;
+  if (event.request.headers.has("next-router-state-tree")) return;
+  if (event.request.headers.has("next-router-prefetch")) return;
+  if (event.request.headers.has("next-router-segment-prefetch")) return;
 
   // HTML ナビゲーションはネットワーク優先：常に最新 HTML を取得し、
   // 失敗時のみキャッシュ／オフラインフォールバックする。
