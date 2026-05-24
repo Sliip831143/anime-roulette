@@ -27,7 +27,7 @@ const buildPopularityOptions = (popularThreshold: number): PopularityOption[] =>
   { value: "very_popular", label: "超人気のみ", hint: "視聴登録5,000人以上" },
 ];
 
-export const MEDIA_VALUES = ["TV", "OVA", "MOVIE", "WEB", "OTHER"] as const;
+export const MEDIA_VALUES = ["TV", "OVA", "MOVIE", "WEB"] as const;
 export type Media = (typeof MEDIA_VALUES)[number];
 
 const MEDIA_LABELS_JA: Record<Media, string> = {
@@ -35,7 +35,6 @@ const MEDIA_LABELS_JA: Record<Media, string> = {
   MOVIE: "映画",
   OVA: "OVA",
   WEB: "Web",
-  OTHER: "その他",
 };
 
 export type SearchParams = {
@@ -183,7 +182,7 @@ export function SearchForm({
           max={currentYear}
           value={yearFromText}
           onChange={(e) => handleYearFromChange(e.target.value)}
-          className="w-20 sm:w-32"
+          className="w-20 sm:w-32 md:w-24"
         />
         <span className="text-muted-foreground">〜</span>
         <Input
@@ -194,7 +193,7 @@ export function SearchForm({
           max={currentYear}
           value={yearToText}
           onChange={(e) => handleYearToChange(e.target.value)}
-          className="w-20 sm:w-32"
+          className="w-20 sm:w-32 md:w-24"
         />
         <Button
           type="button"
@@ -203,7 +202,7 @@ export function SearchForm({
           onClick={handleRandomYear}
           disabled={error != null}
           aria-label="放送年をランダムで決定"
-          className="ml-2 shrink-0"
+          className="ml-2 shrink-0 cursor-pointer"
         >
           <Dices className="size-4" aria-hidden />
           <span>ランダム</span>

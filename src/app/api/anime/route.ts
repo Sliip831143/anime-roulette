@@ -53,7 +53,7 @@ const POPULARITY_THRESHOLDS = {
 
 const HIGH_RATED_THRESHOLD_PERCENT = 70;
 
-const MEDIA_VALUES = ["TV", "OVA", "MOVIE", "WEB", "OTHER"] as const;
+const MEDIA_VALUES = ["TV", "OVA", "MOVIE", "WEB"] as const;
 
 export const querySchema = z
   .object({
@@ -104,10 +104,10 @@ function applyFilters(
     popularity === "popular" && popularityThreshold != null
       ? popularityThreshold
       : POPULARITY_THRESHOLDS[popularity];
-  // 未指定 or 全選択時は絞り込まない
+  // 未指定 or 全選択時は絞り込まない（OTHER は Annict 側のラベルとして残るため Set<string> で受ける）
   const mediaFilter =
     media && media.length > 0 && media.length < MEDIA_VALUES.length
-      ? new Set(media)
+      ? new Set<string>(media)
       : null;
   return works.filter((w) => {
     if (w.watchersCount < minWatchers) return false;
