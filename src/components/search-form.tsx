@@ -170,7 +170,7 @@ export function SearchForm({
   const yearSection = (
     <div className="space-y-2">
       <Label>放送年（任意）</Label>
-      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+      <div className="flex flex-nowrap items-center gap-1.5 sm:gap-2">
         <Input
           type="number"
           inputMode="numeric"
@@ -179,7 +179,7 @@ export function SearchForm({
           max={currentYear}
           value={yearFromText}
           onChange={(e) => handleYearFromChange(e.target.value)}
-          className="w-20 sm:w-32 md:w-24"
+          className="w-20 min-w-0 sm:w-32 md:w-24"
         />
         <span className="text-muted-foreground">〜</span>
         <Input
@@ -190,7 +190,7 @@ export function SearchForm({
           max={currentYear}
           value={yearToText}
           onChange={(e) => handleYearToChange(e.target.value)}
-          className="w-20 sm:w-32 md:w-24"
+          className="w-20 min-w-0 sm:w-32 md:w-24"
         />
         <Button
           type="button"
@@ -199,7 +199,7 @@ export function SearchForm({
           onClick={handleRandomYear}
           disabled={error != null}
           aria-label="放送年をランダムで決定"
-          className="ml-2 shrink-0 cursor-pointer"
+          className="shrink-0 cursor-pointer"
         >
           <Dices className="size-4" aria-hidden />
           <span>ランダム</span>
