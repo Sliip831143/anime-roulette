@@ -174,7 +174,7 @@ export function SearchForm({
   const yearSection = (
     <div className="space-y-2">
       <Label>放送年（任意）</Label>
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
         <Input
           type="number"
           inputMode="numeric"
@@ -183,7 +183,7 @@ export function SearchForm({
           max={currentYear}
           value={yearFromText}
           onChange={(e) => handleYearFromChange(e.target.value)}
-          className="w-28 sm:w-32"
+          className="w-20 sm:w-32"
         />
         <span className="text-muted-foreground">〜</span>
         <Input
@@ -194,7 +194,7 @@ export function SearchForm({
           max={currentYear}
           value={yearToText}
           onChange={(e) => handleYearToChange(e.target.value)}
-          className="w-28 sm:w-32"
+          className="w-20 sm:w-32"
         />
         <Button
           type="button"
@@ -203,7 +203,7 @@ export function SearchForm({
           onClick={handleRandomYear}
           disabled={error != null}
           aria-label="放送年をランダムで決定"
-          className="shrink-0 gap-1.5"
+          className="ml-2 shrink-0"
         >
           <Dices className="size-4" aria-hidden />
           <span>ランダム</span>
@@ -315,7 +315,7 @@ export function SearchForm({
   const mediaSection = (
     <div className="space-y-2">
       <Label>メディア種別</Label>
-      <div className="flex flex-wrap gap-4">
+      <div className="flex flex-wrap gap-x-3 gap-y-2 sm:gap-4">
         {MEDIA_VALUES.map((m) => (
           <label key={m} className="flex items-center gap-2 cursor-pointer">
             <Checkbox
