@@ -631,7 +631,6 @@ export default function Home() {
             onSubmit={handleSubmit}
             submitLabel={gachaMode ? "ガチャを引く" : "候補を取得"}
             loadingLabel={gachaMode ? "Loading..." : "取得中..."}
-            layout={gachaMode ? "two-column" : "stack"}
             showSeason={seasonVisible}
             extendedCount={extendedCount}
             popularThreshold={popularThreshold}

@@ -55,7 +55,6 @@ type Props = {
   onSubmit: (params: SearchParams) => void;
   submitLabel?: string;
   loadingLabel?: string;
-  layout?: "stack" | "two-column";
   showSeason?: boolean;
   extendedCount?: boolean;
   popularThreshold?: number;
@@ -66,7 +65,6 @@ export function SearchForm({
   onSubmit,
   submitLabel = "候補を取得",
   loadingLabel = "取得中...",
-  layout = "stack",
   showSeason = true,
   extendedCount = false,
   popularThreshold = DEFAULT_POPULAR_THRESHOLD,
@@ -84,7 +82,6 @@ export function SearchForm({
   const yearTo = parseYear(yearToText);
   const currentYear = new Date().getFullYear();
   const seasonsEnabled = yearFrom != null || yearTo != null;
-  const twoColumn = layout === "two-column";
   const currentMaxCount = extendedCount ? EXTENDED_MAX_COUNT : SLIDER_MAX_COUNT;
   const popularityOptions = useMemo(
     () => buildPopularityOptions(popularThreshold),
@@ -271,11 +268,7 @@ export function SearchForm({
         onValueChange={(v) =>
           typeof v === "string" && setPopularity(v as Popularity)
         }
-        className={
-          twoColumn
-            ? "grid grid-cols-1 gap-2"
-            : "grid grid-cols-1 gap-2 sm:grid-cols-3"
-        }
+        className="grid grid-cols-1 gap-2"
       >
         {popularityOptions.map((opt) => (
           <label
@@ -332,7 +325,7 @@ export function SearchForm({
   );
 
   const countSection = (
-    <div className="space-y-2">
+    <div className="space-y-2 md:mb-3">
       <Label>取得件数: {count}件</Label>
       {extendedCount ? (
         <div className="space-y-1.5">
@@ -371,29 +364,18 @@ export function SearchForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
-      {twoColumn ? (
-        <div className="grid gap-y-2.5 sm:gap-y-3 md:gap-y-5 md:grid-cols-2">
-          <div className="space-y-2.5 sm:space-y-3 md:space-y-5 md:border-r md:border-slate-200 md:pr-6">
-            {yearSection}
-            {showSeason && seasonSection}
-            {mediaSection}
-          </div>
-          <div className="space-y-2.5 sm:space-y-3 md:space-y-5 md:pl-6">
-            {popularitySection}
-            {highRatedSection}
-            {countSection}
-          </div>
-        </div>
-      ) : (
-        <div className="space-y-4 sm:space-y-6">
+      <div className="grid gap-y-2.5 sm:gap-y-3 md:gap-y-5 md:grid-cols-2">
+        <div className="space-y-2.5 sm:space-y-3 md:space-y-5 md:border-r md:border-slate-200 md:pr-6">
           {yearSection}
           {showSeason && seasonSection}
+          {mediaSection}
+        </div>
+        <div className="space-y-2.5 sm:space-y-3 md:space-y-5 md:pl-6">
           {popularitySection}
           {highRatedSection}
-          {mediaSection}
           {countSection}
         </div>
-      )}
+      </div>
 
       {error && (
         <p className="text-sm text-destructive" role="alert">
