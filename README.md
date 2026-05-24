@@ -180,6 +180,7 @@
   - HTML ナビゲーションは**ネットワーク優先**（最新デプロイの JS バンドルを確実に参照させ、旧 HTML 固定化を防止）
   - ハッシュ付き `/_next/static`・画像など同一オリジン GET は**キャッシュファースト**
   - `/api/*`・`/_next/data/*` は常にネットワーク優先、外部オリジン（Annict CDN 等）は介入せずパススルー
+  - App Router の **RSC プリフェッチ／RSC payload リクエスト**（`rsc: 1` / `next-router-state-tree` / `next-router-prefetch` / `next-router-segment-prefetch` のいずれかのヘッダ）は SW を素通り。同一 URL で HTML と multipart RSC が返り得るため、cache-first にすると形式の取り違えが起きて hydration mismatch（React #418）を誘発するのを防ぐ
 - ホーム画面追加対応、Android はスプラッシュ画面も自動生成
 - 開発時は SW を登録しない（HMR 競合回避）
 
