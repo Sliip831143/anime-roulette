@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { AnnictWork } from "@/lib/annict";
 import { getRarity, type Rarity } from "@/lib/rarity";
 
@@ -96,6 +96,15 @@ export function GachaSequence({ works, onClose }: Props) {
   const [errorIndex, setErrorIndex] = useState<number | null>(null);
   const imageError = errorIndex === revealIndex;
 
+  // カード裏面の decode 完了を待ってからドロップアニメを発火させるためのフラグ。
+  // dev では decode が即座に終わるため目立たないが、本番 CDN（AVIF/WebP fetch）では
+  // <img> ごとの decode 完了タイミングが揃わず、stagger 順より先に後ろのカードが見えてしまうため、
+  // 「全カードが decode 完了 → .is-ready 付与 → animation 開始」とゲートする。
+  // cardsReady は phase との AND で派生させ、effect 内での同期 setState（cascading render）を避ける。
+  const cardsRowRef = useRef<HTMLDivElement | null>(null);
+  const [cardsDecoded, setCardsDecoded] = useState(false);
+  const cardsReady = phase === "cards" && cardsDecoded;
+
   // revealIndex が進むたびに次の画像を preload して有効性を確認
   useEffect(() => {
     const url = works[revealIndex]?.image?.recommendedImageUrl;
@@ -104,6 +113,52 @@ export function GachaSequence({ works, onClose }: Props) {
     probe.onerror = () => setErrorIndex(revealIndex);
     probe.src = url;
   }, [revealIndex, works]);
+
+  // cards フェーズに入ったら、全カード <img> の decode 完了を待ってから cardsDecoded=true にする。
+  // これにより、ブラウザ任せの decode 完了順ではなく、CSS の stagger（--i）通りに必ず 1 枚目から落ちる。
+  useEffect(() => {
+    if (phase !== "cards") return;
+    let cancelled = false;
+    let rafId = 0;
+
+    const waitForDecode = async () => {
+      // React の commit 直後 1 フレーム待って DOM に <img> が並ぶのを確実にする
+      await new Promise<void>((resolve) => {
+        rafId = requestAnimationFrame(() => resolve());
+      });
+      if (cancelled) return;
+
+      const imgs = cardsRowRef.current?.querySelectorAll<HTMLImageElement>(
+        "img.gacha-card-back",
+      );
+      if (!imgs || imgs.length === 0) {
+        setCardsDecoded(true);
+        return;
+      }
+
+      await Promise.all(
+        Array.from(imgs).map((img) => {
+          if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+          if (typeof img.decode === "function") {
+            return img.decode().catch(() => undefined);
+          }
+          return new Promise<void>((resolve) => {
+            const done = () => resolve();
+            img.addEventListener("load", done, { once: true });
+            img.addEventListener("error", done, { once: true });
+          });
+        }),
+      );
+      if (!cancelled) setCardsDecoded(true);
+    };
+
+    waitForDecode();
+
+    return () => {
+      cancelled = true;
+      if (rafId) cancelAnimationFrame(rafId);
+    };
+  }, [phase, works]);
 
   const advance = useCallback(() => {
     if (phase === "cards") {
@@ -212,6 +267,16 @@ export function GachaSequence({ works, onClose }: Props) {
       <div className="gacha-rays" aria-hidden="true" />
       <div className="gacha-particles" aria-hidden="true" />
 
+      {/* intro/slam 中に裏面画像 (avif/webp/png) を裏で fetch & decode しておき、
+          cards フェーズ突入時の decode 待ちを最小化する。 */}
+      {phase !== "cards" && (
+        <div className="gacha-preload" aria-hidden="true">
+          <LocalPicture src={CARD_IMG.r1} alt="" />
+          <LocalPicture src={CARD_IMG.r2} alt="" />
+          <LocalPicture src={CARD_IMG.r3} alt="" />
+        </div>
+      )}
+
       <button
         type="button"
         className="gacha-skip"
@@ -258,7 +323,8 @@ export function GachaSequence({ works, onClose }: Props) {
       {phase === "cards" && (
         <>
           <div
-            className={`gacha-cards-row${works.length >= 6 ? " is-wrap" : ""}`}
+            ref={cardsRowRef}
+            className={`gacha-cards-row${works.length >= 6 ? " is-wrap" : ""}${cardsReady ? " is-ready" : ""}`}
           >
             {works.map((w, i) => {
               const r = getRarity(w.watchersCount, w.satisfactionRate);

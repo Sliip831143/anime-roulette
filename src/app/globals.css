@@ -1545,8 +1545,8 @@ body[data-mode="gacha"] {
   object-fit: contain;
   transform-origin: top center;
   opacity: 0;
-  animation: card-drop 0.55s cubic-bezier(0.3, 0.7, 0.3, 1.2) forwards;
-  animation-delay: calc(var(--i) * 0.08s);
+  /* アニメは .gacha-cards-row.is-ready が付与されてから初めて開始する。
+     これにより、全カードの <img> decode 完了後に CSS stagger 通りの順番でドロップする。 */
   filter: drop-shadow(0 4px 6px oklch(0 0 0 / 0.15));
   will-change: transform, filter, opacity;
 }
@@ -1567,13 +1567,41 @@ body[data-mode="gacha"] {
   100% { transform: translateY(0) rotate(-7deg); opacity: 1; }
 }
 
-/* 並んだカードのアイドル発光（脈動） */
-.gacha-card-back.idle[data-rarity="r2"] {
-  animation: card-drop 0.55s cubic-bezier(0.3, 0.7, 0.3, 1.2) forwards, card-pulse-gold 2s ease-in-out infinite 0.6s;
+/* is-ready 後のみアニメ発火。--i で順番にドロップ */
+.gacha-cards-row.is-ready .gacha-card-back {
+  animation: card-drop 0.55s cubic-bezier(0.3, 0.7, 0.3, 1.2) forwards;
+  animation-delay: calc(var(--i) * 0.08s);
 }
 
-.gacha-card-back.idle[data-rarity="r3"] {
-  animation: card-drop 0.55s cubic-bezier(0.3, 0.7, 0.3, 1.2) forwards, card-pulse-rainbow 2s ease-in-out infinite 0.6s;
+/* 並んだカードのアイドル発光（脈動）。
+   ※ animation ショートハンドは delay も上書きするため、stagger を維持するには
+      animation-delay を明示で per-animation に列挙する必要がある（カンマ区切り）。 */
+.gacha-cards-row.is-ready .gacha-card-back.idle[data-rarity="r2"] {
+  animation:
+    card-drop 0.55s cubic-bezier(0.3, 0.7, 0.3, 1.2) forwards,
+    card-pulse-gold 2s ease-in-out infinite;
+  animation-delay:
+    calc(var(--i) * 0.08s),
+    calc(var(--i) * 0.08s + 0.6s);
+}
+
+.gacha-cards-row.is-ready .gacha-card-back.idle[data-rarity="r3"] {
+  animation:
+    card-drop 0.55s cubic-bezier(0.3, 0.7, 0.3, 1.2) forwards,
+    card-pulse-rainbow 2s ease-in-out infinite;
+  animation-delay:
+    calc(var(--i) * 0.08s),
+    calc(var(--i) * 0.08s + 0.6s);
+}
+
+/* intro/slam 中に裏面画像を裏で fetch & decode するための隠し領域 */
+.gacha-preload {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0;
 }
 
 @keyframes card-pulse-gold {
@@ -2129,6 +2157,7 @@ body[data-mode="gacha"] {
   }
 
   /* ガチャ★3カードの脈動・タイトルバーの虹色ボーダーも停止 */
+  .gacha-cards-row.is-ready .gacha-card-back.idle,
   .gacha-card-back.idle {
     animation-name: card-drop !important;
   }
