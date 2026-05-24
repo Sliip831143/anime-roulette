@@ -5,8 +5,9 @@ import { expandSeasons, SEASONS } from "@/lib/seasons";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-// プール拡大によりキャッシュミス時の取得が長くなるため、関数タイムアウトを延長。
-export const maxDuration = 30;
+// プール拡大 + Annict 側コールドスタートで 13 ページ逐次取得が 30s を超えるケースがあったため、
+// 40s に延長（Hobby プラン nodejs ランタイムは最大 60s だが、失敗時のユーザー待機を抑えるため控えめに設定）。
+export const maxDuration = 40;
 
 const POOL_PER_PAGE = 200;
 const POOL_PAGES = 13;

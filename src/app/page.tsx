@@ -501,12 +501,27 @@ export default function Home() {
 
     try {
       const res = await fetch(url);
-      const data = await res.json();
-      if (debug) {
-        console.log(`status: ${res.status}`);
-        console.log("raw:", data);
+      if (debug) console.log(`status: ${res.status}`);
+      if (!res.ok) {
+        // Vercel の関数タイムアウト (504) 等は text/plain で本文を返すため、
+        // JSON 前提でパースすると "Unexpected token" 例外がそのままユーザーに見える。
+        // JSON ボディなら error フィールドを取り、それ以外は status コード別の既定文を出す。
+        let serverMessage: string | null = null;
+        try {
+          const errBody = await res.json();
+          if (typeof errBody?.error === "string") serverMessage = errBody.error;
+          if (debug) console.log("error body (json):", errBody);
+        } catch {
+          if (debug) console.log("error body: (non-JSON)");
+        }
+        const fallback =
+          res.status === 504
+            ? "サーバが混雑しています。少し待って「もう一度引く」をお試しください"
+            : `取得に失敗しました（HTTP ${res.status}）`;
+        throw new Error(serverMessage ?? fallback);
       }
-      if (!res.ok) throw new Error(data.error ?? "取得に失敗しました");
+      const data = await res.json();
+      if (debug) console.log("raw:", data);
       const works = data.works as AnnictWork[];
 
       if (debug && Array.isArray(works)) {
