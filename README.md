@@ -260,8 +260,8 @@ src/
 │   └── ui/                       # shadcn/ui プリミティブ
 └── lib/
     ├── annict.ts                 # GraphQL クライアント / クエリ / ページネーション
-    ├── seasons.ts                # 年→seasons 配列の展開
-    ├── seasons.test.ts           # seasons 展開の境界値・順序保持テスト
+    ├── seasons.ts                # 年→seasons 配列の展開 + 未来放送予定の判定（isWorkFutureSeason）
+    ├── seasons.test.ts           # seasons 展開・未来判定の境界値・順序保持テスト
     ├── rarity.ts                 # レアリティ判定（watchersCount + satisfactionRate）
     ├── rarity.test.ts            # レアリティ判定の単体テスト（100% カバー）
     ├── share.ts                  # X (Twitter) シェア URL ビルダー（個別 + 一括、X カウント仕様準拠）
@@ -303,6 +303,7 @@ CLAUDE.md                         # プロジェクト固有の Claude 指示（
 
 - API には年単独・年範囲のフィルタが存在せず `seasons: [String!]`（例 `"2024-spring"`）のみ。クライアント側で年×季節を展開して送る（`src/lib/seasons.ts`）
 - `WorkOrderField` は `WATCHERS_COUNT` / `SEASON` / `CREATED_AT` の3種のみ。「人気アニメ」は `WATCHERS_COUNT DESC` で代用
+- **`Work` に放送ステータス系のフィールドが存在しない**（`releasedOn` / `status` / `WorkState` などは無し）。Annict には放送開始前の作品も「予定」として登録されるため、放っておくとガチャに未来作品が混入する。対処として `seasonYear` / `seasonName` から season 開始月（spring=4 / summer=7 / autumn=10 / winter=1）を逆算してクライアント側で除外（`src/lib/seasons.ts` の `isWorkFutureSeason`）。年指定モードでは `expandSeasons` が未来 season をそもそも展開せず、全期間モード（年・季節とも未指定）では `applyFilters` が作品単位で除外する。なお `seasons` を明示指定した場合はユーザー意図を尊重して未来でも展開する
 - **ランダム抽出は「上位最大2,600件（200件×13ページのカーソルページネーション）をプール → サーバーでフィルタ → シャッフル → 指定件数を返却」で実現**（`src/app/api/anime/route.ts`、`searchAnimeWorksPaginated`）
   - 200件のみだとプールが人気作偏重になり、ガチャの低レアが出ないため深掘りしている
   - プールは seasons の組み合わせごとに module スコープでキャッシュ（TTL 24時間）。カーソルページネーションは直列のためページ数に比例して取得が遅くなるが、2回目以降のガチャはキャッシュ命中で Annict 取得ゼロ（フィルタ＋シャッフルのみ）で即応答する
@@ -343,9 +344,9 @@ CLAUDE.md                         # プロジェクト固有の Claude 指示（
 
 [Vitest](https://vitest.dev/) による単体テストを整備。
 
-### カバー対象（4 ファイル / 計 53 ケース）
+### カバー対象（4 ファイル / 計 65 ケース）
 - **`src/lib/rarity.test.ts`**: レアリティ判定（`getRarity`）の境界値テスト（16 ケース、100% カバー）
-- **`src/lib/seasons.test.ts`**: 年→seasons 展開ロジック (`expandSeasons`) と `isSeason` の境界・順序保持・エラー系
+- **`src/lib/seasons.test.ts`**: 年→seasons 展開 (`expandSeasons`) / 未来放送予定の判定 (`isWorkFutureSeason`) / `isSeason` の境界・順序保持・エラー系
 - **`src/app/api/anime/schema.test.ts`**: API route の zod スキーマ（querySchema）の正常・異常系。デフォルト値、年範囲、count 上下限、enum 検証、`highRated` の boolean 変換まで
 - **`src/lib/share.test.ts`**: 一括シェアテキスト (`buildBatchTweetText`) の境界値。X 仕様のカウント（CJK 2 / URL 23 / 上限 280）、超過時の「…他N件」省略、ヘッダー/フッター整形を保証
 
