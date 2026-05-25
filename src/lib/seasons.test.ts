@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { expandSeasons, isSeason, SEASONS } from "./seasons";
+import { expandSeasons, isSeason, isWorkFutureSeason, SEASONS } from "./seasons";
 
 describe("expandSeasons", () => {
   it("年が両方未指定なら空配列を返す", () => {
@@ -74,6 +74,104 @@ describe("expandSeasons", () => {
       "2021-spring",
       "2021-autumn",
     ]);
+  });
+
+  describe("未来 season の除外（seasons 未指定時）", () => {
+    // 2026-05-25 時点：春(4月開始)は放送中、夏(7月開始)以降は未来
+    const now = new Date(2026, 4, 25); // 月は 0-indexed
+
+    it("当年・seasons 未指定なら、未来 season を除外する", () => {
+      expect(expandSeasons({ yearFrom: 2026, yearTo: 2026, now })).toEqual([
+        "2026-spring",
+        "2026-winter",
+      ]);
+    });
+
+    it("season 開始月 1 日ちょうどは含まれる（境界条件）", () => {
+      // 2026-04-01 00:00 時点で spring(4月開始) は「開始済み」扱い
+      const start = new Date(2026, 3, 1);
+      expect(expandSeasons({ yearFrom: 2026, now: start })).toEqual([
+        "2026-spring",
+        "2026-winter",
+      ]);
+    });
+
+    it("年範囲が未来年まで及ぶ場合、未来年の全 season が落ちる", () => {
+      expect(
+        expandSeasons({ yearFrom: 2025, yearTo: 2027, now }),
+      ).toEqual([
+        "2025-spring",
+        "2025-summer",
+        "2025-autumn",
+        "2025-winter",
+        "2026-spring",
+        "2026-winter",
+      ]);
+    });
+
+    it("過去年だけなら除外は発生しない", () => {
+      expect(expandSeasons({ yearFrom: 2023, now })).toHaveLength(4);
+    });
+
+    it("seasons を明示指定した場合はユーザー意図を尊重して未来でも展開する", () => {
+      // 「2026 年夏アニメから選ぶ」と明示されたら未来でも返す
+      expect(
+        expandSeasons({
+          yearFrom: 2026,
+          yearTo: 2026,
+          seasons: ["summer", "autumn"],
+          now,
+        }),
+      ).toEqual(["2026-summer", "2026-autumn"]);
+    });
+  });
+});
+
+describe("isWorkFutureSeason", () => {
+  const now = new Date(2026, 4, 25); // 2026-05-25
+
+  it("未来 season（2026-summer）は true", () => {
+    expect(
+      isWorkFutureSeason({ seasonYear: 2026, seasonName: "SUMMER" }, now),
+    ).toBe(true);
+  });
+
+  it("現在進行中（2026-spring, 4月開始）は false", () => {
+    expect(
+      isWorkFutureSeason({ seasonYear: 2026, seasonName: "SPRING" }, now),
+    ).toBe(false);
+  });
+
+  it("過去年（2025-autumn）は false", () => {
+    expect(
+      isWorkFutureSeason({ seasonYear: 2025, seasonName: "AUTUMN" }, now),
+    ).toBe(false);
+  });
+
+  it("season 開始月 1 日ちょうどは false（境界条件）", () => {
+    // 2026-07-01 00:00 時点で summer は「開始済み」扱い
+    const start = new Date(2026, 6, 1);
+    expect(
+      isWorkFutureSeason({ seasonYear: 2026, seasonName: "SUMMER" }, start),
+    ).toBe(false);
+  });
+
+  it("seasonYear が null なら判定不能で false（除外しない）", () => {
+    expect(
+      isWorkFutureSeason({ seasonYear: null, seasonName: "SUMMER" }, now),
+    ).toBe(false);
+  });
+
+  it("seasonName が null なら判定不能で false（除外しない）", () => {
+    expect(
+      isWorkFutureSeason({ seasonYear: 2027, seasonName: null }, now),
+    ).toBe(false);
+  });
+
+  it("未来年（2027-winter, 1月開始）も true", () => {
+    expect(
+      isWorkFutureSeason({ seasonYear: 2027, seasonName: "WINTER" }, now),
+    ).toBe(true);
   });
 });
 

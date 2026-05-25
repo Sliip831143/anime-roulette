@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { searchAnimeWorksPaginated, type AnnictWork } from "@/lib/annict";
-import { expandSeasons, SEASONS } from "@/lib/seasons";
+import { expandSeasons, isWorkFutureSeason, SEASONS } from "@/lib/seasons";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -99,6 +99,7 @@ function applyFilters(
   highRated: boolean,
   media: readonly (typeof MEDIA_VALUES)[number][] | undefined,
   popularityThreshold: number | undefined,
+  excludeFuture: boolean,
 ): AnnictWork[] {
   const minWatchers =
     popularity === "popular" && popularityThreshold != null
@@ -109,6 +110,7 @@ function applyFilters(
     media && media.length > 0 && media.length < MEDIA_VALUES.length
       ? new Set<string>(media)
       : null;
+  const now = excludeFuture ? new Date() : null;
   return works.filter((w) => {
     if (w.watchersCount < minWatchers) return false;
     if (highRated) {
@@ -116,6 +118,9 @@ function applyFilters(
       if (percent == null || percent < HIGH_RATED_THRESHOLD_PERCENT) return false;
     }
     if (mediaFilter && (w.media == null || !mediaFilter.has(w.media))) return false;
+    // 全期間モード（年・季節とも未指定）では Annict 側の seasons フィルタが効かず、
+    // 未来の放送予定作品もプールに混入する。seasonYear/seasonName から判定して除外する。
+    if (now && isWorkFutureSeason(w, now)) return false;
     return true;
   });
 }
@@ -154,12 +159,16 @@ export async function GET(request: Request) {
   try {
     const expandedSeasons = expandSeasons({ yearFrom, yearTo, seasons });
     const pool = await getPool(expandedSeasons);
+    // expandedSeasons が空 = 「全期間モード」（年・季節とも未指定）。
+    // この場合のみ作品単位で未来 season を除外する（年指定ありは expandSeasons 側で既に処理済み）。
+    const excludeFuture = expandedSeasons.length === 0;
     const filtered = applyFilters(
       pool,
       popularity,
       highRated,
       media,
       popularityThreshold,
+      excludeFuture,
     );
     const picked = shuffle(filtered).slice(0, count);
     return NextResponse.json({
