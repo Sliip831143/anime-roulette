@@ -176,13 +176,10 @@
 
 ### PWA
 - `manifest.json` / 192px・512px アイコン / Apple touch icon を完備
-- Service Worker（`public/sw.js`）: 静的アセットのプリキャッシュ + 用途別キャッシュ戦略
-  - HTML ナビゲーションは**ネットワーク優先**（最新デプロイの JS バンドルを確実に参照させ、旧 HTML 固定化を防止）
-  - ハッシュ付き `/_next/static`・画像など同一オリジン GET は**キャッシュファースト**
-  - `/api/*`・`/_next/data/*` は常にネットワーク優先、外部オリジン（Annict CDN 等）は介入せずパススルー
-  - App Router の **RSC プリフェッチ／RSC payload リクエスト**（`rsc: 1` / `next-router-state-tree` / `next-router-prefetch` / `next-router-segment-prefetch` のいずれかのヘッダ）は SW を素通り。同一 URL で HTML と multipart RSC が返り得るため、cache-first にすると形式の取り違えが起きて hydration mismatch（React #418）を誘発するのを防ぐ
 - ホーム画面追加対応、Android はスプラッシュ画面も自動生成
-- 開発時は SW を登録しない（HMR 競合回避）
+- **Service Worker は廃止**：本アプリは Annict GraphQL に常時依存するオンライン専用で、SW を使うメリット（静的アセットの再キャッシュ）は Next.js の immutable Cache-Control とブラウザキャッシュで十分代替可能。RSC との相性問題や未捕捉エラーなど運用コストが上回ったため撤去
+  - 既存ユーザー向けに `public/sw.js` を tombstone 化し、`activate` 時に自身を `unregister()` + 全 caches を削除
+  - `src/components/sw-register.tsx` も登録ではなく既存 SW の登録解除を行うクリーンアップコードに置換（二重の保険）
 
 ### SEO
 - `metadata` API で title template / description / keywords / authors / openGraph / twitter / robots.googleBot / formatDetection を網羅
@@ -256,7 +253,7 @@ src/
 │   ├── anime-card.tsx            # 結果カード（モード別デザイン、クリックで詳細ダイアログ）
 │   ├── anime-detail-dialog.tsx   # 結果カード詳細モーダル（Portal + Esc クローズ、外部リンク集約）
 │   ├── gacha-sequence.tsx        # ガチャ演出のフルスクリーンオーバーレイ（intro〜reveal〜closing）
-│   ├── sw-register.tsx           # Service Worker 登録（本番のみ）
+│   ├── sw-register.tsx           # 旧 Service Worker の登録解除 + caches 削除（廃止後のクリーンアップ用）
 │   └── ui/                       # shadcn/ui プリミティブ
 └── lib/
     ├── annict.ts                 # GraphQL クライアント / クエリ / ページネーション
@@ -272,7 +269,7 @@ src/
 public/
 ├── logo.png                      # メインロゴ
 ├── icon-192.png / icon-512.png   # PWA icons
-├── sw.js                         # Service Worker
+├── sw.js                         # 旧 Service Worker の tombstone（自己 unregister + caches 削除）
 └── gacha/                        # アロナ画像 / カード裏面（PNG + WebP + AVIF）
 
 scripts/
