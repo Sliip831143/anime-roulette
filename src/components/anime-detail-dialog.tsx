@@ -58,6 +58,7 @@ export function AnimeDetailDialog({ annictId, initial, onClose }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [imageFailed, setImageFailed] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -100,6 +101,21 @@ export function AnimeDetailDialog({ annictId, initial, onClose }: Props) {
     };
   }, [onClose]);
 
+  // プレビュー表示中は Esc でプレビューのみ閉じる（ダイアログは閉じない）。
+  // capture フェーズ + stopPropagation で上のダイアログ用ハンドラより先に処理する。
+  useEffect(() => {
+    if (!previewOpen) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+        setPreviewOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKey, true);
+    return () => window.removeEventListener("keydown", handleKey, true);
+  }, [previewOpen]);
+
   const work = detail;
   const rarity = getRarity(initial.watchersCount, initial.satisfactionRate);
   const hasImage = !!work?.image?.recommendedImageUrl && !imageFailed;
@@ -111,6 +127,7 @@ export function AnimeDetailDialog({ annictId, initial, onClose }: Props) {
   // 親要素のスタッキングコンテキスト（animation や transform を持つ親）の影響で
   // fixed が viewport 基準にならないため、Portal で body 直下にレンダリング
   return createPortal(
+    <>
     <div
       role="dialog"
       aria-modal="true"
@@ -160,14 +177,21 @@ export function AnimeDetailDialog({ annictId, initial, onClose }: Props) {
               <div className="flex gap-4">
                 <div className="aspect-[3/4] w-28 shrink-0 overflow-hidden rounded-[6px] bg-muted sm:w-36">
                   {hasImage ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={work.image!.recommendedImageUrl!}
-                      alt={work.title}
-                      className="h-full w-full object-cover"
-                      loading="lazy"
-                      onError={() => setImageFailed(true)}
-                    />
+                    <button
+                      type="button"
+                      onClick={() => setPreviewOpen(true)}
+                      className="group block h-full w-full cursor-pointer"
+                      aria-label={`${work.title} の画像を拡大表示`}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={work.image!.recommendedImageUrl!}
+                        alt={work.title}
+                        className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+                        loading="lazy"
+                        onError={() => setImageFailed(true)}
+                      />
+                    </button>
                   ) : (
                     <div className="flex h-full w-full items-center justify-center text-[10px] text-muted-foreground">
                       No image
@@ -342,7 +366,34 @@ export function AnimeDetailDialog({ annictId, initial, onClose }: Props) {
           )}
         </div>
       </div>
-    </div>,
+    </div>
+
+    {previewOpen && hasImage && (
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={`${work?.title ?? initial.title} の画像プレビュー`}
+        className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 p-4 sm:p-8"
+        onClick={() => setPreviewOpen(false)}
+      >
+        <button
+          type="button"
+          onClick={() => setPreviewOpen(false)}
+          className="absolute right-3 top-3 inline-flex size-9 cursor-pointer items-center justify-center rounded-full bg-black/40 text-white/90 hover:bg-black/60 hover:text-white"
+          aria-label="プレビューを閉じる"
+        >
+          <XIcon className="size-5" aria-hidden />
+        </button>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={work!.image!.recommendedImageUrl!}
+          alt={work?.title ?? initial.title}
+          className="max-h-full max-w-full cursor-default object-contain shadow-2xl"
+          onClick={(e) => e.stopPropagation()}
+        />
+      </div>
+    )}
+    </>,
     document.body,
   );
 }
