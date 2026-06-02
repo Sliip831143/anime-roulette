@@ -88,3 +88,37 @@ export function expandSeasons({
 export function isSeason(value: string): value is Season {
   return (SEASONS as readonly string[]).includes(value);
 }
+
+export type SeasonFilterInput = {
+  /** 手入力された開始年（未入力なら null） */
+  yearFrom: number | null;
+  /** 手入力された終了年（未入力なら null） */
+  yearTo: number | null;
+  /** ランダムボタンで選ばれた年（未選択なら null） */
+  pickedYear: number | null;
+  /** 現在の年 */
+  currentYear: number;
+};
+
+/**
+ * 検索フォームで季節指定を有効にしてよいかを判定する。
+ *
+ * 有効になる条件:
+ * - 開始年 / 終了年を手入力している（本年の手入力もユーザー意図として許可）
+ * - ランダムボタンで本年「以外」の年が選ばれている
+ *
+ * ランダムで本年が選ばれたケースだけは、未放送の季節を含みうるため無効化する。
+ * （pickedYear が null のときは `null !== currentYear` が true になるので
+ *   手入力ベースの判定を阻害しない）
+ */
+export function isSeasonFilterEnabled({
+  yearFrom,
+  yearTo,
+  pickedYear,
+  currentYear,
+}: SeasonFilterInput): boolean {
+  return (
+    pickedYear !== currentYear &&
+    (yearFrom != null || yearTo != null || pickedYear != null)
+  );
+}

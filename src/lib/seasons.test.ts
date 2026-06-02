@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { expandSeasons, isSeason, isWorkFutureSeason, SEASONS } from "./seasons";
+import {
+  expandSeasons,
+  isSeason,
+  isSeasonFilterEnabled,
+  isWorkFutureSeason,
+  SEASONS,
+} from "./seasons";
 
 describe("expandSeasons", () => {
   it("年が両方未指定なら空配列を返す", () => {
@@ -171,6 +177,71 @@ describe("isWorkFutureSeason", () => {
   it("未来年（2027-winter, 1月開始）も true", () => {
     expect(
       isWorkFutureSeason({ seasonYear: 2027, seasonName: "WINTER" }, now),
+    ).toBe(true);
+  });
+});
+
+describe("isSeasonFilterEnabled", () => {
+  const currentYear = 2026;
+  const base = {
+    yearFrom: null,
+    yearTo: null,
+    pickedYear: null,
+    currentYear,
+  };
+
+  it("年も抽選もなければ無効", () => {
+    expect(isSeasonFilterEnabled(base)).toBe(false);
+  });
+
+  it("開始年を手入力していれば有効", () => {
+    expect(isSeasonFilterEnabled({ ...base, yearFrom: 2020 })).toBe(true);
+  });
+
+  it("終了年を手入力していれば有効", () => {
+    expect(isSeasonFilterEnabled({ ...base, yearTo: 2020 })).toBe(true);
+  });
+
+  it("開始年・終了年の両方を手入力していれば有効", () => {
+    expect(
+      isSeasonFilterEnabled({ ...base, yearFrom: 2018, yearTo: 2020 }),
+    ).toBe(true);
+  });
+
+  it("本年を手入力した場合はユーザー意図として有効", () => {
+    expect(
+      isSeasonFilterEnabled({ ...base, yearFrom: currentYear }),
+    ).toBe(true);
+  });
+
+  it("ランダムで本年以外が選ばれていれば有効", () => {
+    expect(isSeasonFilterEnabled({ ...base, pickedYear: 2020 })).toBe(true);
+  });
+
+  it("ランダムで本年が選ばれた場合は無効（未放送の季節を含みうるため）", () => {
+    expect(
+      isSeasonFilterEnabled({ ...base, pickedYear: currentYear }),
+    ).toBe(false);
+  });
+
+  it("手入力があってもランダムで本年が選ばれていれば無効（実際に検索する年に揃える）", () => {
+    expect(
+      isSeasonFilterEnabled({
+        ...base,
+        yearFrom: 2018,
+        yearTo: 2020,
+        pickedYear: currentYear,
+      }),
+    ).toBe(false);
+  });
+
+  it("手入力とランダム本年以外が併存する場合は有効", () => {
+    expect(
+      isSeasonFilterEnabled({
+        ...base,
+        yearFrom: 2018,
+        pickedYear: 2010,
+      }),
     ).toBe(true);
   });
 });

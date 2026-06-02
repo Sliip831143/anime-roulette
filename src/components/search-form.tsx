@@ -8,7 +8,12 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { SEASONS, SEASON_LABELS_JA, type Season } from "@/lib/seasons";
+import {
+  SEASONS,
+  SEASON_LABELS_JA,
+  isSeasonFilterEnabled,
+  type Season,
+} from "@/lib/seasons";
 
 // Annict に放送年データが存在する最古の年。これ未満を指定しても結果が出ない。
 const MIN_YEAR = 1991;
@@ -81,7 +86,13 @@ export function SearchForm({
   const yearFrom = parseYear(yearFromText);
   const yearTo = parseYear(yearToText);
   const currentYear = new Date().getFullYear();
-  const seasonsEnabled = yearFrom != null || yearTo != null;
+  // 季節指定の有効条件は isSeasonFilterEnabled に集約（境界は seasons.test.ts で検証）。
+  const seasonsEnabled = isSeasonFilterEnabled({
+    yearFrom,
+    yearTo,
+    pickedYear,
+    currentYear,
+  });
   const currentMaxCount = extendedCount ? EXTENDED_MAX_COUNT : SLIDER_MAX_COUNT;
   const popularityOptions = useMemo(
     () => buildPopularityOptions(popularThreshold),
@@ -113,10 +124,7 @@ export function SearchForm({
     onSubmit({
       yearFrom: effectiveFrom,
       yearTo: effectiveTo,
-      seasons:
-        showSeason && (seasonsEnabled || pickedYear != null)
-          ? selectedSeasons
-          : [],
+      seasons: showSeason && seasonsEnabled ? selectedSeasons : [],
       count,
       popularity,
       highRated,
