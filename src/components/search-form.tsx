@@ -8,15 +8,15 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { MEDIA_VALUES, type Media } from "@/lib/annict";
 import {
+  MIN_YEAR,
   SEASONS,
   SEASON_LABELS_JA,
   isSeasonFilterEnabled,
   type Season,
 } from "@/lib/seasons";
 
-// Annict に放送年データが存在する最古の年。これ未満を指定しても結果が出ない。
-const MIN_YEAR = 1991;
 const DEFAULT_POPULAR_THRESHOLD = 1000;
 
 export type Popularity = "all" | "popular" | "very_popular";
@@ -31,9 +31,6 @@ const buildPopularityOptions = (popularThreshold: number): PopularityOption[] =>
   },
   { value: "very_popular", label: "超人気のみ", hint: "視聴登録5,000人以上" },
 ];
-
-export const MEDIA_VALUES = ["TV", "OVA", "MOVIE", "WEB"] as const;
-export type Media = (typeof MEDIA_VALUES)[number];
 
 const MEDIA_LABELS_JA: Record<Media, string> = {
   TV: "TV",

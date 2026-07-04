@@ -1,13 +1,31 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-
-const SITE_URL = "https://anime-roulette-inky.vercel.app";
+import { SITE_URL } from "@/lib/site";
 
 const RARITY_STARS: Record<string, string> = {
   r1: "★",
   r2: "★★",
   r3: "★★★",
 };
+
+// title は外部から任意指定できるクエリのため、OG 画像側（/api/og）と同じ 40 文字で
+// 打ち切り、なりすまし的な長文の埋め込みを防ぐ。id は Annict の作品 ID なので数値のみ許可。
+const MAX_TITLE_LENGTH = 40;
+
+function sanitizeTitle(raw: string | undefined): string {
+  const title = raw?.trim() || "次に観るアニメ";
+  return title.length > MAX_TITLE_LENGTH
+    ? title.slice(0, MAX_TITLE_LENGTH - 1) + "…"
+    : title;
+}
+
+function sanitizeRarity(raw: string | undefined): string {
+  return raw === "r2" || raw === "r3" ? raw : "r1";
+}
+
+function sanitizeId(raw: string | undefined): string | null {
+  return raw && /^\d+$/.test(raw) ? raw : null;
+}
 
 type SearchParamsType = Promise<{
   title?: string;
@@ -26,14 +44,16 @@ export async function generateMetadata({
   searchParams: SearchParamsType;
 }): Promise<Metadata> {
   const { title, rarity } = await searchParams;
-  const safeTitle = title?.trim() || "次に観るアニメ";
-  const safeRarity = rarity === "r2" || rarity === "r3" ? rarity : "r1";
+  const safeTitle = sanitizeTitle(title);
+  const safeRarity = sanitizeRarity(rarity);
   const stars = RARITY_STARS[safeRarity];
   const description = `アニメルーレットで「${safeTitle}」(${stars}) が出ました！`;
   const ogImage = buildOgUrl(safeTitle, safeRarity);
 
   return {
-    title: `${safeTitle} | アニメルーレット`,
+    // layout.tsx の title template（"%s | アニメルーレット"）がサフィックスを付けるため、
+    // ここではタイトル本体のみを渡す（手動で付けると二重になる）
+    title: safeTitle,
     description,
     openGraph: {
       title: description,
@@ -59,10 +79,11 @@ export default async function SharePage({
   searchParams: SearchParamsType;
 }) {
   const { title, rarity, id } = await searchParams;
-  const safeTitle = title?.trim() || "次に観るアニメ";
-  const safeRarity = rarity === "r2" || rarity === "r3" ? rarity : "r1";
+  const safeTitle = sanitizeTitle(title);
+  const safeRarity = sanitizeRarity(rarity);
   const stars = RARITY_STARS[safeRarity];
-  const annictUrl = id ? `https://annict.com/works/${id}` : null;
+  const safeId = sanitizeId(id);
+  const annictUrl = safeId ? `https://annict.com/works/${safeId}` : null;
 
   return (
     <main className="flex flex-1 flex-col items-center justify-center gap-6 px-4 py-12 text-center">

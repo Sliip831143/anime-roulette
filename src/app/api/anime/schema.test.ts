@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { querySchema } from "./route";
+import { querySchema } from "./schema";
 
 const minimal = {
   yearFrom: undefined,
@@ -52,6 +52,31 @@ describe("querySchema (anime API)", () => {
 
   it("yearFrom が範囲外（2101）は失敗", () => {
     const result = querySchema.safeParse({ ...minimal, yearFrom: "2101" });
+    expect(result.success).toBe(false);
+  });
+
+  // 年の受付範囲は Annict にデータが存在する MIN_YEAR（1991）〜現在年に
+  // サーバー側でもクランプする（UI の制約と一致させ、キャッシュキーの
+  // 組み合わせ爆発と Annict への無駄な問い合わせを防ぐ）。
+  it("yearFrom が MIN_YEAR 未満（1990）は失敗", () => {
+    const result = querySchema.safeParse({ ...minimal, yearFrom: "1990" });
+    expect(result.success).toBe(false);
+  });
+
+  it("yearFrom が MIN_YEAR（1991）は成功", () => {
+    const result = querySchema.safeParse({ ...minimal, yearFrom: "1991" });
+    expect(result.success).toBe(true);
+  });
+
+  it("yearTo が現在年は成功", () => {
+    const year = String(new Date().getFullYear());
+    const result = querySchema.safeParse({ ...minimal, yearTo: year });
+    expect(result.success).toBe(true);
+  });
+
+  it("yearTo が現在年+1（未来）は失敗", () => {
+    const year = String(new Date().getFullYear() + 1);
+    const result = querySchema.safeParse({ ...minimal, yearTo: year });
     expect(result.success).toBe(false);
   });
 

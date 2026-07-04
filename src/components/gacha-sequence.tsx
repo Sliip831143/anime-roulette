@@ -2,7 +2,14 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { AnnictWork } from "@/lib/annict";
+import {
+  MEDIA_LABELS,
+  formatSatisfaction,
+  formatYearSeason,
+} from "@/lib/format";
 import { getRarity, type Rarity } from "@/lib/rarity";
+import { safeHttpUrl } from "@/lib/safe-url";
+import { useFocusTrap } from "@/components/use-focus-trap";
 
 type Phase =
   | "intro_1"
@@ -28,35 +35,6 @@ const RARITY_STAR: Record<Rarity, string> = {
   r2: "★★",
   r3: "★★★",
 };
-
-const SEASON_LABEL_MAP: Record<NonNullable<AnnictWork["seasonName"]>, string> = {
-  WINTER: "冬",
-  SPRING: "春",
-  SUMMER: "夏",
-  AUTUMN: "秋",
-};
-
-const MEDIA_LABEL_MAP: Record<NonNullable<AnnictWork["media"]>, string> = {
-  TV: "TV",
-  OVA: "OVA",
-  MOVIE: "映画",
-  WEB: "Web",
-  OTHER: "その他",
-};
-
-function formatYearSeason(work: AnnictWork): string {
-  const parts: string[] = [];
-  if (work.seasonYear != null) parts.push(`${work.seasonYear}年`);
-  if (work.seasonName) parts.push(SEASON_LABEL_MAP[work.seasonName]);
-  return parts.join(" ") || "情報なし";
-}
-
-
-function formatSatisfaction(rate: number | null): string | null {
-  if (rate == null) return null;
-  const percent = rate <= 1 ? rate * 100 : rate;
-  return `満足度${percent.toFixed(1)}%`;
-}
 
 type Props = {
   works: AnnictWork[];
@@ -104,6 +82,11 @@ export function GachaSequence({ works, onClose }: Props) {
   const cardsRowRef = useRef<HTMLDivElement | null>(null);
   const [cardsDecoded, setCardsDecoded] = useState(false);
   const cardsReady = phase === "cards" && cardsDecoded;
+
+  // 演出中は背後のフォームへ Tab で抜けないようにフォーカスを閉じ込める。
+  // アンマウント時（演出終了）に元のフォーカス位置（ガチャを引くボタン）へ復帰する。
+  const stageRef = useRef<HTMLDivElement | null>(null);
+  useFocusTrap(stageRef, phase !== "done");
 
   // revealIndex が進むたびに次の画像を preload して有効性を確認
   useEffect(() => {
@@ -250,6 +233,8 @@ export function GachaSequence({ works, onClose }: Props) {
   const currentRarity = currentWork
     ? getRarity(currentWork.watchersCount, currentWork.satisfactionRate)
     : null;
+  // Annict 由来の URL は危険スキーム混入に備えて無害化してから使う
+  const currentOfficialSiteUrl = safeHttpUrl(currentWork?.officialSiteUrl);
   const showFlyCard =
     (phase === "reveal_fly" || phase === "reveal_burst") && currentRarity != null;
   const hasRainbow = works.some(
@@ -258,6 +243,7 @@ export function GachaSequence({ works, onClose }: Props) {
 
   return (
     <div
+      ref={stageRef}
       className={`gacha-stage${phase === "closing" ? " is-closing" : ""}${hasRainbow ? " has-rainbow" : ""}`}
       onClick={handleStageClick}
       role="dialog"
@@ -447,7 +433,7 @@ export function GachaSequence({ works, onClose }: Props) {
                   <div className="gacha-info-paper-label">メディア</div>
                   <div className="gacha-info-paper-value">
                     {currentWork.media
-                      ? MEDIA_LABEL_MAP[currentWork.media]
+                      ? MEDIA_LABELS[currentWork.media]
                       : "情報なし"}
                   </div>
                 </div>
@@ -461,10 +447,7 @@ export function GachaSequence({ works, onClose }: Props) {
                   <div className="gacha-info-paper-row">
                     <div className="gacha-info-paper-label">満足度</div>
                     <div className="gacha-info-paper-value gacha-info-paper-value-emph">
-                      {formatSatisfaction(currentWork.satisfactionRate)?.replace(
-                        "満足度",
-                        "",
-                      )}
+                      {formatSatisfaction(currentWork.satisfactionRate)}
                     </div>
                   </div>
                 )}
@@ -492,11 +475,11 @@ export function GachaSequence({ works, onClose }: Props) {
                 >
                   Annictで見る
                 </a>
-                {currentWork.officialSiteUrl && (
+                {currentOfficialSiteUrl && (
                   <>
                     <span className="gacha-info-titlebar-divider">/</span>
                     <a
-                      href={currentWork.officialSiteUrl}
+                      href={currentOfficialSiteUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}

@@ -3,37 +3,9 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import type { AnnictWork } from "@/lib/annict";
+import { formatSatisfaction, formatSeasonMedia } from "@/lib/format";
 import { getRarity, RARITY_STARS } from "@/lib/rarity";
 import { AnimeDetailDialog } from "@/components/anime-detail-dialog";
-
-const SEASON_LABEL: Record<NonNullable<AnnictWork["seasonName"]>, string> = {
-  WINTER: "冬",
-  SPRING: "春",
-  SUMMER: "夏",
-  AUTUMN: "秋",
-};
-
-const MEDIA_LABEL: Record<NonNullable<AnnictWork["media"]>, string> = {
-  TV: "TV",
-  OVA: "OVA",
-  MOVIE: "映画",
-  WEB: "Web",
-  OTHER: "その他",
-};
-
-function formatSeason(work: AnnictWork): string {
-  const parts: string[] = [];
-  if (work.seasonYear != null) parts.push(`${work.seasonYear}年`);
-  if (work.seasonName) parts.push(SEASON_LABEL[work.seasonName]);
-  if (work.media) parts.push(MEDIA_LABEL[work.media]);
-  return parts.join(" / ") || "情報なし";
-}
-
-function formatSatisfaction(rate: number | null): string | null {
-  if (rate == null) return null;
-  const percent = rate <= 1 ? rate * 100 : rate;
-  return `${percent.toFixed(1)}%`;
-}
 
 export function AnimeCard({
   work,
@@ -100,7 +72,7 @@ export function AnimeCard({
           <h3 className="font-semibold leading-snug line-clamp-2">
             {work.title}
           </h3>
-          <p className="text-sm text-muted-foreground">{formatSeason(work)}</p>
+          <p className="text-sm text-muted-foreground">{formatSeasonMedia(work)}</p>
           <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
             <span>視聴登録 {work.watchersCount.toLocaleString()}人</span>
             {satisfaction && <span>満足度 {satisfaction}</span>}
@@ -165,7 +137,7 @@ export function AnimeCard({
         <div className="gacha-card-rows">
           <div className="gacha-card-row">
             <div className="gacha-card-label">放送</div>
-            <div className="gacha-card-value">{formatSeason(work)}</div>
+            <div className="gacha-card-value">{formatSeasonMedia(work)}</div>
           </div>
           <div className="gacha-card-row">
             <div className="gacha-card-label">視聴登録</div>

@@ -2,6 +2,11 @@ import { GraphQLClient, gql } from "graphql-request";
 
 const ANNICT_ENDPOINT = "https://api.annict.com/graphql";
 
+// 検索フィルタで選択可能なメディア種別。
+// OTHER は Annict 側のラベルとしてデータ上は存在するが、選択肢には出さない。
+export const MEDIA_VALUES = ["TV", "OVA", "MOVIE", "WEB"] as const;
+export type Media = (typeof MEDIA_VALUES)[number];
+
 export type AnnictWork = {
   annictId: number;
   title: string;

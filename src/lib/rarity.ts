@@ -1,10 +1,6 @@
-export type Rarity = "r1" | "r2" | "r3";
+import { normalizeSatisfactionPercent } from "@/lib/format";
 
-// satisfactionRateは公式仕様で単位（0-1 / 0-100）が明示されていないため両対応
-function normalizePercent(rate: number | null): number | null {
-  if (rate == null) return null;
-  return rate <= 1 ? rate * 100 : rate;
-}
+export type Rarity = "r1" | "r2" | "r3";
 
 /**
  * レアリティ判定
@@ -20,7 +16,7 @@ export function getRarity(
   watchersCount: number,
   satisfactionRate: number | null,
 ): Rarity {
-  const sat = normalizePercent(satisfactionRate);
+  const sat = normalizeSatisfactionPercent(satisfactionRate);
   const isRainbow =
     watchersCount >= 22000 ||
     (watchersCount >= 10500 && sat != null && sat >= 83);

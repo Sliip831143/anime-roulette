@@ -1,6 +1,10 @@
 export const SEASONS = ["spring", "summer", "autumn", "winter"] as const;
 export type Season = (typeof SEASONS)[number];
 
+// Annict に放送年データが存在する最古の年。これ未満を指定しても結果が出ない。
+// UI（search-form）と API（querySchema）の両方で同じ下限を使う。
+export const MIN_YEAR = 1991;
+
 export const SEASON_LABELS_JA: Record<Season, string> = {
   spring: "春",
   summer: "夏",

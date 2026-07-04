@@ -29,8 +29,18 @@ export async function GET(
     }
     return NextResponse.json({ work });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    const status = message.includes("ANNICT_TOKEN") ? 500 : 502;
-    return NextResponse.json({ error: message }, { status });
+    // 上流エラーの詳細（GraphQL クエリ全文等）はサーバーログにのみ残し、
+    // クライアントには汎用メッセージを返す（/api/anime と同方針）。
+    console.error(`GET /api/anime/${parsed.data.id} failed:`, error);
+    const isConfigError =
+      error instanceof Error && error.message.includes("ANNICT_TOKEN");
+    return NextResponse.json(
+      {
+        error: isConfigError
+          ? "サーバーの設定に問題があります"
+          : "詳細情報の取得に失敗しました。時間をおいてお試しください",
+      },
+      { status: isConfigError ? 500 : 502 },
+    );
   }
 }

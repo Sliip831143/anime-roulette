@@ -1,38 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { X as XIcon, Share2 } from "lucide-react";
-import type { AnnictWork, AnnictWorkDetail } from "@/lib/annict";
+import { useFocusTrap } from "@/components/use-focus-trap";
+import type { AnnictWorkDetail } from "@/lib/annict";
+import { formatSatisfaction, formatSeasonMedia } from "@/lib/format";
 import { getRarity } from "@/lib/rarity";
+import { safeHttpUrl } from "@/lib/safe-url";
 import { openTweetIntent } from "@/lib/share";
-
-const SEASON_LABEL: Record<
-  NonNullable<AnnictWork["seasonName"]>,
-  string
-> = { WINTER: "冬", SPRING: "春", SUMMER: "夏", AUTUMN: "秋" };
-
-const MEDIA_LABEL: Record<NonNullable<AnnictWork["media"]>, string> = {
-  TV: "TV",
-  OVA: "OVA",
-  MOVIE: "映画",
-  WEB: "Web",
-  OTHER: "その他",
-};
-
-function formatSeason(work: AnnictWorkDetail): string {
-  const parts: string[] = [];
-  if (work.seasonYear != null) parts.push(`${work.seasonYear}年`);
-  if (work.seasonName) parts.push(SEASON_LABEL[work.seasonName]);
-  if (work.media) parts.push(MEDIA_LABEL[work.media]);
-  return parts.join(" / ") || "情報なし";
-}
-
-function formatSatisfaction(rate: number | null): string | null {
-  if (rate == null) return null;
-  const percent = rate <= 1 ? rate * 100 : rate;
-  return `${percent.toFixed(1)}%`;
-}
 
 function formatDate(iso: string | null): string | null {
   if (!iso) return null;
@@ -59,6 +35,11 @@ export function AnimeDetailDialog({ annictId, initial, onClose }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [imageFailed, setImageFailed] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const previewRef = useRef<HTMLDivElement>(null);
+  // プレビュー表示中は本体側のトラップを止め、トラップが同時に 2 つ動かないようにする
+  useFocusTrap(panelRef, !previewOpen);
+  useFocusTrap(previewRef, previewOpen);
 
   useEffect(() => {
     let cancelled = false;
@@ -120,6 +101,9 @@ export function AnimeDetailDialog({ annictId, initial, onClose }: Props) {
   const rarity = getRarity(initial.watchersCount, initial.satisfactionRate);
   const hasImage = !!work?.image?.recommendedImageUrl && !imageFailed;
   const annictUrl = `https://annict.com/works/${annictId}`;
+  // Annict 由来の URL は javascript: 等の危険スキーム混入に備えて無害化してから使う
+  const officialSiteUrl = safeHttpUrl(work?.officialSiteUrl);
+  const wikipediaUrl = safeHttpUrl(work?.wikipediaUrl);
 
   // SSR ガード（document が無い環境ではレンダーしない）
   if (typeof document === "undefined") return null;
@@ -136,6 +120,7 @@ export function AnimeDetailDialog({ annictId, initial, onClose }: Props) {
       onClick={onClose}
     >
       <div
+        ref={panelRef}
         className="relative w-full max-w-2xl rounded-[6px] bg-card shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
@@ -200,7 +185,7 @@ export function AnimeDetailDialog({ annictId, initial, onClose }: Props) {
                 </div>
                 <dl className="grid flex-1 grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 text-sm">
                   <dt className="text-muted-foreground">放送</dt>
-                  <dd>{formatSeason(work)}</dd>
+                  <dd>{formatSeasonMedia(work)}</dd>
                   <dt className="text-muted-foreground">話数</dt>
                   <dd>
                     {work.episodesCount > 0
@@ -310,9 +295,9 @@ export function AnimeDetailDialog({ annictId, initial, onClose }: Props) {
                 >
                   Annict で見る
                 </a>
-                {work.officialSiteUrl && (
+                {officialSiteUrl && (
                   <a
-                    href={work.officialSiteUrl}
+                    href={officialSiteUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-primary hover:underline"
@@ -320,9 +305,9 @@ export function AnimeDetailDialog({ annictId, initial, onClose }: Props) {
                     公式サイト
                   </a>
                 )}
-                {work.wikipediaUrl && (
+                {wikipediaUrl && (
                   <a
-                    href={work.wikipediaUrl}
+                    href={wikipediaUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-primary hover:underline"
@@ -332,7 +317,7 @@ export function AnimeDetailDialog({ annictId, initial, onClose }: Props) {
                 )}
                 {work.twitterUsername && (
                   <a
-                    href={`https://x.com/${work.twitterUsername}`}
+                    href={`https://x.com/${encodeURIComponent(work.twitterUsername)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-primary hover:underline"
@@ -370,6 +355,7 @@ export function AnimeDetailDialog({ annictId, initial, onClose }: Props) {
 
     {previewOpen && hasImage && (
       <div
+        ref={previewRef}
         role="dialog"
         aria-modal="true"
         aria-label={`${work?.title ?? initial.title} の画像プレビュー`}

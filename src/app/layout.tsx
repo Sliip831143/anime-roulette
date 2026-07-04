@@ -4,10 +4,9 @@ import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Toaster } from "@/components/ui/sonner";
 import { ServiceWorkerRegister } from "@/components/sw-register";
+import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
-// 本番URL（Vercelデプロイ先）。デプロイ先が変わったらここを差し替え
-const SITE_URL = "https://anime-roulette-inky.vercel.app";
 const SITE_TITLE = "アニメルーレット -Anime Roulette-";
 const SITE_DESCRIPTION =
   "次に観るアニメをガチャ演出で楽しく抽選するルーレットアプリ。";

@@ -1,13 +1,11 @@
 import type { Rarity } from "@/lib/rarity";
+import { SITE_URL } from "@/lib/site";
 
 export type ShareTarget = {
   annictId: number;
   title: string;
   rarity: Rarity;
 };
-
-const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://anime-roulette-inky.vercel.app";
 
 const STARS: Record<Rarity, string> = {
   r1: "★",

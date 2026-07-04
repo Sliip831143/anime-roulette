@@ -12,6 +12,31 @@ const nextConfig: NextConfig = {
   ...(allowedDevOrigins && allowedDevOrigins.length > 0
     ? { allowedDevOrigins }
     : {}),
+  async headers() {
+    return [
+      {
+        source: "/(.*)",
+        headers: [
+          // MIME スニッフィング防止
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          // 外部遷移時にフル URL を漏らさない（クエリに作品情報が乗るため）
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          // 使っていない強力な API を明示的に無効化
+          {
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=()",
+          },
+          // iframe 埋め込みを禁止（クリックジャッキング対策）。
+          // frame-ancestors のみの CSP なのでスクリプト等の動作には影響しない。
+          { key: "X-Frame-Options", value: "DENY" },
+          {
+            key: "Content-Security-Policy",
+            value: "frame-ancestors 'none'",
+          },
+        ],
+      },
+    ];
+  },
 };
 
 // `pnpm analyze` で ANALYZE=true となり、ビルド時にバンドルサイズのレポートが生成される

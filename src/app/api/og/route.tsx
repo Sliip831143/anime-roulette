@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { SITE_HOST } from "@/lib/site";
 
 export const runtime = "edge";
 
@@ -125,7 +126,7 @@ export async function GET(request: Request) {
             letterSpacing: 1,
           }}
         >
-          anime-roulette-inky.vercel.app
+          {SITE_HOST}
         </div>
       </div>
     ),

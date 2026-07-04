@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
-import { searchAnimeWorksPaginated, type AnnictWork } from "@/lib/annict";
-import { expandSeasons, isWorkFutureSeason, SEASONS } from "@/lib/seasons";
+import { unstable_cache } from "next/cache";
+import {
+  MEDIA_VALUES,
+  searchAnimeWorksPaginated,
+  type AnnictWork,
+} from "@/lib/annict";
+import { normalizeSatisfactionPercent } from "@/lib/format";
+import { expandSeasons, isWorkFutureSeason } from "@/lib/seasons";
+import { querySchema } from "./schema";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,34 +21,43 @@ const POOL_PAGES = 13;
 // プール（視聴登録数の上位N件）のサーバーサイドキャッシュ。
 // プールの中身は日単位でしか変動しないため一定時間使い回し、2回目以降の
 // ガチャは Annict 取得ゼロ（フィルタ＋シャッフルのみ）で即応答させる。
-// module スコープのため、ウォームなインスタンス／dev サーバ内では永続する。
-const POOL_CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24時間（プール内容は週単位でしか変動しない）
-const POOL_CACHE_MAX_KEYS = 16;
+//
+// 以前は module スコープの Map を使っていたが、それだとサーバーレスインスタンス
+// ごとに独立しており、コールドスタートのたびに 13 ページ逐次フェッチ（30秒超）が
+// 発生していた。unstable_cache は Vercel Data Cache（インスタンス横断で永続、
+// ローカルでは .next/cache）に保存されるため、コールドスタートでも即応答できる。
+const POOL_CACHE_TTL_SECONDS = 24 * 60 * 60; // 24時間（プール内容は週単位でしか変動しない）
 
-type PoolCacheEntry = { works: AnnictWork[]; fetchedAt: number };
-const poolCache = new Map<string, PoolCacheEntry>();
+/**
+ * expandedSeasons をキーにプールを取得する。
+ * キャッシュキーは unstable_cache が keyParts + 引数から導出する。
+ * 呼び出し側で seasons をソートして渡し、順序非依存のキーにする。
+ */
+const getPoolCached = unstable_cache(
+  async (expandedSeasons: string[]): Promise<AnnictWork[]> =>
+    searchAnimeWorksPaginated({
+      seasons: expandedSeasons,
+      perPage: POOL_PER_PAGE,
+      pages: POOL_PAGES,
+    }),
+  ["anime-pool"],
+  { revalidate: POOL_CACHE_TTL_SECONDS },
+);
 
-/** expandedSeasons をキーにプールを取得する（キャッシュ有効ならそれを返す）。 */
-async function getPool(expandedSeasons: string[]): Promise<AnnictWork[]> {
-  // seasons 集合をキー化（順序非依存）。条件未指定は "" がキーになる。
-  const key = [...expandedSeasons].sort().join(",");
-  const cached = poolCache.get(key);
-  if (cached && Date.now() - cached.fetchedAt < POOL_CACHE_TTL_MS) {
-    return cached.works;
-  }
-  const works = await searchAnimeWorksPaginated({
-    seasons: expandedSeasons,
-    perPage: POOL_PER_PAGE,
-    pages: POOL_PAGES,
+// キャッシュミス時のスタンピード対策：同一キーへの同時リクエストが
+// それぞれ 13 ページフェッチを多重実行しないよう、同一インスタンス内では
+// in-flight の Promise を共有する（完了後はエントリを破棄して再試行可能にする）。
+const inFlight = new Map<string, Promise<AnnictWork[]>>();
+
+function getPool(expandedSeasons: string[]): Promise<AnnictWork[]> {
+  const key = expandedSeasons.join(",");
+  const existing = inFlight.get(key);
+  if (existing) return existing;
+  const promise = getPoolCached(expandedSeasons).finally(() => {
+    inFlight.delete(key);
   });
-  poolCache.set(key, { works, fetchedAt: Date.now() });
-  // 季節指定の組み合わせが増えても肥大化しないよう、古いキーから上限内に収める
-  while (poolCache.size > POOL_CACHE_MAX_KEYS) {
-    const oldest = poolCache.keys().next().value;
-    if (oldest === undefined) break;
-    poolCache.delete(oldest);
-  }
-  return works;
+  inFlight.set(key, promise);
+  return promise;
 }
 
 const POPULARITY_THRESHOLDS = {
@@ -53,31 +68,6 @@ const POPULARITY_THRESHOLDS = {
 
 const HIGH_RATED_THRESHOLD_PERCENT = 70;
 
-const MEDIA_VALUES = ["TV", "OVA", "MOVIE", "WEB"] as const;
-
-export const querySchema = z
-  .object({
-    yearFrom: z.coerce.number().int().min(1900).max(2100).optional(),
-    yearTo: z.coerce.number().int().min(1900).max(2100).optional(),
-    seasons: z.array(z.enum(SEASONS)).optional(),
-    count: z.coerce.number().int().min(1).max(100).default(5),
-    popularity: z.enum(["all", "popular", "very_popular"]).default("all"),
-    popularityThreshold: z.coerce.number().int().min(0).optional(),
-    highRated: z
-      .union([z.literal("true"), z.literal("false")])
-      .default("false")
-      .transform((v) => v === "true"),
-    media: z.array(z.enum(MEDIA_VALUES)).optional(),
-  })
-  .refine(
-    (v) => v.yearFrom == null || v.yearTo == null || v.yearFrom <= v.yearTo,
-    { message: "yearFrom must be less than or equal to yearTo", path: ["yearFrom"] },
-  )
-  .refine((v) => v.yearFrom != null || v.yearTo != null || !v.seasons?.length, {
-    message: "seasons require at least one of yearFrom/yearTo",
-    path: ["seasons"],
-  });
-
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -85,12 +75,6 @@ function shuffle<T>(arr: T[]): T[] {
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
-}
-
-// satisfactionRateは公式仕様で単位が明示されていないため、0-1スケール/0-100スケール双方に対応
-function normalizeSatisfactionPercent(rate: number | null): number | null {
-  if (rate == null) return null;
-  return rate <= 1 ? rate * 100 : rate;
 }
 
 function applyFilters(
@@ -157,7 +141,8 @@ export async function GET(request: Request) {
   } = parsed.data;
 
   try {
-    const expandedSeasons = expandSeasons({ yearFrom, yearTo, seasons });
+    // seasons 集合をソートして順序非依存のキャッシュキーにする（条件未指定は空配列）
+    const expandedSeasons = expandSeasons({ yearFrom, yearTo, seasons }).sort();
     const pool = await getPool(expandedSeasons);
     // expandedSeasons が空 = 「全期間モード」（年・季節とも未指定）。
     // この場合のみ作品単位で未来 season を除外する（年指定ありは expandSeasons 側で既に処理済み）。
@@ -177,8 +162,19 @@ export async function GET(request: Request) {
       poolSize: pool.length,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    const status = message.includes("ANNICT_TOKEN") ? 500 : 502;
-    return NextResponse.json({ error: message }, { status });
+    // graphql-request の ClientError はクエリ全文やレスポンス JSON を message に含むため、
+    // そのままクライアントへ返すと内部構造が露出する。詳細はサーバーログにのみ残し、
+    // クライアントには汎用メッセージを返す（page.tsx がこの error をそのまま表示する）。
+    console.error("GET /api/anime failed:", error);
+    const isConfigError =
+      error instanceof Error && error.message.includes("ANNICT_TOKEN");
+    return NextResponse.json(
+      {
+        error: isConfigError
+          ? "サーバーの設定に問題があります"
+          : "アニメ情報の取得に失敗しました。時間をおいてお試しください",
+      },
+      { status: isConfigError ? 500 : 502 },
+    );
   }
 }
