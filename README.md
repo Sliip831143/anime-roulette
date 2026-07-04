@@ -182,7 +182,7 @@
 - **入力バリデーション**: API の全クエリを zod で検証。放送年はデータが存在する 1991〜現在年にサーバー側でクランプし、任意の年範囲指定によるキャッシュキーの組み合わせ爆発（キャッシュミス誘発 → Annict への大量フェッチ）を防止
 - **エラーマスキング**: 上流（Annict GraphQL）のエラー詳細はサーバーログのみに記録し、クライアントには汎用メッセージを返す
 - **外部 URL の無害化**（`src/lib/safe-url.ts`）: Annict 由来の `officialSiteUrl` / `wikipediaUrl` は http/https スキームのみ許可してから `<a href>` に渡す
-- **シェアページのサニタイズ**: `/share` の `title` は 40 文字で打ち切り、`id` は数値のみ許可
+- **シェアページのなりすまし対策**: `/share` と `/api/og` はタイトル・レアリティを URL クエリから受け取らず、`id`（数値のみ許可）から Annict の実データをサーバー側で取得して表示する。旧形式 URL の `title` / `rarity` パラメータは無視される
 - **セキュリティヘッダ**（`next.config.ts`）: `X-Content-Type-Options: nosniff` / `Referrer-Policy` / `Permissions-Policy` / `X-Frame-Options: DENY` + `CSP frame-ancestors 'none'`（クリックジャッキング対策）を全ルートに付与
 - **シークレット管理**: `ANNICT_TOKEN` はサーバー専用（Route Handler 内でのみ参照）。`.env*` は gitignore 済み
 
@@ -200,7 +200,7 @@
 ### SEO
 - `metadata` API で title template / description / keywords / authors / openGraph / twitter / robots.googleBot / formatDetection を網羅
 - **静的 OGP**: `src/app/opengraph-image.png` / `twitter-image.png`（ロゴ + 「Anime Roulette」サブタイトルを上下中央配置）を `scripts/generate-meta-assets.mjs` で生成
-- **動的 OGP**: `app/api/og/route.tsx`（Edge runtime + `next/og`）で「○○が出ました」シェア画像を動的生成。`/share?title=…&rarity=…&id=…` から参照。レアリティ別の色（★1 青 / ★2 黄 / ★3 ピンク紫）の SVG 星アイコンを描画
+- **動的 OGP**: `app/api/og/route.tsx`（Edge runtime + `next/og`）で「○○が出ました」シェア画像を動的生成。`/share?id=…` から参照。**タイトル・レアリティは URL クエリで受け取らず、id から Annict の実データをサーバー側で取得**する（任意文言のなりすまし画像・ページ生成への対策。id が無効なら既定文言にフォールバック）。レアリティ別の色（★1 青 / ★2 黄 / ★3 ピンク紫）の SVG 星アイコンを描画
 - **JSON-LD 構造化データ**: WebApplication / **FAQPage** / **HowTo** schema の 3 種を `<head>` に注入。リッチリザルトテストで FAQ が「有効なアイテム」として検出済み
 - `src/app/sitemap.ts` / `robots.ts` で `/sitemap.xml` / `/robots.txt` を自動配信
 - **Google Search Console** に登録済み（meta verification + sitemap 送信）
