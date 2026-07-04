@@ -140,6 +140,40 @@ export type SearchAnimeWorksPaginatedInput = {
   pages: number;
 };
 
+// ====== サマリ取得（/share・/api/og 用）======
+// シェアページと OG 画像はタイトルを URL クエリから受け取らず、id から実データを引く
+// （任意文言のなりすましページ／画像生成への対策）。レアリティ判定に必要な
+// watchersCount / satisfactionRate も併せて返す。
+
+export type AnnictWorkSummary = {
+  annictId: number;
+  title: string;
+  watchersCount: number;
+  satisfactionRate: number | null;
+};
+
+const WORK_SUMMARY_QUERY = gql`
+  query GetWorkSummary($annictIds: [Int!]) {
+    searchWorks(annictIds: $annictIds, first: 1) {
+      nodes {
+        annictId
+        title
+        watchersCount
+        satisfactionRate
+      }
+    }
+  }
+`;
+
+export async function getWorkSummary(
+  annictId: number,
+): Promise<AnnictWorkSummary | null> {
+  const data = await getClient().request<{
+    searchWorks: { nodes: AnnictWorkSummary[] };
+  }>(WORK_SUMMARY_QUERY, { annictIds: [annictId] });
+  return data.searchWorks.nodes[0] ?? null;
+}
+
 // ====== 詳細取得（クリックで開く詳細ダイアログ用）======
 
 export type AnnictEpisode = {

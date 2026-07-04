@@ -14,12 +14,9 @@ const STARS: Record<Rarity, string> = {
 };
 
 export function buildShareUrl(target: ShareTarget): string {
-  const params = new URLSearchParams({
-    id: String(target.annictId),
-    title: target.title,
-    rarity: target.rarity,
-  });
-  return `${SITE_URL}/share?${params.toString()}`;
+  // title / rarity は URL に含めない：/share 側が id から Annict の実タイトルと
+  // レアリティを取得して表示するため（任意文言のなりすましページ対策）。
+  return `${SITE_URL}/share?id=${target.annictId}`;
 }
 
 export function buildTweetIntent(target: ShareTarget): string {

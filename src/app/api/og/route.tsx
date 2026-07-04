@@ -1,13 +1,15 @@
 import { ImageResponse } from "next/og";
+import { getWorkSummary } from "@/lib/annict";
+import { getRarity, type Rarity } from "@/lib/rarity";
 import { SITE_HOST } from "@/lib/site";
 
 export const runtime = "edge";
 
 // next/og のデフォルトフォントは ★ (U+2605) をカバーしないため、星は SVG で描く
-const RARITY_COUNT: Record<string, number> = { r1: 1, r2: 2, r3: 3 };
+const RARITY_COUNT: Record<Rarity, number> = { r1: 1, r2: 2, r3: 3 };
 
 // ガチャ演出のレアリティアクセントに揃える：青 / 黄 / ピンク紫
-const RARITY_ACCENT: Record<string, string> = {
+const RARITY_ACCENT: Record<Rarity, string> = {
   r1: "#4a8fd9", // ★1 青
   r2: "#e8c44d", // ★2 黄
   r3: "#b572c8", // ★3 ピンク紫
@@ -31,10 +33,25 @@ function Star({ size, color }: { size: number; color: string }) {
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const rawTitle = searchParams.get("title") ?? "次に観るアニメ";
-  const rarity = searchParams.get("rarity") ?? "r1";
-  const starCount = RARITY_COUNT[rarity] ?? 1;
-  const accent = RARITY_ACCENT[rarity] ?? RARITY_ACCENT.r1;
+  // タイトル・レアリティはクエリから受け取らず、id から Annict の実データを引く
+  // （このドメインで任意文言のなりすまし画像を生成されないようにするため）。
+  // id が無効・取得失敗時は既定文言の画像を返す。
+  const idParam = searchParams.get("id");
+  let rawTitle = "次に観るアニメ";
+  let rarity: Rarity = "r1";
+  if (idParam && /^\d+$/.test(idParam)) {
+    try {
+      const summary = await getWorkSummary(Number(idParam));
+      if (summary) {
+        rawTitle = summary.title;
+        rarity = getRarity(summary.watchersCount, summary.satisfactionRate);
+      }
+    } catch (error) {
+      console.error(`og: getWorkSummary(${idParam}) failed:`, error);
+    }
+  }
+  const starCount = RARITY_COUNT[rarity];
+  const accent = RARITY_ACCENT[rarity];
   const title = rawTitle.length > 40 ? rawTitle.slice(0, 39) + "…" : rawTitle;
   // dev は http://localhost:3000、prod は本番 origin から logo を読み込む
   const logoUrl = new URL("/logo.png", request.url).toString();

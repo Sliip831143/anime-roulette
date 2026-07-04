@@ -1,41 +1,63 @@
+import { cache } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getWorkSummary, type AnnictWorkSummary } from "@/lib/annict";
+import { getRarity, RARITY_STARS, type Rarity } from "@/lib/rarity";
 import { SITE_URL } from "@/lib/site";
 
-const RARITY_STARS: Record<string, string> = {
-  r1: "★",
-  r2: "★★",
-  r3: "★★★",
-};
-
-// title は外部から任意指定できるクエリのため、OG 画像側（/api/og）と同じ 40 文字で
-// 打ち切り、なりすまし的な長文の埋め込みを防ぐ。id は Annict の作品 ID なので数値のみ許可。
+// タイトルは URL クエリから受け取らず、id から Annict の実タイトルを取得する
+// （任意文言のなりすましシェアページ対策）。レアリティも実データから判定する。
+// 表示上の打ち切り長は OG 画像側（/api/og）と揃える。
 const MAX_TITLE_LENGTH = 40;
+const FALLBACK_TITLE = "次に観るアニメ";
 
-function sanitizeTitle(raw: string | undefined): string {
-  const title = raw?.trim() || "次に観るアニメ";
+function truncateTitle(title: string): string {
   return title.length > MAX_TITLE_LENGTH
     ? title.slice(0, MAX_TITLE_LENGTH - 1) + "…"
     : title;
 }
 
-function sanitizeRarity(raw: string | undefined): string {
-  return raw === "r2" || raw === "r3" ? raw : "r1";
+function parseId(raw: string | undefined): number | null {
+  return raw && /^\d+$/.test(raw) ? Number(raw) : null;
 }
 
-function sanitizeId(raw: string | undefined): string | null {
-  return raw && /^\d+$/.test(raw) ? raw : null;
-}
+// generateMetadata とページ本体の双方から呼ばれるため、React の cache() で
+// 同一リクエスト内の Annict 取得を 1 回にまとめる。取得失敗時は null（既定表示）。
+const getCachedSummary = cache(
+  async (annictId: number): Promise<AnnictWorkSummary | null> => {
+    try {
+      return await getWorkSummary(annictId);
+    } catch (error) {
+      console.error(`share: getWorkSummary(${annictId}) failed:`, error);
+      return null;
+    }
+  },
+);
 
 type SearchParamsType = Promise<{
-  title?: string;
-  rarity?: string;
   id?: string;
 }>;
 
-function buildOgUrl(title: string, rarity: string): string {
-  const params = new URLSearchParams({ title, rarity });
-  return `${SITE_URL}/api/og?${params.toString()}`;
+type ShareData = {
+  title: string;
+  rarity: Rarity;
+  annictId: number | null;
+};
+
+async function loadShareData(
+  searchParams: SearchParamsType,
+): Promise<ShareData> {
+  const { id } = await searchParams;
+  const annictId = parseId(id);
+  const summary = annictId != null ? await getCachedSummary(annictId) : null;
+  if (!summary) {
+    return { title: FALLBACK_TITLE, rarity: "r1", annictId: null };
+  }
+  return {
+    title: truncateTitle(summary.title),
+    rarity: getRarity(summary.watchersCount, summary.satisfactionRate),
+    annictId: summary.annictId,
+  };
 }
 
 export async function generateMetadata({
@@ -43,17 +65,18 @@ export async function generateMetadata({
 }: {
   searchParams: SearchParamsType;
 }): Promise<Metadata> {
-  const { title, rarity } = await searchParams;
-  const safeTitle = sanitizeTitle(title);
-  const safeRarity = sanitizeRarity(rarity);
-  const stars = RARITY_STARS[safeRarity];
-  const description = `アニメルーレットで「${safeTitle}」(${stars}) が出ました！`;
-  const ogImage = buildOgUrl(safeTitle, safeRarity);
+  const { title, rarity, annictId } = await loadShareData(searchParams);
+  const stars = RARITY_STARS[rarity];
+  const description = `アニメルーレットで「${title}」(${stars}) が出ました！`;
+  const ogImage =
+    annictId != null
+      ? `${SITE_URL}/api/og?id=${annictId}`
+      : `${SITE_URL}/api/og`;
 
   return {
     // layout.tsx の title template（"%s | アニメルーレット"）がサフィックスを付けるため、
     // ここではタイトル本体のみを渡す（手動で付けると二重になる）
-    title: safeTitle,
+    title,
     description,
     openGraph: {
       title: description,
@@ -78,12 +101,10 @@ export default async function SharePage({
 }: {
   searchParams: SearchParamsType;
 }) {
-  const { title, rarity, id } = await searchParams;
-  const safeTitle = sanitizeTitle(title);
-  const safeRarity = sanitizeRarity(rarity);
-  const stars = RARITY_STARS[safeRarity];
-  const safeId = sanitizeId(id);
-  const annictUrl = safeId ? `https://annict.com/works/${safeId}` : null;
+  const { title, rarity, annictId } = await loadShareData(searchParams);
+  const stars = RARITY_STARS[rarity];
+  const annictUrl =
+    annictId != null ? `https://annict.com/works/${annictId}` : null;
 
   return (
     <main className="flex flex-1 flex-col items-center justify-center gap-6 px-4 py-12 text-center">
@@ -91,7 +112,7 @@ export default async function SharePage({
         ANIME ROULETTE
       </p>
       <h1 className="max-w-2xl text-3xl font-bold leading-tight sm:text-4xl">
-        「{safeTitle}」が出ました
+        「{title}」が出ました
       </h1>
       <p
         className="text-2xl font-bold"

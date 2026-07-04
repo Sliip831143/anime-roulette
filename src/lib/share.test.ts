@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { buildBatchTweetText, type BatchShareTarget } from "./share";
+import {
+  buildBatchTweetText,
+  buildShareUrl,
+  type BatchShareTarget,
+} from "./share";
 
 const make = (title: string, rarity: BatchShareTarget["rarity"] = "r1") => ({
   title,
@@ -25,6 +29,19 @@ function countXWithUrl(text: string): number {
   const replaced = text.replace(SHARE_URL, "");
   return countX(replaced) - 1 + 23;
 }
+
+describe("buildShareUrl", () => {
+  // なりすましシェアページ対策：タイトル・レアリティは URL に含めず、
+  // /share 側が id から Annict の実データを取得して表示する
+  it("id のみを含み、title / rarity をクエリに含めない", () => {
+    const url = buildShareUrl({
+      annictId: 4168,
+      title: "SHIROBAKO",
+      rarity: "r3",
+    });
+    expect(url).toBe("https://anime-roulette-inky.vercel.app/share?id=4168");
+  });
+});
 
 describe("buildBatchTweetText", () => {
   it("ヘッダー / フッター（URL とハッシュタグ）が必ず含まれる", () => {
