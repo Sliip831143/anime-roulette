@@ -113,6 +113,7 @@
 - React **Error Boundary**（`app/error.tsx`）で予期しないエラーを捕捉し、「もう一度試す」「トップへ戻る」を提示
 - **オフライン検知**（`navigator.onLine` + online/offline イベント）で接続喪失を toast 通知
 - API 取得失敗時は結果セクション上部に **「もう一度引く」リトライ UI** を表示（直前の検索条件を保持）
+- **上流エラーの詳細はマスキング**: Annict API 由来のエラー（GraphQL クエリ全文等を含む）はサーバーログにのみ記録し、ユーザーには「アニメ情報の取得に失敗しました…」等の汎用メッセージのみ表示
 
 ### レスポンシブ
 - スマホ（〜768px）: ガチャ演出のアニメ情報画面はシングルカラム（タイトル → サムネ → 申請書 → リンクの順）
@@ -172,6 +173,18 @@
 - **キーボードフォーカスリングの統一**: 全フォーム部品（input / checkbox / radio / slider / 送信ボタン）に同一トーンの薄青リング（簡易モードはグレー）を `:focus-visible` / `:focus-within` で適用
 - **カーソル統一**: 送信ボタン・スライダー thumb・結果バッジの ×ボタンなど操作可能要素はすべて `cursor: pointer` に揃え、Base UI の隠し input が UA stylesheet で `cursor:default` を上書きする問題にも対処
 - **結果カードのキーボード操作**: `role="button"` + `tabIndex={0}` で Tab フォーカス可能化、Enter / Space で詳細ダイアログを開く。ダイアログは `role="dialog"` + `aria-modal="true"` でセマンティクスを明示し、Esc で閉じる
+- **フォーカストラップ**（`use-focus-trap.ts`）: 詳細ダイアログ・画像プレビュー・ガチャ演出の表示中は Tab / Shift+Tab をモーダル内で循環させ、クローズ時は開く前の要素へフォーカスを復帰
+
+---
+
+## セキュリティ
+
+- **入力バリデーション**: API の全クエリを zod で検証。放送年はデータが存在する 1991〜現在年にサーバー側でクランプし、任意の年範囲指定によるキャッシュキーの組み合わせ爆発（キャッシュミス誘発 → Annict への大量フェッチ）を防止
+- **エラーマスキング**: 上流（Annict GraphQL）のエラー詳細はサーバーログのみに記録し、クライアントには汎用メッセージを返す
+- **外部 URL の無害化**（`src/lib/safe-url.ts`）: Annict 由来の `officialSiteUrl` / `wikipediaUrl` は http/https スキームのみ許可してから `<a href>` に渡す
+- **シェアページのサニタイズ**: `/share` の `title` は 40 文字で打ち切り、`id` は数値のみ許可
+- **セキュリティヘッダ**（`next.config.ts`）: `X-Content-Type-Options: nosniff` / `Referrer-Policy` / `Permissions-Policy` / `X-Frame-Options: DENY` + `CSP frame-ancestors 'none'`（クリックジャッキング対策）を全ルートに付与
+- **シークレット管理**: `ANNICT_TOKEN` はサーバー専用（Route Handler 内でのみ参照）。`.env*` は gitignore 済み
 
 ---
 
@@ -235,7 +248,8 @@ pnpm dev
 ```
 src/
 ├── app/
-│   ├── api/anime/route.ts        # Annict GraphQL を呼ぶ Route Handler（zod 検証付き）
+│   ├── api/anime/route.ts        # Annict GraphQL を呼ぶ Route Handler（プールキャッシュ + フィルタ + シャッフル）
+│   ├── api/anime/schema.ts       # 入力 zod スキーマ（年は 1991〜現在年にクランプ）
 │   ├── api/anime/schema.test.ts  # 入力 zod スキーマの境界値テスト
 │   ├── api/anime/[id]/route.ts   # 単一作品の詳細取得 API（モーダル表示用）
 │   ├── api/og/route.tsx          # 動的 OGP 画像生成（next/og + Edge runtime）
@@ -256,6 +270,7 @@ src/
 │   ├── anime-card.tsx            # 結果カード（モード別デザイン、クリックで詳細ダイアログ）
 │   ├── anime-detail-dialog.tsx   # 結果カード詳細モーダル（Portal + Esc クローズ、外部リンク集約）
 │   ├── gacha-sequence.tsx        # ガチャ演出のフルスクリーンオーバーレイ（intro〜reveal〜closing）
+│   ├── use-focus-trap.ts         # モーダル用フォーカストラップ（Tab 循環 + クローズ時フォーカス復帰）
 │   ├── sw-register.tsx           # 旧 Service Worker の登録解除 + caches 削除（廃止後のクリーンアップ用）
 │   └── ui/                       # shadcn/ui プリミティブ
 └── lib/
@@ -266,6 +281,10 @@ src/
     ├── rarity.test.ts            # レアリティ判定の単体テスト（100% カバー）
     ├── share.ts                  # X (Twitter) シェア URL ビルダー（個別 + 一括、X カウント仕様準拠）
     ├── share.test.ts             # 一括シェアテキスト生成の境界値・X カウント・省略ロジックのテスト
+    ├── format.ts                 # 表示フォーマッタ集約（満足度正規化 / 季節・メディアのラベル）
+    ├── safe-url.ts               # 外部データ由来 URL の無害化（http/https 以外のスキームを拒否）
+    ├── safe-url.test.ts          # URL 無害化の境界値テスト（javascript: / data: / 相対 URL 等）
+    ├── site.ts                   # 本番 URL（SITE_URL / SITE_HOST）の一元管理
     ├── gacha-test-fixture.ts     # 開発用ガチャ演出デモ（?gachatest=1）のモック★3作品
     └── utils.ts                  # cn ヘルパ
 
@@ -306,13 +325,14 @@ CLAUDE.md                         # プロジェクト固有の Claude 指示（
 - **`Work` に放送ステータス系のフィールドが存在しない**（`releasedOn` / `status` / `WorkState` などは無し）。Annict には放送開始前の作品も「予定」として登録されるため、放っておくとガチャに未来作品が混入する。対処として `seasonYear` / `seasonName` から season 開始月（spring=4 / summer=7 / autumn=10 / winter=1）を逆算してクライアント側で除外（`src/lib/seasons.ts` の `isWorkFutureSeason`）。年指定モードでは `expandSeasons` が未来 season をそもそも展開せず、全期間モード（年・季節とも未指定）では `applyFilters` が作品単位で除外する。なお `seasons` を明示指定した場合はユーザー意図を尊重して未来でも展開する
 - **ランダム抽出は「上位最大2,600件（200件×13ページのカーソルページネーション）をプール → サーバーでフィルタ → シャッフル → 指定件数を返却」で実現**（`src/app/api/anime/route.ts`、`searchAnimeWorksPaginated`）
   - 200件のみだとプールが人気作偏重になり、ガチャの低レアが出ないため深掘りしている
-  - プールは seasons の組み合わせごとに module スコープでキャッシュ（TTL 24時間）。カーソルページネーションは直列のためページ数に比例して取得が遅くなるが、2回目以降のガチャはキャッシュ命中で Annict 取得ゼロ（フィルタ＋シャッフルのみ）で即応答する
+  - プールは seasons の組み合わせごとに **`unstable_cache`（Vercel Data Cache）でキャッシュ（TTL 24時間）**。以前は module スコープの Map だったが、それだとサーバーレスインスタンスごとに独立しコールドスタートのたびに 13 ページ逐次フェッチ（30秒超）が発生するため、インスタンス横断で永続する Data Cache（ローカルは `.next/cache`）へ移行した。カーソルページネーションは直列のためページ数に比例して取得が遅くなるが、2回目以降のガチャはキャッシュ命中で Annict 取得ゼロ（フィルタ＋シャッフルのみ）で即応答する
+  - キャッシュミス時のスタンピード対策として、同一キーへの同時リクエストは同一インスタンス内で in-flight Promise を共有する
 - **`Work` には `organizations` / `ratingsCount` フィールドが存在しない**（GraphQL introspection で確認済み）。詳細ダイアログでは取得しない
 - **`Staff.roleOther` はスキーマ宣言が non-nullable だが実データで null が返る**ことがあり、GraphQL の error propagation で staff レコード全体が消失する。詳細取得クエリでは `roleOther` を含めず、職位は `roleText` のみで運用
 
 ### satisfactionRate の単位
 
-`Float` 型でドキュメントに単位記載なし。0-1 スケール／0-100 スケールどちらでも動作するよう `rate <= 1 ? rate * 100 : rate` で正規化（`src/lib/rarity.ts`、`src/components/anime-card.tsx`）。
+`Float` 型でドキュメントに単位記載なし。0-1 スケール／0-100 スケールどちらでも動作するよう `rate <= 1 ? rate * 100 : rate` で正規化（`src/lib/format.ts` の `normalizeSatisfactionPercent` に一元化し、レアリティ判定・各表示コンポーネントから共用）。
 
 ### 画像取得失敗時のフォールバック
 

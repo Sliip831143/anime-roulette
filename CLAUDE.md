@@ -31,7 +31,7 @@ pnpm test:run
 - **`Staff.roleOther` はスキーマ上 non-nullable だが実データで null が返る。** GraphQL の error propagation で
   staff レコードごと消失するため、詳細クエリには `roleOther` を含めず職位は `roleText` のみで運用する。
 - `satisfactionRate` は単位記載のない `Float`。`rate <= 1 ? rate * 100 : rate` で 0-100 スケールに正規化する
-  （`src/lib/rarity.ts` / `src/components/anime-card.tsx`）。
+  （`src/lib/format.ts` の `normalizeSatisfactionPercent` に一元化。個別実装を増やさないこと）。
 
 ### レアリティ閾値
 
