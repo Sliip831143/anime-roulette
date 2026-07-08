@@ -2,13 +2,16 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { X as XIcon, Share2 } from "lucide-react";
+import { X as XIcon } from "lucide-react";
+import { XLogo } from "@/components/x-logo";
 import { useFocusTrap } from "@/components/use-focus-trap";
 import type { AnnictWorkDetail } from "@/lib/annict";
 import { formatSatisfaction, formatSeasonMedia } from "@/lib/format";
 import { getRarity } from "@/lib/rarity";
 import { safeHttpUrl } from "@/lib/safe-url";
 import { openTweetIntent } from "@/lib/share";
+import { StatusButtons } from "@/components/status-buttons";
+import type { CollectionStatus } from "@/lib/collection";
 
 function formatDate(iso: string | null): string | null {
   if (!iso) return null;
@@ -25,10 +28,18 @@ type Props = {
     watchersCount: number;
     satisfactionRate: number | null;
   };
+  status?: CollectionStatus;
+  onStatusChange?: (next: CollectionStatus) => void;
   onClose: () => void;
 };
 
-export function AnimeDetailDialog({ annictId, initial, onClose }: Props) {
+export function AnimeDetailDialog({
+  annictId,
+  initial,
+  status = "none",
+  onStatusChange,
+  onClose,
+}: Props) {
   const [detail, setDetail] = useState<AnnictWorkDetail | null>(null);
   // 初期値を true にして effect 内では set しない（annictId はマウント中変わらない前提）
   const [loading, setLoading] = useState(true);
@@ -335,17 +346,23 @@ export function AnimeDetailDialog({ annictId, initial, onClose }: Props) {
                     #{work.twitterHashtag}
                   </a>
                 )}
-                <button
-                  type="button"
-                  onClick={() =>
-                    openTweetIntent({ annictId, title: work.title, rarity })
-                  }
-                  className="ml-auto inline-flex cursor-pointer items-center gap-1 text-muted-foreground hover:text-primary"
-                  aria-label={`「${work.title}」を X でシェア`}
-                >
-                  <Share2 className="size-3.5" aria-hidden />
-                  シェア
-                </button>
+                {/* 「観た / 興味なし」とシェアは操作系としてまとめ、行末の同一グループに置く */}
+                <span className="ml-auto inline-flex items-center gap-4">
+                  {onStatusChange && (
+                    <StatusButtons status={status} onChange={onStatusChange} />
+                  )}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      openTweetIntent({ annictId, title: work.title, rarity })
+                    }
+                    className="inline-flex cursor-pointer items-center gap-1 text-muted-foreground hover:text-primary"
+                    aria-label={`「${work.title}」を X でシェア`}
+                  >
+                    <XLogo className="size-3" />
+                    シェア
+                  </button>
+                </span>
               </div>
             </>
           )}

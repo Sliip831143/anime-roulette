@@ -254,32 +254,6 @@ body[data-mode="gacha"] {
     inset 0 0 0 1px oklch(0.55 0.08 250 / 0.22);
 }
 
-/* コーナーマーク */
-[data-mode="gacha"] .gacha-card::before,
-[data-mode="gacha"] .gacha-card::after {
-  content: "";
-  position: absolute;
-  width: 12px;
-  height: 12px;
-  border: 1.5px solid oklch(0.55 0.08 250 / 0.55);
-  pointer-events: none;
-  z-index: 3;
-}
-
-[data-mode="gacha"] .gacha-card::before {
-  top: 6px;
-  left: 6px;
-  border-right: none;
-  border-bottom: none;
-}
-
-[data-mode="gacha"] .gacha-card::after {
-  bottom: 6px;
-  right: 6px;
-  border-left: none;
-  border-top: none;
-}
-
 /* 上端の濃紺タイトルバー */
 [data-mode="gacha"] .gacha-card-titlebar {
   display: flex;
@@ -848,6 +822,60 @@ body[data-mode="gacha"] {
 @keyframes scroll-top-in {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* スマホ用：図鑑への左下固定ボタン。
+   ヘッダー 1 行にロゴ・図鑑・モード切替を収めるとつぶれるため、
+   640px 未満では図鑑リンクをヘッダーから退避してこちらを表示する
+   （右下の「トップへ戻る」ボタンと対の意匠）。 */
+.collection-fab {
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  background: oklch(0.18 0 0);
+  color: oklch(0.99 0 0);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px oklch(0 0 0 / 0.18);
+  z-index: 50;
+}
+
+[data-mode="gacha"] .collection-fab {
+  background: linear-gradient(135deg, oklch(0.22 0.05 255), oklch(0.32 0.08 280));
+  box-shadow: 0 4px 12px oklch(0 0 0 / 0.28);
+}
+
+.collection-fab svg {
+  width: 20px;
+  height: 20px;
+}
+
+.collection-fab-badge {
+  position: absolute;
+  top: -4px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: oklch(0.99 0 0);
+  color: oklch(0.25 0.05 255);
+  font-size: 10px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px oklch(0 0 0 / 0.25);
+}
+
+@media (min-width: 640px) {
+  .collection-fab {
+    display: none;
+  }
 }
 
 /* 結果一覧パネル（PC のみ表示） */

@@ -30,3 +30,10 @@ export const RARITY_STARS: Record<Rarity, string> = {
   r2: "★★",
   r3: "★★★",
 };
+
+/** スクリーンリーダー向けの数値表現（★が記号読みされるのを避ける） */
+export const RARITY_LEVEL: Record<Rarity, number> = {
+  r1: 1,
+  r2: 2,
+  r3: 3,
+};

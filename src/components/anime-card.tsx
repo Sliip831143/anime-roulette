@@ -1,18 +1,34 @@
 "use client";
 
-import { useState } from "react";
+import { memo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import type { AnnictWork } from "@/lib/annict";
 import { formatSatisfaction, formatSeasonMedia } from "@/lib/format";
-import { getRarity, RARITY_STARS } from "@/lib/rarity";
+import { getRarity, RARITY_LEVEL, RARITY_STARS } from "@/lib/rarity";
 import { AnimeDetailDialog } from "@/components/anime-detail-dialog";
+import { NoImageIcon } from "@/components/no-image-icon";
+import { StatusButtons } from "@/components/status-buttons";
+import type { CollectionStatus } from "@/lib/collection";
+import { isInteractiveElementClick } from "@/lib/utils";
 
-export function AnimeCard({
+/**
+ * 結果カード。キーボード・支援技術向けの「詳細を開く」操作はタイトルの
+ * 実 button に集約し、カード全体には冗長なマウス用 onClick だけを付ける
+ * （カード自体を role="button" にすると内側の StatusButtons が
+ * ARIA 的に無効化されるため）。内側の button/a 起点のクリックは無視する。
+ * 状態トグル時に結果の全カードが再レンダーされないよう memo 化している
+ * （onStatusChange は annictId を受ける安定コールバック前提）。
+ */
+export const AnimeCard = memo(function AnimeCard({
   work,
   gachaMode = true,
+  status = "none",
+  onStatusChange,
 }: {
   work: AnnictWork;
   gachaMode?: boolean;
+  status?: CollectionStatus;
+  onStatusChange?: (annictId: number, next: CollectionStatus) => void;
 }) {
   const rarity = getRarity(work.watchersCount, work.satisfactionRate);
   const satisfaction = formatSatisfaction(work.satisfactionRate);
@@ -20,22 +36,27 @@ export function AnimeCard({
   const [dialogOpen, setDialogOpen] = useState(false);
   const hasImage = !!work.image?.recommendedImageUrl && !imageError;
 
-  const handleKey = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      setDialogOpen(true);
-    }
+  const openFromCardClick = (e: React.MouseEvent) => {
+    if (isInteractiveElementClick(e)) return;
+    setDialogOpen(true);
   };
+
+  const titleButton = (className: string) => (
+    <button
+      type="button"
+      onClick={() => setDialogOpen(true)}
+      aria-label={`「${work.title}」の詳細を見る`}
+      className={`cursor-pointer text-left focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 ${className}`}
+    >
+      {work.title}
+    </button>
+  );
 
   const card = !gachaMode ? (
     <Card
       id={`work-${work.annictId}`}
-      role="button"
-      tabIndex={0}
-      onClick={() => setDialogOpen(true)}
-      onKeyDown={handleKey}
-      aria-label={`「${work.title}」の詳細を見る`}
-      className="cursor-pointer overflow-hidden p-0 scroll-mt-4 transition-shadow focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+      onClick={openFromCardClick}
+      className="cursor-pointer overflow-hidden p-0 scroll-mt-4 transition-shadow hover:shadow-md"
     >
       <div className="flex gap-4 p-4">
         <div className="shrink-0 w-24 h-36 rounded-md overflow-hidden bg-muted">
@@ -49,59 +70,47 @@ export function AnimeCard({
               onError={() => setImageError(true)}
             />
           ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-xs text-muted-foreground">
-              <svg
-                viewBox="0 0 64 64"
-                className="w-8 h-8"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <rect x="8" y="12" width="48" height="40" rx="3" />
-                <circle cx="22" cy="26" r="4" />
-                <path d="M8 44 L24 30 L36 40 L48 28 L56 36" />
-              </svg>
+            <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-xs text-[oklch(0.45_0.02_250)]">
+              <NoImageIcon className="w-8 h-8" />
               <span className="text-[10px]">No image</span>
             </div>
           )}
         </div>
         <div className="flex-1 min-w-0 flex flex-col gap-2">
-          <h3 className="font-semibold leading-snug line-clamp-2">
-            {work.title}
+          <h3 className="font-semibold leading-snug">
+            {titleButton("line-clamp-2 rounded-sm")}
           </h3>
           <p className="text-sm text-muted-foreground">{formatSeasonMedia(work)}</p>
           <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
             <span>視聴登録 {work.watchersCount.toLocaleString()}人</span>
             {satisfaction && <span>満足度 {satisfaction}</span>}
           </div>
-          <p className="mt-auto text-xs text-muted-foreground">
-            クリックで詳細を表示
-          </p>
+          {onStatusChange && (
+            <div className="mt-auto flex items-center justify-end">
+              <StatusButtons
+                status={status}
+                onChange={(next) => onStatusChange(work.annictId, next)}
+              />
+            </div>
+          )}
         </div>
       </div>
     </Card>
   ) : (
     <Card
       id={`work-${work.annictId}`}
-      role="button"
-      tabIndex={0}
-      onClick={() => setDialogOpen(true)}
-      onKeyDown={handleKey}
-      aria-label={`「${work.title}」の詳細を見る`}
-      className="gacha-card cursor-pointer overflow-hidden p-0 scroll-mt-4 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+      onClick={openFromCardClick}
+      className="gacha-card cursor-pointer overflow-hidden p-0 scroll-mt-4"
       data-rarity={rarity}
     >
       <div className="gacha-card-titlebar">
-        <span
-          className="gacha-card-rarity"
-          aria-label={`レアリティ${RARITY_STARS[rarity]}`}
-        >
-          {RARITY_STARS[rarity]}
+        <span className="gacha-card-rarity">
+          <span aria-hidden>{RARITY_STARS[rarity]}</span>
+          <span className="sr-only">レアリティ{RARITY_LEVEL[rarity]}</span>
         </span>
-        <h3 className="gacha-card-title">{work.title}</h3>
+        <h3 className="gacha-card-title">
+          {titleButton("rounded-sm")}
+        </h3>
       </div>
       <CardContent className="gacha-card-body p-0">
         {hasImage ? (
@@ -114,23 +123,8 @@ export function AnimeCard({
             onError={() => setImageError(true)}
           />
         ) : (
-          <div
-            className="gacha-card-image gacha-card-image-empty"
-            aria-label="画像なし"
-          >
-            <svg
-              viewBox="0 0 64 64"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <rect x="8" y="12" width="48" height="40" rx="3" />
-              <circle cx="22" cy="26" r="4" />
-              <path d="M8 44 L24 30 L36 40 L48 28 L56 36" />
-            </svg>
+          <div className="gacha-card-image gacha-card-image-empty">
+            <NoImageIcon />
             <span>NO IMAGE</span>
           </div>
         )}
@@ -155,9 +149,14 @@ export function AnimeCard({
           )}
         </div>
       </CardContent>
-      <p className="border-t border-[oklch(0.85_0.04_250/0.4)] bg-[oklch(0.97_0.02_230/0.55)] px-4 py-1.5 text-center text-[10px] tracking-widest text-[oklch(0.5_0.04_250)]">
-        クリックで詳細を表示
-      </p>
+      {onStatusChange && (
+        <div className="flex items-center justify-end border-t border-[oklch(0.85_0.04_250/0.4)] bg-[oklch(0.97_0.02_230/0.55)] px-4 py-1.5">
+          <StatusButtons
+            status={status}
+            onChange={(next) => onStatusChange(work.annictId, next)}
+          />
+        </div>
+      )}
     </Card>
   );
 
@@ -172,9 +171,15 @@ export function AnimeCard({
             watchersCount: work.watchersCount,
             satisfactionRate: work.satisfactionRate,
           }}
+          status={status}
+          onStatusChange={
+            onStatusChange
+              ? (next) => onStatusChange(work.annictId, next)
+              : undefined
+          }
           onClose={() => setDialogOpen(false)}
         />
       )}
     </>
   );
-}
+});

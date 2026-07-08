@@ -1,63 +1,38 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
 import { SearchForm, type SearchParams } from "@/components/search-form";
 import { AnimeCard } from "@/components/anime-card";
 import { GachaSequence } from "@/components/gacha-sequence";
-import { Share2 } from "lucide-react";
+import { BookMarked } from "lucide-react";
+import { XLogo } from "@/components/x-logo";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { openBatchTweetIntent } from "@/lib/share";
 import type { AnnictWork } from "@/lib/annict";
 import { getRarity, RARITY_STARS } from "@/lib/rarity";
-
-const STORAGE_PREFIX = "anime-roulette-";
-const MODE_STORAGE_KEY = `${STORAGE_PREFIX}mode`;
-const SEASON_VISIBLE_KEY = `${STORAGE_PREFIX}season-visible`;
-const DEBUG_MODE_KEY = `${STORAGE_PREFIX}debug`;
-const ANIM_DISABLED_KEY = `${STORAGE_PREFIX}anim-disabled`;
-const EXTENDED_COUNT_KEY = `${STORAGE_PREFIX}extended-count`;
-const POPULAR_THRESHOLD_KEY = `${STORAGE_PREFIX}popular-threshold`;
-
-const DEFAULT_POPULAR_THRESHOLD = 1000;
-
-type CmdDef = { usage: string; desc: string };
-const CMD_DEFS: CmdDef[] = [
-  { usage: 'cmd("/help")', desc: "利用可能コマンド一覧を表示" },
-  { usage: 'cmd("/state")', desc: "現在の各種設定を一覧表示" },
-  {
-    usage: 'cmd("/season"|"/season on"|"/season off")',
-    desc: "季節フィルタの表示切替（デフォルト非表示）",
-  },
-  {
-    usage: 'cmd("/debug"|"/debug on"|"/debug off")',
-    desc: "APIリクエスト・レアリティ判定の詳細ログを切替",
-  },
-  {
-    usage: 'cmd("/anim"|"/anim on"|"/anim off")',
-    desc: "ガチャ演出のON/OFF切替（OFFで即結果表示）",
-  },
-  {
-    usage: 'cmd("/max"|"/max on"|"/max off")',
-    desc: "取得件数UIを切替（Slider 1〜10 ⇔ 数値入力 1〜50、ONで演出も自動OFF）",
-  },
-  {
-    usage: 'cmd("/popularity tune <n>"|"/popularity reset")',
-    desc: `「人気のみ」の視聴登録閾値をカスタマイズ（デフォルト${DEFAULT_POPULAR_THRESHOLD}）`,
-  },
-  {
-    usage: 'cmd("/reset")',
-    desc: "localStorageの全設定をクリアして初期状態へ",
-  },
-];
-
-declare global {
-  interface Window {
-    cmd?: (input: string) => void;
-  }
-}
+import {
+  excludedIdsOf,
+  pickAfterExclusion,
+  recordDraws,
+  type CollectionStatus,
+} from "@/lib/collection";
+import { useCollection } from "@/lib/use-collection";
+import {
+  ANIM_DISABLED_KEY,
+  DEBUG_MODE_KEY,
+  DEFAULT_POPULAR_THRESHOLD,
+  EXTENDED_COUNT_KEY,
+  MODE_STORAGE_KEY,
+  POPULAR_THRESHOLD_KEY,
+  SEASON_VISIBLE_KEY,
+  SETTINGS_CHANGED_EVENT,
+  readSettings,
+  safeSetItem,
+} from "@/lib/settings";
 
 export default function Home() {
   const [results, setResults] = useState<AnnictWork[] | null>(null);
@@ -76,11 +51,15 @@ export default function Home() {
   );
   const [lastError, setLastError] = useState<string | null>(null);
   const [lastParams, setLastParams] = useState<SearchParams | null>(null);
+  // 結果 0 件時に恒常表示する文言の出し分け（トーストは消えても理由が残るように）
+  const [emptyReason, setEmptyReason] = useState<"no-match" | "excluded">(
+    "no-match",
+  );
+  const { collection, setCollection, collectionRef, markStatus } =
+    useCollection();
   const debugModeRef = useRef(false);
   const animDisabledRef = useRef(false);
   const gachaModeRef = useRef(true);
-  const seasonVisibleRef = useRef(false);
-  const extendedCountRef = useRef(false);
   const popularThresholdRef = useRef(DEFAULT_POPULAR_THRESHOLD);
   const resultsRef = useRef<HTMLElement>(null);
 
@@ -95,14 +74,6 @@ export default function Home() {
   useEffect(() => {
     gachaModeRef.current = gachaMode;
   }, [gachaMode]);
-
-  useEffect(() => {
-    seasonVisibleRef.current = seasonVisible;
-  }, [seasonVisible]);
-
-  useEffect(() => {
-    extendedCountRef.current = extendedCount;
-  }, [extendedCount]);
 
   useEffect(() => {
     popularThresholdRef.current = popularThreshold;
@@ -150,27 +121,32 @@ export default function Home() {
       ?.scrollIntoView({ behavior: "smooth", block: "center" });
   };
 
+  // 図鑑（collection）の読み込み・保存・再読込は useCollection が担う
+  const applyStoredSettings = useCallback(() => {
+    const s = readSettings();
+    setGachaMode(s.gachaMode);
+    setSeasonVisible(s.seasonVisible);
+    setDebugMode(s.debugMode);
+    setAnimDisabled(s.animDisabled);
+    setExtendedCount(s.extendedCount);
+    setPopularThreshold(s.popularThreshold);
+  }, []);
+
   useEffect(() => {
     // localStorage はクライアント限定なので、ハイドレーション直後に effect で読み込んで
     // state へ反映する必要がある（典型的なハイドレーション例外）。
     /* eslint-disable react-hooks/set-state-in-effect */
-    const stored = localStorage.getItem(MODE_STORAGE_KEY);
-    if (stored === "simple") setGachaMode(false);
-    const storedSeason = localStorage.getItem(SEASON_VISIBLE_KEY);
-    if (storedSeason === "1") setSeasonVisible(true);
-    const storedDebug = localStorage.getItem(DEBUG_MODE_KEY);
-    if (storedDebug === "1") setDebugMode(true);
-    const storedAnim = localStorage.getItem(ANIM_DISABLED_KEY);
-    if (storedAnim === "1") setAnimDisabled(true);
-    const storedExtended = localStorage.getItem(EXTENDED_COUNT_KEY);
-    if (storedExtended === "1") setExtendedCount(true);
-    const storedPopular = Number(localStorage.getItem(POPULAR_THRESHOLD_KEY));
-    if (Number.isInteger(storedPopular) && storedPopular >= 0) {
-      setPopularThreshold(storedPopular);
-    }
+    applyStoredSettings();
     setMounted(true);
     /* eslint-enable react-hooks/set-state-in-effect */
-  }, []);
+  }, [applyStoredSettings]);
+
+  // 隠しコマンド（ConsoleCmd）が localStorage を書き換えたら state へ反映する
+  useEffect(() => {
+    window.addEventListener(SETTINGS_CHANGED_EVENT, applyStoredSettings);
+    return () =>
+      window.removeEventListener(SETTINGS_CHANGED_EVENT, applyStoredSettings);
+  }, [applyStoredSettings]);
 
   // 開発用：?gachatest=1 でモック★3作品のガチャ演出を即起動する。
   // 「★3かつサムネイルあり」の Ken Burns 演出は実データだと出現頻度が低く
@@ -196,277 +172,37 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    // mounted 前は初期値（gacha）のままなので書き込まない。
+    // ここで書くと localStorage の保存値を上書きし、直後の読み込みが誤った値を拾う
+    if (!mounted) return;
     document.documentElement.dataset.mode = gachaMode ? "gacha" : "simple";
-    localStorage.setItem(MODE_STORAGE_KEY, gachaMode ? "gacha" : "simple");
-  }, [gachaMode]);
+    safeSetItem(MODE_STORAGE_KEY, gachaMode ? "gacha" : "simple");
+  }, [gachaMode, mounted]);
 
   useEffect(() => {
     if (!mounted) return;
-    localStorage.setItem(SEASON_VISIBLE_KEY, seasonVisible ? "1" : "0");
+    safeSetItem(SEASON_VISIBLE_KEY, seasonVisible ? "1" : "0");
   }, [seasonVisible, mounted]);
 
   useEffect(() => {
     if (!mounted) return;
-    localStorage.setItem(DEBUG_MODE_KEY, debugMode ? "1" : "0");
+    safeSetItem(DEBUG_MODE_KEY, debugMode ? "1" : "0");
   }, [debugMode, mounted]);
 
   useEffect(() => {
     if (!mounted) return;
-    localStorage.setItem(ANIM_DISABLED_KEY, animDisabled ? "1" : "0");
+    safeSetItem(ANIM_DISABLED_KEY, animDisabled ? "1" : "0");
   }, [animDisabled, mounted]);
 
   useEffect(() => {
     if (!mounted) return;
-    localStorage.setItem(EXTENDED_COUNT_KEY, extendedCount ? "1" : "0");
+    safeSetItem(EXTENDED_COUNT_KEY, extendedCount ? "1" : "0");
   }, [extendedCount, mounted]);
 
   useEffect(() => {
     if (!mounted) return;
-    localStorage.setItem(POPULAR_THRESHOLD_KEY, String(popularThreshold));
+    safeSetItem(POPULAR_THRESHOLD_KEY, String(popularThreshold));
   }, [popularThreshold, mounted]);
-
-  useEffect(() => {
-    const log = (label: string, on: boolean) =>
-      console.log(
-        `%c[cmd] ${label}: %c${on ? "ON" : "OFF"}`,
-        "color:#7aa;font-weight:600",
-        on ? "color:#3a7;font-weight:700" : "color:#a55;font-weight:700",
-      );
-
-    const applyToggle = (
-      arg: string | undefined,
-      label: string,
-      setter: React.Dispatch<React.SetStateAction<boolean>>,
-    ) => {
-      if (arg === "on") {
-        setter(true);
-        log(label, true);
-      } else if (arg === "off") {
-        setter(false);
-        log(label, false);
-      } else {
-        setter((prev) => {
-          log(label, !prev);
-          return !prev;
-        });
-      }
-    };
-
-    const handler = (input: string) => {
-      const parts = String(input ?? "").trim().split(/\s+/);
-      const head = parts[0];
-      const arg = parts[1]?.toLowerCase();
-
-      if (head === "/help") {
-        console.group(
-          "%c[cmd] /help — 利用可能コマンド",
-          "color:#7aa;font-weight:700",
-        );
-        CMD_DEFS.forEach((c) => {
-          console.log(
-            `  %c${c.usage}%c  ${c.desc}`,
-            "color:#3a7;font-weight:600",
-            "color:inherit",
-          );
-        });
-        console.groupEnd();
-        return;
-      }
-
-      if (head === "/state") {
-        const onOff = (b: boolean) => (b ? "ON" : "OFF");
-        const items: { label: string; value: string }[] = [
-          { label: "mode", value: gachaModeRef.current ? "gacha" : "simple" },
-          { label: "season filter", value: onOff(seasonVisibleRef.current) },
-          { label: "debug log", value: onOff(debugModeRef.current) },
-          {
-            label: "gacha anim",
-            value: animDisabledRef.current ? "OFF (skip)" : "ON",
-          },
-          {
-            label: "count UI",
-            value: extendedCountRef.current
-              ? "extended (number input, 1〜50)"
-              : "default (slider, 1〜10)",
-          },
-          {
-            label: "popular threshold",
-            value: `${popularThresholdRef.current.toLocaleString()} (default ${DEFAULT_POPULAR_THRESHOLD.toLocaleString()})`,
-          },
-        ];
-        console.group(
-          "%c[cmd] /state — 現在の設定",
-          "color:#7aa;font-weight:700",
-        );
-        items.forEach((it) => {
-          console.log(
-            `  %c${it.label.padEnd(20)}%c${it.value}`,
-            "color:#7aa;font-weight:600",
-            "color:inherit",
-          );
-        });
-        console.groupEnd();
-        return;
-      }
-
-      if (head === "/season") {
-        applyToggle(arg, "season", setSeasonVisible);
-        return;
-      }
-
-      if (head === "/debug") {
-        applyToggle(arg, "debug", setDebugMode);
-        return;
-      }
-
-      if (head === "/anim") {
-        // /anim on = 演出ON(animDisabled=false)、/anim off = 演出OFF(animDisabled=true)
-        if (arg === "on") {
-          setAnimDisabled(false);
-          log("anim", true);
-        } else if (arg === "off") {
-          setAnimDisabled(true);
-          log("anim", false);
-        } else {
-          setAnimDisabled((prev) => {
-            log("anim", prev);
-            return !prev;
-          });
-        }
-        return;
-      }
-
-      if (head === "/max") {
-        const applyExtended = (on: boolean) => {
-          setExtendedCount(on);
-          console.log(
-            `%c[cmd] max (extended count UI): %c${on ? "ON" : "OFF"}`,
-            "color:#7aa;font-weight:600",
-            on ? "color:#3a7;font-weight:700" : "color:#a55;font-weight:700",
-          );
-          if (on) {
-            setAnimDisabled(true);
-            console.log(
-              `%c[cmd] anim: %cauto-OFF (件数拡張中はガチャ演出を自動停止)`,
-              "color:#7aa;font-weight:600",
-              "color:#a55;font-weight:700",
-            );
-          }
-        };
-        if (arg === "on") {
-          applyExtended(true);
-        } else if (arg === "off") {
-          applyExtended(false);
-        } else {
-          setExtendedCount((prev) => {
-            const next = !prev;
-            console.log(
-              `%c[cmd] max (extended count UI): %c${next ? "ON" : "OFF"}`,
-              "color:#7aa;font-weight:600",
-              next ? "color:#3a7;font-weight:700" : "color:#a55;font-weight:700",
-            );
-            if (next) {
-              setAnimDisabled(true);
-              console.log(
-                `%c[cmd] anim: %cauto-OFF (件数拡張中はガチャ演出を自動停止)`,
-                "color:#7aa;font-weight:600",
-                "color:#a55;font-weight:700",
-              );
-            }
-            return next;
-          });
-        }
-        return;
-      }
-
-      if (head === "/popularity") {
-        const sub = parts[1]?.toLowerCase();
-        if (sub === undefined) {
-          console.log(
-            `%c[cmd] popularity threshold (current): %c${popularThresholdRef.current}`,
-            "color:#7aa;font-weight:600",
-            "color:#3a7;font-weight:700",
-          );
-          return;
-        }
-        if (sub === "reset") {
-          setPopularThreshold(DEFAULT_POPULAR_THRESHOLD);
-          console.log(
-            `%c[cmd] popularity threshold: %creset to ${DEFAULT_POPULAR_THRESHOLD}`,
-            "color:#7aa;font-weight:600",
-            "color:#3a7;font-weight:700",
-          );
-          return;
-        }
-        if (sub === "tune") {
-          const n = Number(parts[2]);
-          if (!Number.isInteger(n) || n < 0) {
-            console.log(
-              `%c[cmd] /popularity tune <n>: 0以上の整数を指定してください`,
-              "color:#a55;font-weight:600",
-            );
-            return;
-          }
-          setPopularThreshold(n);
-          console.log(
-            `%c[cmd] popularity threshold: %c${n}`,
-            "color:#7aa;font-weight:600",
-            "color:#3a7;font-weight:700",
-          );
-          return;
-        }
-        console.log(
-          `%c[cmd] /popularity: 使い方は cmd("/popularity tune <n>") / cmd("/popularity reset")`,
-          "color:#a55;font-weight:600",
-        );
-        return;
-      }
-
-      if (head === "/reset") {
-        const removed: string[] = [];
-        for (let i = localStorage.length - 1; i >= 0; i--) {
-          const key = localStorage.key(i);
-          if (key && key.startsWith(STORAGE_PREFIX)) {
-            localStorage.removeItem(key);
-            removed.push(key);
-          }
-        }
-        setGachaMode(true);
-        setSeasonVisible(false);
-        setDebugMode(false);
-        setAnimDisabled(false);
-        setExtendedCount(false);
-        setPopularThreshold(DEFAULT_POPULAR_THRESHOLD);
-        console.group(
-          "%c[cmd] /reset — localStorage を初期化しました",
-          "color:#7aa;font-weight:700",
-        );
-        if (removed.length === 0) {
-          console.log("  (削除されたキーはありません)");
-        } else {
-          removed.forEach((k) => console.log(`  removed: ${k}`));
-        }
-        console.log(
-          "%c  反映が不完全な場合はページをリロードしてください",
-          "color:#999;font-style:italic",
-        );
-        console.groupEnd();
-        return;
-      }
-
-      console.log(
-        `%c[cmd] unknown command: %c${input}\n%cTry: cmd("/help")`,
-        "color:#a55;font-weight:600",
-        "color:inherit",
-        "color:#999;font-style:italic",
-      );
-    };
-
-    window.cmd = handler;
-    return () => {
-      if (window.cmd === handler) delete window.cmd;
-    };
-  }, []);
 
   const handleSubmit = async (params: SearchParams) => {
     setLoading(true);
@@ -477,7 +213,10 @@ export default function Home() {
     if (params.yearFrom != null) sp.set("yearFrom", String(params.yearFrom));
     if (params.yearTo != null) sp.set("yearTo", String(params.yearTo));
     for (const s of params.seasons) sp.append("seasons", s);
-    sp.set("count", String(params.count));
+    // 除外後も指定件数を確保できるよう多めに取得する（API 上限 100）。
+    // 除外リストはサーバーに送らず、受信後にクライアント側でフィルタする。
+    const requestCount = Math.min(params.count * 3, 100);
+    sp.set("count", String(requestCount));
     sp.set("popularity", params.popularity);
     if (
       params.popularity === "popular" &&
@@ -524,6 +263,27 @@ export default function Home() {
       if (debug) console.log("raw:", data);
       const works = data.works as AnnictWork[];
 
+      const excluded = excludedIdsOf(collectionRef.current);
+      const { picked, excludedCount } = pickAfterExclusion(
+        works,
+        excluded,
+        params.count,
+      );
+      if (picked.length > 0) {
+        setCollection((prev) => recordDraws(prev, picked));
+      }
+      if (excludedCount > 0 && picked.length < params.count) {
+        // 多め取得してもなお不足した場合、原因が除外なのか
+        // 「条件に合う作品自体が少ない」のかで文言を分ける
+        toast.info(
+          picked.length === 0
+            ? "条件に合う作品はすべて除外中でした（図鑑から解除できます）"
+            : works.length >= params.count
+              ? `除外中の作品を除いたため ${picked.length} 件のみの表示になりました`
+              : `条件に合う作品が少なく ${picked.length} 件のみの表示になりました`,
+        );
+      }
+
       if (debug && Array.isArray(works)) {
         console.group(`works (${works.length}件) — rarity 判定`);
         works.forEach((w) => {
@@ -536,19 +296,22 @@ export default function Home() {
         console.groupEnd();
       }
 
-      if (works.length === 0) {
-        setResults(works);
+      if (picked.length === 0) {
+        setEmptyReason(excludedCount > 0 ? "excluded" : "no-match");
+        setResults(picked);
         setResultsVersion((v) => v + 1);
-        toast.info("条件に合うアニメが見つかりませんでした");
+        if (excludedCount === 0) {
+          toast.info("条件に合うアニメが見つかりませんでした");
+        }
       } else if (
         gachaModeRef.current &&
         !animDisabledRef.current &&
-        works.length <= 10
+        picked.length <= 10
       ) {
         setResults(null);
-        setPendingWorks(works);
+        setPendingWorks(picked);
       } else {
-        setResults(works);
+        setResults(picked);
         setResultsVersion((v) => v + 1);
         setShowResultsPanel(true);
       }
@@ -564,6 +327,17 @@ export default function Home() {
     }
   };
 
+  // memo 化した AnimeCard に渡すため useCallback で安定化する
+  const handleStatusChange = useCallback(
+    (annictId: number, next: CollectionStatus) => {
+      const known = markStatus(annictId, next);
+      if (next !== "none" && known) {
+        toast.info("以後の抽選から除外します（図鑑から戻せます）");
+      }
+    },
+    [markStatus],
+  );
+
   const handleSequenceClose = () => {
     if (pendingWorks) {
       setResults(pendingWorks);
@@ -573,9 +347,11 @@ export default function Home() {
     setPendingWorks(null);
   };
 
+  // 下余白 pb-20（lg 未満のみ）は、右下固定の「トップへ戻る」ボタンが
+  // 最下部カードの「観た / 興味なし」ボタンに重ならないようにするための確保分
   return (
     <div
-      className="page-root flex flex-col flex-1 items-center px-4 py-5 sm:py-8"
+      className="page-root flex flex-col flex-1 items-center px-4 py-5 pb-20 sm:py-8 sm:pb-20 lg:pb-8"
       style={!mounted ? { visibility: "hidden" } : undefined}
     >
       <main
@@ -597,27 +373,49 @@ export default function Home() {
                 アニメルーレット
               </h1>
             )}
-            <div
-              className="mode-toggle"
-              role="group"
-              aria-label="モード切り替え"
-            >
-              <button
-                type="button"
-                className={`mode-toggle-btn${!gachaMode ? " is-active" : ""}`}
-                onClick={() => setGachaMode(false)}
-                aria-pressed={!gachaMode}
+            <div className="flex items-center gap-2">
+              <Link
+                href="/collection"
+                aria-label={
+                  mounted && Object.keys(collection.entries).length > 0
+                    ? `図鑑（${Object.keys(collection.entries).length}件収集済み）`
+                    : undefined
+                }
+                className="hidden items-center gap-1 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:inline-flex"
               >
-                簡易
-              </button>
-              <button
-                type="button"
-                className={`mode-toggle-btn${gachaMode ? " is-active" : ""}`}
-                onClick={() => setGachaMode(true)}
-                aria-pressed={gachaMode}
+                <BookMarked className="size-3.5" aria-hidden />
+                図鑑
+                {mounted && Object.keys(collection.entries).length > 0 && (
+                  <span
+                    aria-hidden
+                    className="rounded-full bg-primary/10 px-1.5 text-[10px] font-semibold text-primary"
+                  >
+                    {Object.keys(collection.entries).length}
+                  </span>
+                )}
+              </Link>
+              <div
+                className="mode-toggle"
+                role="group"
+                aria-label="モード切り替え"
               >
-                ガチャ
-              </button>
+                <button
+                  type="button"
+                  className={`mode-toggle-btn${!gachaMode ? " is-active" : ""}`}
+                  onClick={() => setGachaMode(false)}
+                  aria-pressed={!gachaMode}
+                >
+                  簡易
+                </button>
+                <button
+                  type="button"
+                  className={`mode-toggle-btn${gachaMode ? " is-active" : ""}`}
+                  onClick={() => setGachaMode(true)}
+                  aria-pressed={gachaMode}
+                >
+                  ガチャ
+                </button>
+              </div>
             </div>
           </div>
         </header>
@@ -693,9 +491,8 @@ export default function Home() {
                   )
                 }
                 className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                aria-label="結果一覧を X でシェア"
               >
-                <Share2 className="size-3.5" aria-hidden />
+                <XLogo className="size-3" />
                 結果をシェア
               </button>
             )}
@@ -708,7 +505,20 @@ export default function Home() {
             </div>
           ) : results && results.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              条件に合うアニメが見つかりませんでした。
+              {emptyReason === "excluded" ? (
+                <>
+                  条件に合う作品はすべて除外中でした。
+                  <Link
+                    href="/collection"
+                    className="text-primary hover:underline"
+                  >
+                    図鑑
+                  </Link>
+                  から解除できます。
+                </>
+              ) : (
+                "条件に合うアニメが見つかりませんでした。"
+              )}
             </p>
           ) : results && results.length > 0 ? (
             <div
@@ -720,6 +530,8 @@ export default function Home() {
                   key={work.annictId}
                   work={work}
                   gachaMode={gachaMode}
+                  status={collection.entries[String(work.annictId)]?.status ?? "none"}
+                  onStatusChange={handleStatusChange}
                 />
               ))}
             </div>
@@ -729,6 +541,23 @@ export default function Home() {
       {pendingWorks && (
         <GachaSequence works={pendingWorks} onClose={handleSequenceClose} />
       )}
+      {/* スマホ用（640px 未満）：ヘッダーから退避した図鑑リンク */}
+      <Link
+        href="/collection"
+        className="collection-fab"
+        aria-label={
+          mounted && Object.keys(collection.entries).length > 0
+            ? `図鑑（${Object.keys(collection.entries).length}件収集済み）`
+            : "図鑑"
+        }
+      >
+        <BookMarked aria-hidden />
+        {mounted && Object.keys(collection.entries).length > 0 && (
+          <span className="collection-fab-badge" aria-hidden>
+            {Object.keys(collection.entries).length}
+          </span>
+        )}
+      </Link>
       {results && results.length > 0 && showScrollTop && (
         <button
           type="button"
