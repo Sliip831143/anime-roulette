@@ -108,12 +108,34 @@
   ひとつのツイートに整形。X 仕様の文字数（CJK 2 カウント・URL 23 固定 / 280 上限）を
   厳密にカウントし、超過分は末尾から削って「…他N件」に省略。シェア URL は `?from=x` で
   X 側の OGP キャッシュをバスト
+- **「観た / 興味なし」トグル**: 結果カード・詳細ダイアログから直接マークでき、
+  以後の抽選から除外される（詳細は次の「図鑑と抽選除外」）
+
+### 図鑑と抽選除外（ローカル完結）
+- ガチャ結果に表示された作品を **localStorage に自動記録**。視聴状態はサーバーに一切
+  送信しない（ログイン不要・ローカル完結の思想）。初回入手時のレアリティ等を
+  スナップショットとして保持し、かぶり時は入手回数のみ加算
+- **「観た / 興味なし」マークで以後の抽選から除外**。除外リストはサーバーへ送らず、
+  多め取得（指定件数×3、API 上限 100）した結果をクライアント側でフィルタ。
+  除外の影響で件数が不足した場合は原因別（除外起因／候補自体が少ない）のトーストで案内し、
+  全件除外時は結果エリアに図鑑への導線を常設表示
+- **図鑑ページ（`/collection`）**: 収集数・レアリティ内訳・「観た」数・「通算N連」の統計、
+  フィルタ（レアリティ / 観た / 興味なし）と並び順（新しい順 / 古い順 / レアリティ順）、
+  無限スクロール（24件ずつ描画、IntersectionObserver で先読み）
+- **リセット**: 「観た」の一括解除（記録は残る）と図鑑の全削除。どちらもテーマに合わせた
+  自前の確認ダイアログ（`role="alertdialog"`、初期フォーカスはキャンセル、破壊的操作のみ
+  destructive 色）で誤操作を防止
+- 図鑑へはヘッダーのリンク（640px 以上）またはスマホ用の左下固定ボタンから遷移。
+  どちらも収集数バッジ付き。星色や No image 表示はトップページのモード（ガチャ／簡易）に追従
+- 保存はトグル連打を考慮した **300ms デバウンス**（ページ離脱・遷移時は即時フラッシュ）。
+  破損・改ざんデータは読み込み時にエントリ単位で検証して黙って捨てる（正常分は温存）
 
 ### エラー体験
 - React **Error Boundary**（`app/error.tsx`）で予期しないエラーを捕捉し、「もう一度試す」「トップへ戻る」を提示
 - **オフライン検知**（`navigator.onLine` + online/offline イベント）で接続喪失を toast 通知
 - API 取得失敗時は結果セクション上部に **「もう一度引く」リトライ UI** を表示（直前の検索条件を保持）
 - **上流エラーの詳細はマスキング**: Annict API 由来のエラー（GraphQL クエリ全文等を含む）はサーバーログにのみ記録し、ユーザーには「アニメ情報の取得に失敗しました…」等の汎用メッセージのみ表示
+- **図鑑の保存失敗**（容量超過・ストレージ無効等）はアプリ本体を止めず、`console.warn` ＋初回のみのトーストで通知。localStorage へのアクセス自体が例外を投げる環境（Cookie 全ブロック等）でも設定読み書きは安全にフォールバック
 
 ### レスポンシブ
 - スマホ（〜768px）: ガチャ演出のアニメ情報画面はシングルカラム（タイトル → サムネ → 申請書 → リンクの順）
@@ -134,7 +156,7 @@
 | `cmd("/anim")` | ガチャ演出の ON/OFF 切替（OFF で即結果表示） |
 | `cmd("/max")` | 取得件数 UI を Slider ⇔ 数値入力で切替（1〜50件） |
 | `cmd("/popularity tune <n>")` | 「人気のみ」の視聴登録閾値をカスタマイズ |
-| `cmd("/reset")` | localStorage の全設定を初期化 |
+| `cmd("/reset")` | 設定を初期化（蓄積資産の図鑑は保持。`cmd("/reset all")` で図鑑データも削除） |
 
 ページロード時にコンソールに案内が自動出力されます。
 
@@ -149,7 +171,7 @@
 - **sonner**（トースト）
 - **next/font**（Zen Maru Gothic / Geist / Geist Mono）
 - **@vercel/analytics** + **@vercel/speed-insights**
-- **Vitest**（単体テスト）
+- **Vitest** + **Testing Library**（単体テスト。フックのテストのみ jsdom 環境）
 - **sharp**（画像変換スクリプト用、devDependency）
 - **pnpm**（パッケージマネージャ）
 
@@ -173,7 +195,9 @@
 - **キーボードフォーカスリングの統一**: 全フォーム部品（input / checkbox / radio / slider / 送信ボタン）に同一トーンの薄青リング（簡易モードはグレー）を `:focus-visible` / `:focus-within` で適用
 - **カーソル統一**: 送信ボタン・スライダー thumb・結果バッジの ×ボタンなど操作可能要素はすべて `cursor: pointer` に揃え、Base UI の隠し input が UA stylesheet で `cursor:default` を上書きする問題にも対処
 - **結果カードのキーボード操作**: `role="button"` + `tabIndex={0}` で Tab フォーカス可能化、Enter / Space で詳細ダイアログを開く。ダイアログは `role="dialog"` + `aria-modal="true"` でセマンティクスを明示し、Esc で閉じる
-- **フォーカストラップ**（`use-focus-trap.ts`）: 詳細ダイアログ・画像プレビュー・ガチャ演出の表示中は Tab / Shift+Tab をモーダル内で循環させ、クローズ時は開く前の要素へフォーカスを復帰
+- **フォーカストラップ**（`use-focus-trap.ts`）: 詳細ダイアログ・画像プレビュー・ガチャ演出・確認ダイアログの表示中は Tab / Shift+Tab をモーダル内で循環させ、クローズ時は開く前の要素へフォーカスを復帰
+- **図鑑のフォーカス管理**: 「観た / 興味なし」フィルタ表示中に状態トグルでカードが消えた場合、フォーカスが body に落ちないよう現在のフィルタチップへ退避。無限スクロールの進行は `aria-live` でスクリーンリーダーへ通知し、レアリティは ★ 記号の記号読みを避けて sr-only の数値表現（「レアリティ3」等）で補完
+- **リセット確認ダイアログ**: `role="alertdialog"` ＋初期フォーカスをキャンセルボタンに置き、開いた直後の Enter で破壊的操作が実行されない設計
 
 ---
 
@@ -181,7 +205,8 @@
 
 - **入力バリデーション**: API の全クエリを zod で検証。放送年はデータが存在する 1991〜現在年にサーバー側でクランプし、任意の年範囲指定によるキャッシュキーの組み合わせ爆発（キャッシュミス誘発 → Annict への大量フェッチ）を防止
 - **エラーマスキング**: 上流（Annict GraphQL）のエラー詳細はサーバーログのみに記録し、クライアントには汎用メッセージを返す
-- **外部 URL の無害化**（`src/lib/safe-url.ts`）: Annict 由来の `officialSiteUrl` / `wikipediaUrl` は http/https スキームのみ許可してから `<a href>` に渡す
+- **外部 URL の無害化**（`src/lib/safe-url.ts`）: Annict 由来の `officialSiteUrl` / `wikipediaUrl` は http/https スキームのみ許可してから `<a href>` に渡す。図鑑（localStorage）由来の `imageUrl` も読み込み時に同じ無害化を適用
+- **localStorage データの検証**: 図鑑データは読み込み時にエントリ単位で型・値域を検証し（レアリティ / 状態の許容値、数値の有限性、季節・メディアの enum）、破損・改ざんエントリは黙って捨てて正常分のみ温存する
 - **シェアページのなりすまし対策**: `/share` と `/api/og` はタイトル・レアリティを URL クエリから受け取らず、`id`（数値のみ許可）から Annict の実データをサーバー側で取得して表示する。旧形式 URL の `title` / `rarity` パラメータは無視される
 - **セキュリティヘッダ**（`next.config.ts`）: `X-Content-Type-Options: nosniff` / `Referrer-Policy` / `Permissions-Policy` / `X-Frame-Options: DENY` + `CSP frame-ancestors 'none'`（クリックジャッキング対策）を全ルートに付与
 - **シークレット管理**: `ANNICT_TOKEN` はサーバー専用（Route Handler 内でのみ参照）。`.env*` は gitignore 済み
@@ -203,6 +228,7 @@
 - **動的 OGP**: `app/api/og/route.tsx`（Edge runtime + `next/og`）で「○○が出ました」シェア画像を動的生成。`/share?id=…` から参照。**タイトル・レアリティは URL クエリで受け取らず、id から Annict の実データをサーバー側で取得**する（任意文言のなりすまし画像・ページ生成への対策。id が無効なら既定文言にフォールバック）。レアリティ別の色（★1 青 / ★2 黄 / ★3 ピンク紫）の SVG 星アイコンを描画
 - **JSON-LD 構造化データ**: WebApplication / **FAQPage** / **HowTo** schema の 3 種を `<head>` に注入。リッチリザルトテストで FAQ が「有効なアイテム」として検出済み
 - `src/app/sitemap.ts` / `robots.ts` で `/sitemap.xml` / `/robots.txt` を自動配信
+- 図鑑ページ（`/collection`）は個人のローカルデータのため `robots: noindex` を指定
 - **Google Search Console** に登録済み（meta verification + sitemap 送信）
 
 ---
@@ -254,10 +280,11 @@ src/
 │   ├── api/anime/[id]/route.ts   # 単一作品の詳細取得 API（モーダル表示用）
 │   ├── api/og/route.tsx          # 動的 OGP 画像生成（next/og + Edge runtime）
 │   ├── share/page.tsx            # シェアランディング（generateMetadata で動的 OGP）
+│   ├── collection/page.tsx       # 図鑑ページ（robots: noindex、実体は collection-view.tsx）
 │   ├── error.tsx                 # Error Boundary（リトライ / トップへ戻る）
-│   ├── globals.css               # Tailwind + ガチャモード・演出・レスポンシブ用 CSS
-│   ├── layout.tsx                # metadata / JSON-LD（WebApplication / FAQ / HowTo） / prefetch / FOUC 抑制
-│   ├── page.tsx                  # メイン画面 + 隠しコマンドハンドラ + オフライン検知 + リトライ UI
+│   ├── globals.css               # Tailwind + ガチャモード・演出・図鑑 FAB・レスポンシブ用 CSS
+│   ├── layout.tsx                # metadata / JSON-LD（WebApplication / FAQ / HowTo） / prefetch / FOUC 抑制 / 隠しコマンド登録
+│   ├── page.tsx                  # メイン画面 + オフライン検知 + リトライ UI + 図鑑記録・抽選除外
 │   ├── manifest.ts               # PWA manifest（自動配信）
 │   ├── sitemap.ts                # /sitemap.xml（自動配信）
 │   ├── robots.ts                 # /robots.txt（自動配信）
@@ -267,9 +294,15 @@ src/
 │   └── twitter-image.png         # Twitter Card 画像（静的フォールバック）
 ├── components/
 │   ├── search-form.tsx           # 検索フォーム（PC md 以上で2カラム配置）
-│   ├── anime-card.tsx            # 結果カード（モード別デザイン、クリックで詳細ダイアログ）
+│   ├── anime-card.tsx            # 結果カード（モード別デザイン、クリックで詳細ダイアログ、観た/興味なし）
 │   ├── anime-detail-dialog.tsx   # 結果カード詳細モーダル（Portal + Esc クローズ、外部リンク集約）
+│   ├── collection-view.tsx       # 図鑑画面本体（統計 / フィルタ / 無限スクロール / リセット）
+│   ├── status-buttons.tsx        # 「観た / 興味なし」トグル（結果カード・詳細・図鑑で共用）
+│   ├── confirm-dialog.tsx        # テーマ準拠の確認ダイアログ（alertdialog、初期フォーカス=キャンセル）
+│   ├── console-cmd.tsx           # DevTools 隠しコマンド window.cmd の登録（layout でマウント）
 │   ├── gacha-sequence.tsx        # ガチャ演出のフルスクリーンオーバーレイ（intro〜reveal〜closing）
+│   ├── no-image-icon.tsx         # No image プレースホルダ共通アイコン（結果カード・図鑑で共用）
+│   ├── x-logo.tsx                # X（旧 Twitter）公式ロゴ SVG（currentColor 追従）
 │   ├── use-focus-trap.ts         # モーダル用フォーカストラップ（Tab 循環 + クローズ時フォーカス復帰）
 │   ├── sw-register.tsx           # 旧 Service Worker の登録解除 + caches 削除（廃止後のクリーンアップ用）
 │   └── ui/                       # shadcn/ui プリミティブ
@@ -279,6 +312,11 @@ src/
     ├── seasons.test.ts           # seasons 展開・未来判定の境界値・順序保持テスト
     ├── rarity.ts                 # レアリティ判定（watchersCount + satisfactionRate）
     ├── rarity.test.ts            # レアリティ判定の単体テスト（100% カバー）
+    ├── collection.ts             # 図鑑のデータモデルと純粋関数（記録 / 状態 / 除外 / 統計 / 検証）
+    ├── collection.test.ts        # 図鑑純粋関数と loadCollection の破損データ検証テスト
+    ├── use-collection.ts         # 図鑑の React state + localStorage 永続化フック（デバウンス保存）
+    ├── use-collection.test.ts    # 永続化フックのテスト（jsdom。保存 / flush / 再読込）
+    ├── settings.ts               # UI 設定の localStorage キー + 安全な読み書きヘルパ
     ├── share.ts                  # X (Twitter) シェア URL ビルダー（個別 + 一括、X カウント仕様準拠）
     ├── share.test.ts             # 一括シェアテキスト生成の境界値・X カウント・省略ロジックのテスト
     ├── format.ts                 # 表示フォーマッタ集約（満足度正規化 / 季節・メディアのラベル）
@@ -286,7 +324,7 @@ src/
     ├── safe-url.test.ts          # URL 無害化の境界値テスト（javascript: / data: / 相対 URL 等）
     ├── site.ts                   # 本番 URL（SITE_URL / SITE_HOST）の一元管理
     ├── gacha-test-fixture.ts     # 開発用ガチャ演出デモ（?gachatest=1）のモック★3作品
-    └── utils.ts                  # cn ヘルパ
+    └── utils.ts                  # cn / isInteractiveElementClick ヘルパ
 
 public/
 ├── logo.png                      # メインロゴ
@@ -364,11 +402,14 @@ CLAUDE.md                         # プロジェクト固有の Claude 指示（
 
 [Vitest](https://vitest.dev/) による単体テストを整備。
 
-### カバー対象（4 ファイル / 計 65 ケース）
+### カバー対象（7 ファイル / 計 117 ケース）
 - **`src/lib/rarity.test.ts`**: レアリティ判定（`getRarity`）の境界値テスト（16 ケース、100% カバー）
 - **`src/lib/seasons.test.ts`**: 年→seasons 展開 (`expandSeasons`) / 未来放送予定の判定 (`isWorkFutureSeason`) / `isSeason` の境界・順序保持・エラー系
 - **`src/app/api/anime/schema.test.ts`**: API route の zod スキーマ（querySchema）の正常・異常系。デフォルト値、年範囲、count 上下限、enum 検証、`highRated` の boolean 変換まで
 - **`src/lib/share.test.ts`**: 一括シェアテキスト (`buildBatchTweetText`) の境界値。X 仕様のカウント（CJK 2 / URL 23 / 上限 280）、超過時の「…他N件」省略、ヘッダー/フッター整形を保証
+- **`src/lib/safe-url.test.ts`**: 外部 URL 無害化の境界値（`javascript:` / `data:` / 相対 URL 等の拒否）
+- **`src/lib/collection.test.ts`**: 図鑑の純粋関数（記録・状態設定・除外・統計）と `loadCollection` の破損データ検証（不正エントリの黙殺、`imageUrl` 無害化、`totalDraws` フォールバック）
+- **`src/lib/use-collection.test.ts`**: 図鑑永続化フック（jsdom 環境）。デバウンス保存、pagehide / アンマウント時の即時フラッシュ、外部書き換え検知時の再読込と未保存分破棄、保存失敗時の一度きりトースト
 
 ### 実行
 
