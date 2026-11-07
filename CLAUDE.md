@@ -24,6 +24,14 @@ pnpm test:run
 
 ### Annict GraphQL API の落とし穴
 
+- **公式ドキュメントは Wikino に移転済み**（旧 `developers.annict.com` は 2026-09 に閉鎖、404）。
+  開発者向けヘルプ: <https://wikino.app/s/annict/topics/5>（GraphQL リファレンス / レート制限 / リリースノート）。
+  API 利用規約: <https://annict.com/terms/api>（2026-11-25 施行。作品情報の画面表示・サーバー側キャッシュは可、
+  取得データのまとまった形での公開・再配布は不可）。
+- **レート制限はトークン + 接続元 IP ごとに 600 リクエスト/分**（2026-10-25〜）。GraphQL は 1 リクエスト = 1 件。
+  超過時は 429 + `Retry-After`。`src/lib/annict-rate-limit.ts` が短時間なら待って 1 回再試行し、駄目なら
+  `AnnictRateLimitError` を投げて Route Handler が 429 を返す。`User-Agent` にアプリ名と連絡先を入れている
+  （`src/lib/annict.ts` の `ANNICT_USER_AGENT`）。
 - **年・年範囲フィルタは存在しない。** `seasons: [String!]`（例 `"2024-spring"`）のみ。
   年×季節をクライアント側で展開する（`src/lib/seasons.ts`）。
 - `WorkOrderField` は `WATCHERS_COUNT` / `SEASON` / `CREATED_AT` の 3 種のみ。「人気」は `WATCHERS_COUNT DESC` で代用。

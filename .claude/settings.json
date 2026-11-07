@@ -22,7 +22,8 @@
       "Bash(git rev-list *)",
       "Bash(git config *)",
       "WebSearch",
-      "WebFetch(domain:developers.annict.com)"
+      "WebFetch(domain:wikino.app)",
+      "WebFetch(domain:annict.com)"
     ]
   },
   "hooks": {
