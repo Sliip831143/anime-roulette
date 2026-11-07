@@ -138,6 +138,7 @@
 - **オフライン検知**（`navigator.onLine` + online/offline イベント）で接続喪失を toast 通知
 - API 取得失敗時は結果セクション上部に **「もう一度引く」リトライ UI** を表示（直前の検索条件を保持）
 - **上流エラーの詳細はマスキング**: Annict API 由来のエラー（GraphQL クエリ全文等を含む）はサーバーログにのみ記録し、ユーザーには「アニメ情報の取得に失敗しました…」等の汎用メッセージのみ表示
+- **Annict のレート制限（429）に追随**（`src/lib/annict-rate-limit.ts`）: `Retry-After` が短時間（10 秒以内）なら待って 1 回だけ再試行し、それでも解消しなければ 502 ではなく **429 + `Retry-After`** を返して「Annict が混み合っています」と案内する。Route Handler の 40 秒制限内で 13 ページ取得を完走させるため、長い待ちは諦めて早期に返す設計
 - **図鑑の保存失敗**（容量超過・ストレージ無効等）はアプリ本体を止めず、`console.warn` ＋初回のみのトーストで通知。localStorage へのアクセス自体が例外を投げる環境（Cookie 全ブロック等）でも設定読み書きは安全にフォールバック
 
 ### レスポンシブ
@@ -311,6 +312,8 @@ src/
 │   └── ui/                       # shadcn/ui プリミティブ
 └── lib/
     ├── annict.ts                 # GraphQL クライアント / クエリ / ページネーション
+    ├── annict-rate-limit.ts      # Annict レート制限（429）の Retry-After 解釈・短時間待機再試行・専用エラー
+    ├── annict-rate-limit.test.ts # Retry-After の解釈（秒数 / HTTP-date / 不正値）と再試行方針のテスト
     ├── seasons.ts                # 年→seasons 配列の展開 + 未来放送予定の判定（isWorkFutureSeason）
     ├── seasons.test.ts           # seasons 展開・未来判定の境界値・順序保持テスト
     ├── rarity.ts                 # レアリティ判定（watchersCount + satisfactionRate）
@@ -361,6 +364,9 @@ CLAUDE.md                         # プロジェクト固有の Claude 指示（
 
 ### Annict API の制約と対処
 
+- **公式ドキュメントは Wikino に移転**（旧 `developers.annict.com` は 2026 年 9 月に閉鎖）: [開発者向けヘルプ](https://wikino.app/s/annict/topics/5) / [API 利用規約](https://annict.com/terms/api)（2026-11-25 施行。作品情報の画面表示とサーバー側キャッシュは可、取得データのまとまった形での公開・再配布は不可）
+- **レート制限**（2026-10-25〜）: アクセストークン + 接続元 IP ごとに 600 リクエスト/分（GraphQL は 1 リクエスト = 1 件）。本アプリのプール取得は最大 13 リクエスト/キーなので余裕があるが、超過時の 429 は `src/lib/annict-rate-limit.ts` で扱う（[エラー体験](#エラー体験)）。開発者向けヘルプの推奨に従い、`User-Agent` にアプリ名とサイト URL・リポジトリ URL を入れて送信する
+
 - API には年単独・年範囲のフィルタが存在せず `seasons: [String!]`（例 `"2024-spring"`）のみ。クライアント側で年×季節を展開して送る（`src/lib/seasons.ts`）
 - `WorkOrderField` は `WATCHERS_COUNT` / `SEASON` / `CREATED_AT` の3種のみ。「人気アニメ」は `WATCHERS_COUNT DESC` で代用
 - **`Work` に放送ステータス系のフィールドが存在しない**（`releasedOn` / `status` / `WorkState` などは無し）。Annict には放送開始前の作品も「予定」として登録されるため、放っておくとガチャに未来作品が混入する。対処として `seasonYear` / `seasonName` から season 開始月（spring=4 / summer=7 / autumn=10 / winter=1）を逆算してクライアント側で除外（`src/lib/seasons.ts` の `isWorkFutureSeason`）。年指定モードでは `expandSeasons` が未来 season をそもそも展開せず、全期間モード（年・季節とも未指定）では `applyFilters` が作品単位で除外する。なお `seasons` を明示指定した場合はユーザー意図を尊重して未来でも展開する
@@ -405,13 +411,14 @@ CLAUDE.md                         # プロジェクト固有の Claude 指示（
 
 [Vitest](https://vitest.dev/) による単体テストを整備。
 
-### カバー対象（7 ファイル / 計 117 ケース）
+### カバー対象（8 ファイル / 計 129 ケース）
 - **`src/lib/rarity.test.ts`**: レアリティ判定（`getRarity`）の境界値テスト（16 ケース、100% カバー）
 - **`src/lib/seasons.test.ts`**: 年→seasons 展開 (`expandSeasons`) / 未来放送予定の判定 (`isWorkFutureSeason`) / `isSeason` の境界・順序保持・エラー系
 - **`src/app/api/anime/schema.test.ts`**: API route の zod スキーマ（querySchema）の正常・異常系。デフォルト値、年範囲、count 上下限、enum 検証、`highRated` の boolean 変換まで
 - **`src/lib/share.test.ts`**: 一括シェアテキスト (`buildBatchTweetText`) の境界値。X 仕様のカウント（CJK 2 / URL 23 / 上限 280）、超過時の「…他N件」省略、ヘッダー/フッター整形を保証
 - **`src/lib/safe-url.test.ts`**: 外部 URL 無害化の境界値（`javascript:` / `data:` / 相対 URL 等の拒否）
 - **`src/lib/collection.test.ts`**: 図鑑の純粋関数（記録・状態設定・除外・統計）と `loadCollection` の破損データ検証（不正エントリの黙殺、`imageUrl` 無害化、`totalDraws` フォールバック）
+- **`src/lib/annict-rate-limit.test.ts`**: Annict レート制限対応。`Retry-After` の解釈（整数秒 / HTTP-date / 不正値）、上限内なら待って 1 回だけ再試行、上限超過・ヘッダ無し・再試行失敗時は `AnnictRateLimitError`、429 以外は素通し
 - **`src/lib/use-collection.test.ts`**: 図鑑永続化フック（jsdom 環境）。デバウンス保存、pagehide / アンマウント時の即時フラッシュ、外部書き換え検知時の再読込と未保存分破棄、保存失敗時の一度きりトースト
 
 ### 実行
