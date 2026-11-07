@@ -48,3 +48,10 @@ next-env.d.ts
 !.claude/settings.json
 !.claude/hooks/
 !.claude/hooks/**
+
+# superpowers（設計メモ・モックアップ。作業メモ扱いでコミットしない）
+docs/superpowers/
+.superpowers/
+
+# Next.js 16.4 が next dev 時に自動生成する（プロジェクトの指示書は CLAUDE.md）
+AGENTS.md
