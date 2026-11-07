@@ -1,6 +1,16 @@
-import { GraphQLClient, gql } from "graphql-request";
+import { GraphQLClient, gql, type Variables } from "graphql-request";
+import { withRateLimitRetry } from "./annict-rate-limit";
+import { SITE_URL } from "./site";
 
 const ANNICT_ENDPOINT = "https://api.annict.com/graphql";
+
+// Annict の開発者向けヘルプは、負荷が高くなったときに遮断の前に連絡できるよう
+// User-Agent にアプリ名と連絡先（サイト URL 等）を入れることを推奨している。
+const ANNICT_USER_AGENT = `anime-roulette (+${SITE_URL}; https://github.com/Sliip831143/anime-roulette)`;
+
+// 429 を受けたとき、この時間内に再試行できるなら待つ。Route Handler の maxDuration（40s）の
+// 中で 13 ページの逐次取得を完走させる必要があるため、長い待ちは諦めて 429 を返す方を選ぶ。
+const RATE_LIMIT_MAX_WAIT_MS = 10_000;
 
 // 検索フィルタで選択可能なメディア種別。
 // OTHER は Annict 側のラベルとしてデータ上は存在するが、選択肢には出さない。
@@ -72,7 +82,16 @@ function getClient(): GraphQLClient {
     throw new Error("ANNICT_TOKEN is not configured");
   }
   return new GraphQLClient(ANNICT_ENDPOINT, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "User-Agent": ANNICT_USER_AGENT,
+    },
+  });
+}
+
+function requestAnnict<T>(query: string, variables: Variables): Promise<T> {
+  return withRateLimitRetry(() => getClient().request<T>(query, variables), {
+    maxWaitMs: RATE_LIMIT_MAX_WAIT_MS,
   });
 }
 
@@ -117,7 +136,7 @@ async function searchAnimeWorksPage({
   if (seasons.length > 0) variables.seasons = seasons;
   if (after) variables.after = after;
 
-  const data = await getClient().request<SearchWorksResponse>(
+  const data = await requestAnnict<SearchWorksResponse>(
     SEARCH_WORKS_QUERY,
     variables,
   );
@@ -168,7 +187,7 @@ const WORK_SUMMARY_QUERY = gql`
 export async function getWorkSummary(
   annictId: number,
 ): Promise<AnnictWorkSummary | null> {
-  const data = await getClient().request<{
+  const data = await requestAnnict<{
     searchWorks: { nodes: AnnictWorkSummary[] };
   }>(WORK_SUMMARY_QUERY, { annictIds: [annictId] });
   return data.searchWorks.nodes[0] ?? null;
@@ -286,7 +305,7 @@ type WorkDetailResponse = {
 export async function getWorkDetail(
   annictId: number,
 ): Promise<AnnictWorkDetail | null> {
-  const data = await getClient().request<WorkDetailResponse>(
+  const data = await requestAnnict<WorkDetailResponse>(
     WORK_DETAIL_QUERY,
     { annictIds: [annictId] },
   );

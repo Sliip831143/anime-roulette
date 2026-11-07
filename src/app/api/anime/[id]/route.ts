@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { AnnictRateLimitError } from "@/lib/annict-rate-limit";
 import { z } from "zod";
 import { getWorkDetail } from "@/lib/annict";
 
@@ -32,6 +33,20 @@ export async function GET(
     // 上流エラーの詳細（GraphQL クエリ全文等）はサーバーログにのみ残し、
     // クライアントには汎用メッセージを返す（/api/anime と同方針）。
     console.error(`GET /api/anime/${parsed.data.id} failed:`, error);
+    if (error instanceof AnnictRateLimitError) {
+      // Annict のレート制限。待てば解消するので 502 ではなく 429 で返し、
+      // 分かる場合は Retry-After も透過してクライアントが待ち時間を判断できるようにする。
+      return NextResponse.json(
+        { error: "Annict が混み合っています。少し待ってからお試しください" },
+        {
+          status: 429,
+          headers:
+            error.retryAfterSeconds != null
+              ? { "Retry-After": String(error.retryAfterSeconds) }
+              : undefined,
+        },
+      );
+    }
     const isConfigError =
       error instanceof Error && error.message.includes("ANNICT_TOKEN");
     return NextResponse.json(
