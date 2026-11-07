@@ -31,6 +31,7 @@
 - [デプロイ（Vercel）](#デプロイvercel)
 - [計測（Analytics / CI）](#計測analytics--ci)
 - [開発体験（DX）](#開発体験dx)
+- [開発ガイド](#開発ガイド)
 - [Claude Code との協働](#claude-code-との協働)
 - [ライセンス](#ライセンス)
 
@@ -81,6 +82,8 @@
 | ★3 虹 | `watchersCount >= 22,000` または (`watchersCount >= 10,500` AND `satisfactionRate >= 83%`) | 虹色アクセント、結果カードの虹色発光、ガチャ画面背景もパープル／ピンク基調へ |
 | ★2 金 | `watchersCount >= 5,800`（虹に該当しない） | 金色アクセント、金光発光 |
 | ★1 青 | それ以外（大半） | 青色アクセント |
+
+閾値は抽選プール規模（`src/app/api/anime/route.ts` の `POOL_PAGES` = 13 ページ × 200 件 ≒ 2,600 件）に対して ★3 ≈ 2% / ★2 ≈ 10% になるよう実測で調整した値。**プール規模と閾値はセット**なので、`POOL_PAGES` を変えたら閾値も再調整し、`src/lib/rarity.ts`（判定＋doc コメント）/ `src/lib/rarity.test.ts` / 上記の表を揃えて更新する。
 
 > [!NOTE]
 > **レアリティはガチャ演出のための区分であり、作品を評価・格付けするものではありません。**
@@ -451,6 +454,76 @@ pnpm test:coverage  # カバレッジレポート生成 → coverage/index.html
 - **Husky + lint-staged**: pre-commit でステージしたファイルのみ `eslint --fix` を実行
 - **Dependabot**（`.github/dependabot.yml`）: npm 依存と GitHub Actions の週次自動 PR。マイナー/パッチはまとめて 1 PR
 - **`.editorconfig`** / **`.nvmrc`** / **`.vscode/{settings,extensions}.json`**: エディタ・Node バージョンを統一、保存時 ESLint 自動修正、推奨拡張を共有
+
+---
+
+## 開発ガイド
+
+久しぶりに触るときや初めて触る人が迷わないための、日常の開発手順をまとめる。
+
+### ブランチとコミット
+
+- `main` が本番。作業は `feature/<topic>` ブランチで行い、検証が通ったら `main` へマージする（履歴が意味単位に整理済みなら fast-forward、細切れコミットが残っていれば squash で整理してから）
+- マージ済みの feature ブランチはローカル・リモートとも削除する（`dependabot/*` は対象外）
+- 1 コミット = 1 つの意味のある変更単位。**コード変更と README 更新は別コミット**にする（コミットメッセージ例: 「README を現行実装に合わせて更新：○○を反映」）
+- コミットは **Sliip831143** アカウントで行う。`git config user.name` / `user.email` を事前に確認する（詳細は `CLAUDE.md`）
+- pre-commit（Husky + lint-staged）でステージ済み TS/JS に `eslint --fix` が走る。自動修正が入った場合は再度 `git add` が必要
+
+### 変更後のチェックリスト
+
+```bash
+pnpm lint
+pnpm typecheck
+pnpm test:run
+```
+
+この 3 つが green であることを確認してからコミットする（CI でも同じ 3 つが走る）。
+あわせて、差分が README の記載（機能 / 仕様値 / アーキテクチャ図）に影響しないかを確認し、ズレがあれば README を更新する。
+
+### ローカルでの E2E 検証
+
+dev サーバより `next start` の方がキャッシュ挙動（`unstable_cache` → `.next/cache`）が本番に近い。
+
+```bash
+pnpm build                       # 約 30 秒
+npx next start -p 3005           # 要 .env.local の ANNICT_TOKEN
+
+# 抽選 API（works / total / poolSize が返る）
+curl "http://localhost:3005/api/anime?count=3"
+curl "http://localhost:3005/api/anime?yearFrom=2005&yearTo=2005&count=2"
+
+# 詳細 API（4168 = SHIROBAKO）
+curl "http://localhost:3005/api/anime/4168"
+
+# シェアページ / OG 画像（id から実タイトルが入る。title / rarity クエリは無視される）
+curl "http://localhost:3005/share?id=4168"
+curl -o og.png "http://localhost:3005/api/og?id=4168"
+```
+
+- **プールキャッシュ**: 未キャッシュの seasons 組み合わせは Annict へ最大 13 ページ逐次フェッチするため初回は数秒〜数十秒。2 回目以降は Data Cache ヒットで数十 ms。`.next/cache` に永続するため、プロセス再起動後も速ければコールドスタート改善が効いている。未キャッシュ状態を作るには年範囲を変えるか `.next/cache` を削除する
+- **上流エラーパス**: `ANNICT_TOKEN=bogus npx next start -p 3006` で 502 ＋汎用メッセージ、`ANNICT_TOKEN= npx next start -p 3007` で 500 ＋設定エラーになる（詳細はマスクされる）。キャッシュ済みキーだと Annict に到達せず成功してしまうので、未キャッシュの年を使う
+- **バリデーション**: 年は 1991〜現在年。`yearFrom=1990` や未来年は 400
+- **ガチャ演出**: dev サーバで `/?gachatest=1` を開くとモック ★3 作品で演出を即再生できる（本番ビルドでは無効）
+- ポート 3000 を他プロジェクトの dev サーバが使っていることがあるため、検証は別ポートで行う
+
+### どこを触るか早見表
+
+| やりたいこと | 主に触るファイル |
+|---|---|
+| 検索フィルタの追加・変更 | `src/app/api/anime/schema.ts`（zod）→ `src/app/api/anime/route.ts`（`applyFilters`）→ `src/components/search-form.tsx` |
+| Annict から取るフィールドの変更 | `src/lib/annict.ts`（クエリ・型）。`roleOther` / `organizations` / `ratingsCount` は取らないこと（[制約](#annict-api-の制約と対処)） |
+| レアリティの条件 | `src/lib/rarity.ts` + `rarity.test.ts` + README の表（[レアリティ](#レアリティ)） |
+| ガチャ演出 | `src/components/gacha-sequence.tsx` + `src/app/globals.css` |
+| 結果カード / 詳細ダイアログ | `src/components/anime-card.tsx` / `anime-detail-dialog.tsx` |
+| 図鑑・抽選除外 | `src/lib/collection.ts`（純粋関数）/ `use-collection.ts`（永続化）/ `src/components/collection-view.tsx` |
+| シェア文言・OG 画像 | `src/lib/share.ts` / `src/app/share/page.tsx` / `src/app/api/og/route.tsx` |
+| 隠しコマンド | `src/components/console-cmd.tsx` |
+| メタ情報・JSON-LD | `src/app/layout.tsx` |
+
+### デプロイと依存更新
+
+- Vercel の GitHub 連携により、`main` への push で本番が自動デプロイされる。feature ブランチの push では Preview デプロイが作られる
+- Dependabot の PR は CI（lint / typecheck / test）が green なら取り込んでよい。メジャー更新（TypeScript 6 / `@types/node` 25 / GitHub Actions のメジャー等）は、ローカルで `pnpm install` 後に上記チェックリストと `pnpm build` を通してから判断する
 
 ---
 
