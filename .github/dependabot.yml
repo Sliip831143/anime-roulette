@@ -9,6 +9,10 @@ updates:
       time: "09:00"
       timezone: Asia/Tokyo
     open-pull-requests-limit: 5
+    ignore:
+      # @types/node は実行環境（.nvmrc の Node 22）に合わせて手動で上げる
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
     groups:
       # マイナー/パッチは1つの PR にまとめる
       minor-and-patch:
