@@ -1,9 +1,10 @@
 import { ImageResponse } from "next/og";
 import { getWorkSummary } from "@/lib/annict";
 import { getRarity, type Rarity } from "@/lib/rarity";
-import { SITE_HOST } from "@/lib/site";
+import { SITE_HOST, SITE_URL } from "@/lib/site";
 
-export const runtime = "edge";
+// Next.js 16.4 で Edge Runtime が非推奨になったため nodejs で動かす（ImageResponse は両対応）
+export const runtime = "nodejs";
 
 // next/og のデフォルトフォントは ★ (U+2605) をカバーしないため、星は SVG で描く
 const RARITY_COUNT: Record<Rarity, number> = { r1: 1, r2: 2, r3: 3 };
@@ -53,8 +54,10 @@ export async function GET(request: Request) {
   const starCount = RARITY_COUNT[rarity];
   const accent = RARITY_ACCENT[rarity];
   const title = rawTitle.length > 40 ? rawTitle.slice(0, 39) + "…" : rawTitle;
-  // dev は http://localhost:3000、prod は本番 origin から logo を読み込む
-  const logoUrl = new URL("/logo.png", request.url).toString();
+  // ロゴはリクエストの Host ではなく固定の本番 URL から読む。request.url 由来だと
+  // ローカル検証時に localhost となり next/og の SSRF 保護（プライベートアドレス拒否）で
+  // 画像生成ごと失敗するうえ、Host ヘッダ次第で取得先が変わる余地を残すため。
+  const logoUrl = new URL("/logo.png", SITE_URL).toString();
 
   return new ImageResponse(
     (

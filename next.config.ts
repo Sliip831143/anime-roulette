@@ -12,6 +12,9 @@ const nextConfig: NextConfig = {
   ...(allowedDevOrigins && allowedDevOrigins.length > 0
     ? { allowedDevOrigins }
     : {}),
+  // next/image は使っておらず（画像は <img> / <picture> で直接配信）、画像最適化 API（/_next/image）は
+  // 不要なのに到達可能な状態だった。過去に SVG / AVIF 処理経由の RCE が報告された攻撃面なので無効化する。
+  images: { unoptimized: true },
   async headers() {
     return [
       {

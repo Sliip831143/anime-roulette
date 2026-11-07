@@ -31,7 +31,9 @@ export default function ErrorBoundary({
           type="button"
           variant="outline"
           onClick={() => {
-            window.location.href = "/";
+            // 予期しないエラー後はクライアント側の状態を信用せず、絶対 URL でトップを読み直す
+            // （router.push だと壊れた状態のまま遷移し得る）
+            window.location.assign(new URL("/", window.location.origin).href);
           }}
         >
           トップへ戻る
