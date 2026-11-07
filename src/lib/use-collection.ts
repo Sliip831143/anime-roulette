@@ -8,6 +8,7 @@ import {
   loadCollection,
   saveCollection,
   setStatus,
+  setFavorite,
   type CollectionData,
   type CollectionStatus,
 } from "@/lib/collection";
@@ -113,7 +114,7 @@ export function useCollection() {
   }, [reload]);
 
   /**
-   * 「観た / 興味なし」を設定し、図鑑に記録済みの作品だったかを返す。
+   * 視聴状態（観た / 後で観る / 興味なし）を設定し、図鑑に記録済みの作品だったかを返す。
    * 未記録の作品（/reset all 直後の表示済みカード等）は setStatus が no-op に
    * なるため、呼び出し側は戻り値 false のとき成功トーストを出さない。
    */
@@ -126,5 +127,19 @@ export function useCollection() {
     [],
   );
 
-  return { collection, setCollection, loaded, collectionRef, markStatus };
+  /** お気に入りを設定する。markStatus と同じく記録済みかを返す（watched 以外は setFavorite 側で no-op）。 */
+  const markFavorite = useCallback((annictId: number, on: boolean): boolean => {
+    const known = collectionRef.current.entries[String(annictId)] != null;
+    setCollection((prev) => setFavorite(prev, annictId, on));
+    return known;
+  }, []);
+
+  return {
+    collection,
+    setCollection,
+    loaded,
+    collectionRef,
+    markStatus,
+    markFavorite,
+  };
 }

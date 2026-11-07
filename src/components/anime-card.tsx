@@ -8,6 +8,7 @@ import { getRarity, RARITY_LEVEL, RARITY_STARS } from "@/lib/rarity";
 import { AnimeDetailDialog } from "@/components/anime-detail-dialog";
 import { NoImageIcon } from "@/components/no-image-icon";
 import { StatusButtons } from "@/components/status-buttons";
+import { FavoriteButton } from "@/components/favorite-button";
 import type { CollectionStatus } from "@/lib/collection";
 import { isInteractiveElementClick } from "@/lib/utils";
 
@@ -24,17 +25,31 @@ export const AnimeCard = memo(function AnimeCard({
   gachaMode = true,
   status = "none",
   onStatusChange,
+  favorite = false,
+  onFavoriteChange,
 }: {
   work: AnnictWork;
   gachaMode?: boolean;
   status?: CollectionStatus;
   onStatusChange?: (annictId: number, next: CollectionStatus) => void;
+  favorite?: boolean;
+  onFavoriteChange?: (annictId: number, on: boolean) => void;
 }) {
   const rarity = getRarity(work.watchersCount, work.satisfactionRate);
   const satisfaction = formatSatisfaction(work.satisfactionRate);
   const [imageError, setImageError] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const hasImage = !!work.image?.recommendedImageUrl && !imageError;
+  // お気に入りは「観た」作品にだけ付く印。状態ボタンが出ないカードでは出さない
+  const showFavorite = status === "watched" && !!onFavoriteChange;
+  const favoriteButton = (className: string) =>
+    showFavorite ? (
+      <FavoriteButton
+        className={className}
+        favorite={favorite}
+        onChange={(on) => onFavoriteChange!(work.annictId, on)}
+      />
+    ) : null;
 
   const openFromCardClick = (e: React.MouseEvent) => {
     if (isInteractiveElementClick(e)) return;
@@ -56,8 +71,9 @@ export const AnimeCard = memo(function AnimeCard({
     <Card
       id={`work-${work.annictId}`}
       onClick={openFromCardClick}
-      className="cursor-pointer overflow-hidden p-0 scroll-mt-4 transition-shadow hover:shadow-md"
+      className="relative cursor-pointer overflow-hidden p-0 scroll-mt-4 transition-shadow hover:shadow-md"
     >
+      {favoriteButton("absolute top-2 right-2")}
       <div className="flex gap-4 p-4">
         <div className="shrink-0 w-24 h-36 rounded-md overflow-hidden bg-muted">
           {hasImage ? (
@@ -77,7 +93,7 @@ export const AnimeCard = memo(function AnimeCard({
           )}
         </div>
         <div className="flex-1 min-w-0 flex flex-col gap-2">
-          <h3 className="font-semibold leading-snug">
+          <h3 className="pr-8 font-semibold leading-snug">
             {titleButton("line-clamp-2 rounded-sm")}
           </h3>
           <p className="text-sm text-muted-foreground">{formatSeasonMedia(work)}</p>
@@ -111,6 +127,7 @@ export const AnimeCard = memo(function AnimeCard({
         <h3 className="gacha-card-title">
           {titleButton("rounded-sm")}
         </h3>
+        {favoriteButton("absolute right-3 top-1/2 -translate-y-1/2")}
       </div>
       <CardContent className="gacha-card-body p-0">
         {hasImage ? (
@@ -175,6 +192,12 @@ export const AnimeCard = memo(function AnimeCard({
           onStatusChange={
             onStatusChange
               ? (next) => onStatusChange(work.annictId, next)
+              : undefined
+          }
+          favorite={favorite}
+          onFavoriteChange={
+            onFavoriteChange
+              ? (on) => onFavoriteChange(work.annictId, on)
               : undefined
           }
           onClose={() => setDialogOpen(false)}

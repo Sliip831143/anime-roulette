@@ -11,6 +11,7 @@ import { getRarity } from "@/lib/rarity";
 import { safeHttpUrl } from "@/lib/safe-url";
 import { openTweetIntent } from "@/lib/share";
 import { StatusButtons } from "@/components/status-buttons";
+import { FavoriteButton } from "@/components/favorite-button";
 import type { CollectionStatus } from "@/lib/collection";
 
 function formatDate(iso: string | null): string | null {
@@ -30,6 +31,8 @@ type Props = {
   };
   status?: CollectionStatus;
   onStatusChange?: (next: CollectionStatus) => void;
+  favorite?: boolean;
+  onFavoriteChange?: (on: boolean) => void;
   onClose: () => void;
 };
 
@@ -38,6 +41,8 @@ export function AnimeDetailDialog({
   initial,
   status = "none",
   onStatusChange,
+  favorite = false,
+  onFavoriteChange,
   onClose,
 }: Props) {
   const [detail, setDetail] = useState<AnnictWorkDetail | null>(null);
@@ -346,10 +351,13 @@ export function AnimeDetailDialog({
                     #{work.twitterHashtag}
                   </a>
                 )}
-                {/* 「観た / 興味なし」とシェアは操作系としてまとめ、行末の同一グループに置く */}
+                {/* 視聴状態・お気に入り・シェアは操作系としてまとめ、行末の同一グループに置く */}
                 <span className="ml-auto inline-flex items-center gap-4">
                   {onStatusChange && (
                     <StatusButtons status={status} onChange={onStatusChange} />
+                  )}
+                  {status === "watched" && onFavoriteChange && (
+                    <FavoriteButton favorite={favorite} onChange={onFavoriteChange} />
                   )}
                   <button
                     type="button"

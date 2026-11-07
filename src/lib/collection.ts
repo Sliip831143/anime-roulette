@@ -6,14 +6,15 @@ import { safeHttpUrl } from "@/lib/safe-url";
  * ローカル図鑑（コレクション）のデータモデルと純粋関数。
  *
  * ガチャ結果に表示された作品を localStorage に自動記録し、
- * 「観た / 興味なし」マークで以後の抽選から除外する。
+ * 視聴状態「観た / 後で観る / 興味なし」のいずれかを付けた作品を以後の抽選から除外する。
+ * 「お気に入り」は「観た」作品にだけ重ねられる印（favorite ⇒ watched を不変条件とする）。
  * 視聴状態はサーバーに一切送らない（ログイン不要・ローカル完結の思想）。
  * 設計書: anime-roulette-md/2026-07-04-collection-exclusion/ 配下を参照。
  */
 
 export const COLLECTION_STORAGE_KEY = "anime-roulette-collection-v1";
 
-export type CollectionStatus = "none" | "watched" | "not_interested";
+export type CollectionStatus = "none" | "watched" | "later" | "not_interested";
 
 export type CollectionEntry = {
   annictId: number;
@@ -30,6 +31,8 @@ export type CollectionEntry = {
   lastDrawnAt: number;
   drawCount: number;
   status: CollectionStatus;
+  /** 「観た」作品にだけ付くお気に入り印。status が watched 以外のとき常に false */
+  favorite: boolean;
 };
 
 export type CollectionData = {
@@ -47,6 +50,7 @@ const VALID_RARITIES: ReadonlySet<string> = new Set(["r1", "r2", "r3"]);
 const VALID_STATUSES: ReadonlySet<string> = new Set([
   "none",
   "watched",
+  "later",
   "not_interested",
 ]);
 const VALID_SEASON_NAMES: ReadonlySet<string> = new Set([
@@ -72,8 +76,11 @@ function isFiniteNumber(value: unknown): value is number {
  * localStorage 由来のエントリを 1 件ずつ検証する。
  * 破損した 1 件で図鑑ページ・抽選除外の全体が落ちないよう、
  * 不正なエントリは読み込み時に黙って捨てる（正常な残りは温存）。
+ * favorite は後から追加した項目のため欠落・不正を許し、loadCollection 側で正規化する。
  */
-function isValidEntry(value: unknown): value is CollectionEntry {
+function isValidEntry(
+  value: unknown,
+): value is Omit<CollectionEntry, "favorite"> & { favorite?: unknown } {
   if (typeof value !== "object" || value == null) return false;
   const e = value as Record<string, unknown>;
   return (
@@ -118,6 +125,8 @@ export function loadCollection(): CollectionData {
       entries[String(value.annictId)] = {
         ...value,
         imageUrl: safeHttpUrl(value.imageUrl),
+        // 旧データ（favorite 無し）や不変条件違反（watched 以外で true）は false に寄せる
+        favorite: value.status === "watched" && value.favorite === true,
       };
     }
     const totalDraws =
@@ -184,13 +193,17 @@ export function recordDraws(
         lastDrawnAt: now,
         drawCount: 1,
         status: "none",
+        favorite: false,
       };
     }
   }
   return { ...data, entries, totalDraws: data.totalDraws + works.length };
 }
 
-/** 状態を設定する（"none" で解除）。未知の ID は無視。 */
+/**
+ * 状態を設定する（"none" で解除）。未知の ID・変化なしは同一参照を返す。
+ * watched 以外へ変えるとお気に入りも外す（favorite ⇒ watched の不変条件）。
+ */
 export function setStatus(
   data: CollectionData,
   annictId: number,
@@ -198,16 +211,32 @@ export function setStatus(
 ): CollectionData {
   const key = String(annictId);
   const entry = data.entries[key];
-  if (!entry) return data;
+  if (!entry || entry.status === status) return data;
+  const favorite = status === "watched" ? entry.favorite : false;
   return {
     ...data,
-    entries: { ...data.entries, [key]: { ...entry, status } },
+    entries: { ...data.entries, [key]: { ...entry, status, favorite } },
+  };
+}
+
+/** お気に入りを設定する。watched 以外・未知の ID・変化なしは同一参照を返す。 */
+export function setFavorite(
+  data: CollectionData,
+  annictId: number,
+  on: boolean,
+): CollectionData {
+  const key = String(annictId);
+  const entry = data.entries[key];
+  if (!entry || entry.status !== "watched" || entry.favorite === on) return data;
+  return {
+    ...data,
+    entries: { ...data.entries, [key]: { ...entry, favorite: on } },
   };
 }
 
 /**
  * 指定 status の全エントリを "none" に戻す（「観た」一括リセット用）。
- * エントリ本体（drawCount 等）は消えない。
+ * エントリ本体（drawCount 等）は消えないが、観たを外す以上お気に入りも一緒に外れる。
  */
 export function clearStatus(
   data: CollectionData,
@@ -215,12 +244,15 @@ export function clearStatus(
 ): CollectionData {
   const entries: Record<string, CollectionEntry> = {};
   for (const [key, entry] of Object.entries(data.entries)) {
-    entries[key] = entry.status === status ? { ...entry, status: "none" } : entry;
+    entries[key] =
+      entry.status === status
+        ? { ...entry, status: "none", favorite: false }
+        : entry;
   }
   return { ...data, entries };
 }
 
-/** 抽選から除外すべき annictId の集合（watched / not_interested） */
+/** 抽選から除外すべき annictId の集合（watched / later / not_interested） */
 export function excludedIdsOf(data: CollectionData): Set<number> {
   const ids = new Set<number>();
   for (const entry of Object.values(data.entries)) {
@@ -249,23 +281,31 @@ export function statsOf(data: CollectionData): {
   unique: number;
   byRarity: Record<Rarity, number>;
   watched: number;
+  later: number;
   notInterested: number;
+  favorite: number;
   totalDraws: number;
 } {
   const byRarity: Record<Rarity, number> = { r1: 0, r2: 0, r3: 0 };
   let watched = 0;
+  let later = 0;
   let notInterested = 0;
+  let favorite = 0;
   const entries = Object.values(data.entries);
   for (const entry of entries) {
     byRarity[entry.rarity]++;
     if (entry.status === "watched") watched++;
+    if (entry.status === "later") later++;
     if (entry.status === "not_interested") notInterested++;
+    if (entry.favorite) favorite++;
   }
   return {
     unique: entries.length,
     byRarity,
     watched,
+    later,
     notInterested,
+    favorite,
     totalDraws: data.totalDraws,
   };
 }

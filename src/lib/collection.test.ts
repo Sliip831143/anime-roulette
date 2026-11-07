@@ -6,6 +6,7 @@ import {
   loadCollection,
   recordDraws,
   setStatus,
+  setFavorite,
   clearStatus,
   excludedIdsOf,
   pickAfterExclusion,
@@ -181,8 +182,74 @@ describe("statsOf", () => {
       unique: 3,
       byRarity: { r1: 1, r2: 1, r3: 1 },
       watched: 1,
+      later: 0,
       notInterested: 1,
+      favorite: 0,
       totalDraws: 4,
+    });
+  });
+});
+
+describe("later / favorite", () => {
+  const drawn = () => recordDraws(emptyCollection(), [makeWork()], 1_000);
+
+  it("recordDraws の新規エントリは favorite: false", () => {
+    expect(drawn().entries["1"].favorite).toBe(false);
+  });
+
+  it("setFavorite は watched のエントリにだけ付く", () => {
+    const base = drawn();
+    expect(setFavorite(base, 1, true).entries["1"].favorite).toBe(false);
+    const watched = setStatus(base, 1, "watched");
+    expect(setFavorite(watched, 1, true).entries["1"].favorite).toBe(true);
+    expect(setFavorite(watched, 999, true)).toBe(watched);
+  });
+
+  it("値が変わらない setStatus / setFavorite は同一参照を返す", () => {
+    const watched = setStatus(drawn(), 1, "watched");
+    expect(setStatus(watched, 1, "watched")).toBe(watched);
+    expect(setFavorite(watched, 1, false)).toBe(watched);
+  });
+
+  it("watched 以外へ切り替えると favorite が外れる", () => {
+    const fav = setFavorite(setStatus(drawn(), 1, "watched"), 1, true);
+    expect(setStatus(fav, 1, "later").entries["1"].favorite).toBe(false);
+    expect(setStatus(fav, 1, "none").entries["1"].favorite).toBe(false);
+  });
+
+  it("clearStatus(watched) で favorite も外れ、later / not_interested は残る", () => {
+    let data = recordDraws(
+      emptyCollection(),
+      [makeWork({ annictId: 1 }), makeWork({ annictId: 2 }), makeWork({ annictId: 3 })],
+      1_000,
+    );
+    data = setFavorite(setStatus(data, 1, "watched"), 1, true);
+    data = setStatus(data, 2, "later");
+    data = setStatus(data, 3, "not_interested");
+    const cleared = clearStatus(data, "watched");
+    expect(cleared.entries["1"]).toMatchObject({ status: "none", favorite: false });
+    expect(cleared.entries["2"].status).toBe("later");
+    expect(cleared.entries["3"].status).toBe("not_interested");
+  });
+
+  it("excludedIdsOf は later も含む", () => {
+    const data = setStatus(drawn(), 1, "later");
+    expect(excludedIdsOf(data)).toEqual(new Set([1]));
+  });
+
+  it("statsOf は later / favorite を数える", () => {
+    let data = recordDraws(
+      emptyCollection(),
+      [makeWork({ annictId: 1 }), makeWork({ annictId: 2 })],
+      1_000,
+    );
+    data = setFavorite(setStatus(data, 1, "watched"), 1, true);
+    data = setStatus(data, 2, "later");
+    expect(statsOf(data)).toMatchObject({
+      watched: 1,
+      later: 1,
+      favorite: 1,
+      notInterested: 0,
     });
   });
 });
@@ -218,7 +285,39 @@ describe("loadCollection", () => {
     lastDrawnAt: 1_000,
     drawCount: 1,
     status: "none",
+    favorite: false,
   };
+
+  const store = (entry: unknown) =>
+    localStorage.setItem(
+      COLLECTION_STORAGE_KEY,
+      JSON.stringify({ version: 1, totalDraws: 1, entries: { "1": entry } }),
+    );
+
+  it("favorite が無い旧データは false として読み込む", () => {
+    const legacy: Record<string, unknown> = { ...validEntry };
+    delete legacy.favorite;
+    store(legacy);
+    expect(loadCollection().entries["1"].favorite).toBe(false);
+  });
+
+  it("favorite が boolean でないエントリは false に正規化して温存する", () => {
+    store({ ...validEntry, favorite: "yes" });
+    expect(loadCollection().entries["1"].favorite).toBe(false);
+  });
+
+  it("watched 以外で favorite: true のエントリは favorite を false に正規化する", () => {
+    store({ ...validEntry, status: "later", favorite: true });
+    expect(loadCollection().entries["1"]).toMatchObject({
+      status: "later",
+      favorite: false,
+    });
+  });
+
+  it("status: later は有効なエントリとして読み込む", () => {
+    store({ ...validEntry, status: "later" });
+    expect(loadCollection().entries["1"].status).toBe("later");
+  });
 
   it("キーなしは初期値を返す", () => {
     expect(loadCollection()).toEqual(emptyCollection());

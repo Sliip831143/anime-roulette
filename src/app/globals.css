@@ -260,6 +260,8 @@ body[data-mode="gacha"] {
   align-items: center;
   gap: 10px;
   padding: 10px 18px;
+  /* 右端に重ねるお気に入りボタン（26px）の分だけ余白を取り、タイトルが被らないようにする */
+  padding-right: 52px;
   background: linear-gradient(135deg, oklch(0.22 0.05 255), oklch(0.28 0.06 250));
   color: oklch(0.99 0 0);
   position: relative;

@@ -163,6 +163,27 @@ describe("useCollection", () => {
     expect(result.current.collection.entries["999"]).toBeUndefined();
   });
 
+  it("markFavorite は watched のエントリにだけ付き、未記録なら no-op で false", () => {
+    const data = recordDraws(emptyCollection(), [makeWork(1)], 1_000);
+    localStorage.setItem(COLLECTION_STORAGE_KEY, JSON.stringify(data));
+    const { result } = renderHook(() => useCollection());
+
+    act(() => {
+      result.current.markStatus(1, "watched");
+    });
+    let known: boolean | undefined;
+    act(() => {
+      known = result.current.markFavorite(1, true);
+    });
+    expect(known).toBe(true);
+    expect(result.current.collection.entries["1"].favorite).toBe(true);
+
+    act(() => {
+      known = result.current.markFavorite(999, true);
+    });
+    expect(known).toBe(false);
+  });
+
   it("保存に失敗したら警告ログと一度だけのエラートーストを出す", () => {
     const { result } = renderHook(() => useCollection());
     act(() => {

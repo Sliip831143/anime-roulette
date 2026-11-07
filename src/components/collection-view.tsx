@@ -8,6 +8,7 @@ import { AnimeDetailDialog } from "@/components/anime-detail-dialog";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { NoImageIcon } from "@/components/no-image-icon";
 import { StatusButtons } from "@/components/status-buttons";
+import { FavoriteButton } from "@/components/favorite-button";
 import {
   clearStatus,
   emptyCollection,
@@ -20,7 +21,7 @@ import { RARITY_LEVEL, RARITY_STARS, type Rarity } from "@/lib/rarity";
 import { SETTINGS_CHANGED_EVENT, readSettings } from "@/lib/settings";
 import { isInteractiveElementClick } from "@/lib/utils";
 
-type Filter = "all" | Rarity | "watched" | "not_interested";
+type Filter = "all" | Rarity | "watched" | "later" | "not_interested" | "favorite";
 type Sort = "newest" | "oldest" | "rarity";
 
 const FILTERS: { value: Filter; label: string; ariaLabel?: string }[] = [
@@ -29,7 +30,9 @@ const FILTERS: { value: Filter; label: string; ariaLabel?: string }[] = [
   { value: "r2", label: "★★", ariaLabel: "レアリティ2" },
   { value: "r1", label: "★", ariaLabel: "レアリティ1" },
   { value: "watched", label: "観た" },
+  { value: "later", label: "後で観る" },
   { value: "not_interested", label: "興味なし" },
+  { value: "favorite", label: "お気に入り" },
 ];
 
 const RARITY_ORDER: Record<Rarity, number> = { r3: 0, r2: 1, r1: 2 };
@@ -49,7 +52,8 @@ const GACHA_STAR_CLASS: Record<Rarity, string> = {
 };
 
 export function CollectionView() {
-  const { collection, setCollection, loaded, markStatus } = useCollection();
+  const { collection, setCollection, loaded, markStatus, markFavorite } =
+    useCollection();
   const [filter, setFilter] = useState<Filter>("all");
   const [sort, setSort] = useState<Sort>("newest");
   const [openEntry, setOpenEntry] = useState<CollectionEntry | null>(null);
@@ -82,7 +86,9 @@ export function CollectionView() {
     const entries = Object.values(collection.entries).filter((e) => {
       if (filter === "all") return true;
       if (filter === "watched") return e.status === "watched";
+      if (filter === "later") return e.status === "later";
       if (filter === "not_interested") return e.status === "not_interested";
+      if (filter === "favorite") return e.favorite;
       return e.rarity === filter;
     });
     entries.sort((a, b) => {
@@ -140,26 +146,49 @@ export function CollectionView() {
     [markStatus],
   );
 
-  // グリッド上のカードからのトグル専用。「観た / 興味なし」フィルタ表示中は
-  // トグルで該当カードが即座に消え、フォーカスしていたボタンごと DOM から
-  // 外れてフォーカスが body に落ちる（キーボード・SR 利用者が現在地を見失う）。
-  // 描画後もフォーカスの行き先が無い場合のみ、現在のフィルタチップへ移す。
+  // お気に入りは抽選に影響しないのでトーストは出さない
+  const handleFavoriteChange = useCallback(
+    (annictId: number, on: boolean) => {
+      markFavorite(annictId, on);
+    },
+    [markFavorite],
+  );
+
+  // 状態・お気に入りのフィルタ表示中にカードが消えた場合の退避先。
+  // フォーカスしていたボタンごと DOM から外れてフォーカスが body に落ちる
+  // （キーボード・SR 利用者が現在地を見失う）ため、描画後も行き先が無い場合のみ
+  // 現在のフィルタチップへ移す。
+  const focusCurrentChipIfLost = () => {
+    requestAnimationFrame(() => {
+      if (document.activeElement !== document.body) return;
+      chipsRef.current
+        ?.querySelector<HTMLButtonElement>('[aria-pressed="true"]')
+        ?.focus();
+    });
+  };
+
+  // グリッド上のカードからのトグル専用。フィルタ表示中はトグルで該当カードが即座に消える。
   // ダイアログ内のトグルはダイアログが開いたままなので対象外（handleStatusChange を直接使う）。
   const handleGridStatusChange = useCallback(
     (annictId: number, next: CollectionStatus) => {
       const removesCard =
         (filter === "watched" && next !== "watched") ||
-        (filter === "not_interested" && next !== "not_interested");
+        (filter === "later" && next !== "later") ||
+        (filter === "not_interested" && next !== "not_interested") ||
+        // お気に入りは watched 以外へ切り替えた時点で外れるためカードも消える
+        (filter === "favorite" && next !== "watched");
       handleStatusChange(annictId, next);
-      if (!removesCard) return;
-      requestAnimationFrame(() => {
-        if (document.activeElement !== document.body) return;
-        chipsRef.current
-          ?.querySelector<HTMLButtonElement>('[aria-pressed="true"]')
-          ?.focus();
-      });
+      if (removesCard) focusCurrentChipIfLost();
     },
     [filter, handleStatusChange],
+  );
+
+  const handleGridFavoriteChange = useCallback(
+    (annictId: number, on: boolean) => {
+      handleFavoriteChange(annictId, on);
+      if (filter === "favorite" && !on) focusCurrentChipIfLost();
+    },
+    [filter, handleFavoriteChange],
   );
 
   const handleResetWatched = () => {
@@ -247,6 +276,10 @@ export function CollectionView() {
               <div className="flex items-baseline gap-1.5">
                 <dt className="text-muted-foreground">観た</dt>
                 <dd className="font-semibold">{stats.watched}</dd>
+              </div>
+              <div className="flex items-baseline gap-1.5">
+                <dt className="text-muted-foreground">お気に入り</dt>
+                <dd className="font-semibold">{stats.favorite}</dd>
               </div>
               <div className="flex items-baseline gap-1.5">
                 <dt className="text-muted-foreground">通算</dt>
@@ -343,6 +376,7 @@ export function CollectionView() {
                     gachaMode={gachaMode}
                     onOpen={handleOpen}
                     onStatusChange={handleGridStatusChange}
+                    onFavoriteChange={handleGridFavoriteChange}
                   />
                 </li>
               ))}
@@ -375,6 +409,10 @@ export function CollectionView() {
           status={
             collection.entries[String(openEntry.annictId)]?.status ?? "none"
           }
+          favorite={
+            collection.entries[String(openEntry.annictId)]?.favorite ?? false
+          }
+          onFavoriteChange={(on) => handleFavoriteChange(openEntry.annictId, on)}
           onStatusChange={(next) => handleStatusChange(openEntry.annictId, next)}
           onClose={() => setOpenEntry(null)}
         />
@@ -388,7 +426,7 @@ export function CollectionView() {
                 「観た」{stats.watched}{" "}
                 件をすべて抽選対象に戻します。よろしいですか？
               </p>
-              <p>図鑑の記録は消えません。</p>
+              <p>図鑑の記録は消えません。お気に入りの印も外れます。</p>
             </>
           }
           confirmLabel="すべて戻す"
@@ -406,7 +444,7 @@ export function CollectionView() {
                 件と通算回数をすべて削除します。よろしいですか？
               </p>
               <p>
-                「観た / 興味なし」の設定も消え、すべて抽選対象に戻ります。
+                視聴状態やお気に入りの設定も消え、すべて抽選対象に戻ります。
                 この操作は取り消せません。
               </p>
             </>
@@ -435,11 +473,13 @@ const CollectionCard = memo(function CollectionCard({
   gachaMode,
   onOpen,
   onStatusChange,
+  onFavoriteChange,
 }: {
   entry: CollectionEntry;
   gachaMode: boolean;
   onOpen: (entry: CollectionEntry) => void;
   onStatusChange: (annictId: number, next: CollectionStatus) => void;
+  onFavoriteChange: (annictId: number, on: boolean) => void;
 }) {
   const [imageError, setImageError] = useState(false);
   const hasImage = !!entry.imageUrl && !imageError;
@@ -454,7 +494,7 @@ const CollectionCard = memo(function CollectionCard({
       onClick={openFromCardClick}
       className="flex h-full cursor-pointer flex-col overflow-hidden rounded-md border border-border bg-card transition-shadow hover:shadow-md"
     >
-      <div className="aspect-[3/4] w-full overflow-hidden bg-muted">
+      <div className="relative aspect-[3/4] w-full overflow-hidden bg-muted">
         {hasImage ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -481,6 +521,13 @@ const CollectionCard = memo(function CollectionCard({
               <span className="text-[10px]">No image</span>
             )}
           </div>
+        )}
+        {entry.status === "watched" && (
+          <FavoriteButton
+            className="absolute top-1.5 right-1.5"
+            favorite={entry.favorite}
+            onChange={(on) => onFavoriteChange(entry.annictId, on)}
+          />
         )}
       </div>
       <div className="flex flex-1 flex-col gap-1 p-2">

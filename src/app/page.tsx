@@ -55,7 +55,7 @@ export default function Home() {
   const [emptyReason, setEmptyReason] = useState<"no-match" | "excluded">(
     "no-match",
   );
-  const { collection, setCollection, collectionRef, markStatus } =
+  const { collection, setCollection, collectionRef, markStatus, markFavorite } =
     useCollection();
   const debugModeRef = useRef(false);
   const animDisabledRef = useRef(false);
@@ -338,6 +338,14 @@ export default function Home() {
     [markStatus],
   );
 
+  // お気に入りは抽選に影響しないのでトーストは出さない
+  const handleFavoriteChange = useCallback(
+    (annictId: number, on: boolean) => {
+      markFavorite(annictId, on);
+    },
+    [markFavorite],
+  );
+
   const handleSequenceClose = () => {
     if (pendingWorks) {
       setResults(pendingWorks);
@@ -348,7 +356,7 @@ export default function Home() {
   };
 
   // 下余白 pb-20（lg 未満のみ）は、右下固定の「トップへ戻る」ボタンが
-  // 最下部カードの「観た / 興味なし」ボタンに重ならないようにするための確保分
+  // 最下部カードの視聴状態ボタンに重ならないようにするための確保分
   return (
     <div
       className="page-root flex flex-col flex-1 items-center px-4 py-5 pb-20 sm:py-8 sm:pb-20 lg:pb-8"
@@ -532,6 +540,8 @@ export default function Home() {
                   gachaMode={gachaMode}
                   status={collection.entries[String(work.annictId)]?.status ?? "none"}
                   onStatusChange={handleStatusChange}
+                  favorite={collection.entries[String(work.annictId)]?.favorite ?? false}
+                  onFavoriteChange={handleFavoriteChange}
                 />
               ))}
             </div>
