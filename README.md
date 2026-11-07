@@ -105,7 +105,7 @@
   全画面オーバーレイで原寸画像（`object-contain`）を表示。背景クリック・×ボタン・Esc で閉じる。
   プレビュー表示中の Esc は capture フェーズで先取りし、詳細ダイアログ本体は閉じない
 - **X (Twitter) シェアボタン**: 詳細ダイアログから作品単位でツイート。
-  シェアされた URL（`/share`）は **動的 OGP**（next/og + Edge runtime）でレアリティ別の
+  シェアされた URL（`/share`）は **動的 OGP**（next/og）でレアリティ別の
   画像が表示される
 - **「結果をシェア」一括シェア**: 結果セクションの見出し横のボタンから、ガチャ結果一覧を
   ひとつのツイートに整形。X 仕様の文字数（CJK 2 カウント・URL 23 固定 / 280 上限）を
@@ -213,6 +213,8 @@
 - **localStorage データの検証**: 図鑑データは読み込み時にエントリ単位で型・値域を検証し（レアリティ / 状態の許容値、数値の有限性、季節・メディアの enum）、破損・改ざんエントリは黙って捨てて正常分のみ温存する
 - **シェアページのなりすまし対策**: `/share` と `/api/og` はタイトル・レアリティを URL クエリから受け取らず、`id`（数値のみ許可）から Annict の実データをサーバー側で取得して表示する。旧形式 URL の `title` / `rarity` パラメータは無視される
 - **セキュリティヘッダ**（`next.config.ts`）: `X-Content-Type-Options: nosniff` / `Referrer-Policy` / `Permissions-Policy` / `X-Frame-Options: DENY` + `CSP frame-ancestors 'none'`（クリックジャッキング対策）を全ルートに付与
+- **画像最適化 API の無効化**（`next.config.ts` の `images.unoptimized`）: `next/image` を使っていないのに `/_next/image` が到達可能な状態だったため無効化。過去に SVG / AVIF 処理経由の RCE が報告された攻撃面を丸ごと塞ぐ
+- **依存関係の脆弱性対応**: Dependabot の週次 PR に加え、`pnpm audit` で本番に同梱される依存（next / zod 等）の advisory が出たら速やかに更新する（2026-11 に Next.js 16.2 → 16.4 の critical 修正を取り込み）
 - **シークレット管理**: `ANNICT_TOKEN` はサーバー専用（Route Handler 内でのみ参照）。`.env*` は gitignore 済み
 
 ---
@@ -229,7 +231,7 @@
 ### SEO
 - `metadata` API で title template / description / keywords / authors / openGraph / twitter / robots.googleBot / formatDetection を網羅
 - **静的 OGP**: `src/app/opengraph-image.png` / `twitter-image.png`（ロゴ + 「Anime Roulette」サブタイトルを上下中央配置）を `scripts/generate-meta-assets.mjs` で生成
-- **動的 OGP**: `app/api/og/route.tsx`（Edge runtime + `next/og`）で「○○が出ました」シェア画像を動的生成。`/share?id=…` から参照。**タイトル・レアリティは URL クエリで受け取らず、id から Annict の実データをサーバー側で取得**する（任意文言のなりすまし画像・ページ生成への対策。id が無効なら既定文言にフォールバック）。レアリティ別の色（★1 青 / ★2 黄 / ★3 ピンク紫）の SVG 星アイコンを描画
+- **動的 OGP**: `app/api/og/route.tsx`（`next/og`、Node.js runtime）で「○○が出ました」シェア画像を動的生成。`/share?id=…` から参照。**タイトル・レアリティは URL クエリで受け取らず、id から Annict の実データをサーバー側で取得**する（任意文言のなりすまし画像・ページ生成への対策。id が無効なら既定文言にフォールバック）。レアリティ別の色（★1 青 / ★2 黄 / ★3 ピンク紫）の SVG 星アイコンを描画
 - **JSON-LD 構造化データ**: WebApplication / **FAQPage** / **HowTo** schema の 3 種を `<head>` に注入。リッチリザルトテストで FAQ が「有効なアイテム」として検出済み
 - `src/app/sitemap.ts` / `robots.ts` で `/sitemap.xml` / `/robots.txt` を自動配信
 - 図鑑ページ（`/collection`）は個人のローカルデータのため `robots: noindex` を指定
@@ -282,7 +284,7 @@ src/
 │   ├── api/anime/schema.ts       # 入力 zod スキーマ（年は 1991〜現在年にクランプ）
 │   ├── api/anime/schema.test.ts  # 入力 zod スキーマの境界値テスト
 │   ├── api/anime/[id]/route.ts   # 単一作品の詳細取得 API（モーダル表示用）
-│   ├── api/og/route.tsx          # 動的 OGP 画像生成（next/og + Edge runtime）
+│   ├── api/og/route.tsx          # 動的 OGP 画像生成（next/og、Node.js runtime）
 │   ├── share/page.tsx            # シェアランディング（generateMetadata で動的 OGP）
 │   ├── collection/page.tsx       # 図鑑ページ（robots: noindex、実体は collection-view.tsx）
 │   ├── error.tsx                 # Error Boundary（リトライ / トップへ戻る）
