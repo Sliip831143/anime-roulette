@@ -13,6 +13,9 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test:run",
     "prepare": "husky"
   },
   "dependencies": {
@@ -48,6 +51,7 @@
     "husky": "^9.1.7",
     "jsdom": "^29.1.1",
     "lint-staged": "^17.6.0",
+    "prettier": "^3.9.10",
     "shadcn": "^4.23.0",
     "sharp": "^0.35.5",
     "tailwindcss": "^4.3.4",
@@ -64,7 +68,11 @@
   },
   "lint-staged": {
     "*.{ts,tsx,js,mjs}": [
-      "eslint --fix"
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{css,json,md,yml,yaml}": [
+      "prettier --write"
     ]
   }
 }

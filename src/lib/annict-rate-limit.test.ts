@@ -31,9 +31,9 @@ describe("parseRetryAfterSeconds", () => {
 
   it("HTTP-date 表記は現在時刻からの残り秒数（切り上げ）にする", () => {
     const now = Date.parse("2026-11-07T12:00:00Z");
-    expect(
-      parseRetryAfterSeconds("Sat, 07 Nov 2026 12:00:30 GMT", now),
-    ).toBe(30);
+    expect(parseRetryAfterSeconds("Sat, 07 Nov 2026 12:00:30 GMT", now)).toBe(
+      30,
+    );
     expect(parseRetryAfterSeconds("Sat, 07 Nov 2026 12:00:00 GMT", now)).toBe(
       0,
     );
@@ -41,9 +41,9 @@ describe("parseRetryAfterSeconds", () => {
 
   it("過去の HTTP-date は 0 に丸める", () => {
     const now = Date.parse("2026-11-07T12:00:00Z");
-    expect(
-      parseRetryAfterSeconds("Sat, 07 Nov 2026 11:59:00 GMT", now),
-    ).toBe(0);
+    expect(parseRetryAfterSeconds("Sat, 07 Nov 2026 11:59:00 GMT", now)).toBe(
+      0,
+    );
   });
 
   it("未指定・不正な値は null", () => {
@@ -109,7 +109,9 @@ describe("withRateLimitRetry", () => {
 
   it("Retry-After が上限を超えるときは待たずに AnnictRateLimitError を投げる", async () => {
     const sleep = vi.fn(async () => {});
-    const fn = vi.fn<() => Promise<string>>().mockRejectedValue(rateLimited("30"));
+    const fn = vi
+      .fn<() => Promise<string>>()
+      .mockRejectedValue(rateLimited("30"));
     await expect(
       withRateLimitRetry(fn, { maxWaitMs: 10_000, sleep }),
     ).rejects.toBeInstanceOf(AnnictRateLimitError);

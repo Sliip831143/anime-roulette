@@ -23,7 +23,9 @@ const DEFAULT_POPULAR_THRESHOLD = 1000;
 export type Popularity = "all" | "popular" | "very_popular";
 
 type PopularityOption = { value: Popularity; label: string; hint: string };
-const buildPopularityOptions = (popularThreshold: number): PopularityOption[] => [
+const buildPopularityOptions = (
+  popularThreshold: number,
+): PopularityOption[] => [
   { value: "all", label: "すべて", hint: "制限なし" },
   {
     value: "popular",
@@ -134,7 +136,14 @@ export function SearchForm({
     if (yearFrom != null && yearTo != null && yearFrom > yearTo)
       return "開始年は終了年以下にしてください";
     return null;
-  }, [currentSeasonMode, yearFromText, yearToText, yearFrom, yearTo, currentYear]);
+  }, [
+    currentSeasonMode,
+    yearFromText,
+    yearToText,
+    yearFrom,
+    yearTo,
+    currentYear,
+  ]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -365,7 +374,9 @@ export function SearchForm({
             <RadioGroupItem value={opt.value} className="mt-1" />
             <span className="flex flex-col">
               <span className="text-sm">{opt.label}</span>
-              <span className="text-[11px] text-muted-foreground sm:text-xs">{opt.hint}</span>
+              <span className="text-[11px] text-muted-foreground sm:text-xs">
+                {opt.hint}
+              </span>
             </span>
           </label>
         ))}
@@ -475,7 +486,11 @@ export function SearchForm({
         </p>
       )}
 
-      <Button type="submit" disabled={loading || error != null} className="w-full">
+      <Button
+        type="submit"
+        disabled={loading || error != null}
+        className="w-full"
+      >
         {loading ? (
           loadingLabel
         ) : (

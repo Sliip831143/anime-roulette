@@ -114,10 +114,7 @@ export default async function SharePage({
       <h1 className="max-w-2xl text-3xl font-bold leading-tight sm:text-4xl">
         「{title}」が出ました
       </h1>
-      <p
-        className="text-2xl font-bold"
-        aria-label={`レアリティ${stars}`}
-      >
+      <p className="text-2xl font-bold" aria-label={`レアリティ${stars}`}>
         {stars}
       </p>
       <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
@@ -139,8 +136,9 @@ export default async function SharePage({
         )}
       </div>
       <p className="mt-6 text-xs text-muted-foreground">
-        アニメルーレットは Annict のアニメデータベースから条件付きでランダム抽選する
-        Web アプリです（ログイン不要・無料）。
+        アニメルーレットは Annict
+        のアニメデータベースから条件付きでランダム抽選する Web
+        アプリです（ログイン不要・無料）。
       </p>
     </main>
   );

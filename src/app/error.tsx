@@ -21,7 +21,9 @@ export default function ErrorBoundary({
         {error.message || "申し訳ありません。問題が発生しました。"}
       </p>
       {error.digest && (
-        <p className="text-xs text-muted-foreground">エラーID: {error.digest}</p>
+        <p className="text-xs text-muted-foreground">
+          エラーID: {error.digest}
+        </p>
       )}
       <div className="mt-2 flex flex-wrap items-center justify-center gap-3">
         <Button type="button" onClick={reset}>

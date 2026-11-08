@@ -236,7 +236,8 @@ export function GachaSequence({ works, onClose }: Props) {
   // Annict 由来の URL は危険スキーム混入に備えて無害化してから使う
   const currentOfficialSiteUrl = safeHttpUrl(currentWork?.officialSiteUrl);
   const showFlyCard =
-    (phase === "reveal_fly" || phase === "reveal_burst") && currentRarity != null;
+    (phase === "reveal_fly" || phase === "reveal_burst") &&
+    currentRarity != null;
   const hasRainbow = works.some(
     (w) => getRarity(w.watchersCount, w.satisfactionRate) === "r3",
   );
@@ -274,7 +275,9 @@ export function GachaSequence({ works, onClose }: Props) {
       >
         <span className="gacha-skip-inner">
           SKIP
-          <span className="gacha-skip-chevron" aria-hidden="true">&gt;&gt;</span>
+          <span className="gacha-skip-chevron" aria-hidden="true">
+            &gt;&gt;
+          </span>
         </span>
       </button>
 
@@ -384,116 +387,116 @@ export function GachaSequence({ works, onClose }: Props) {
       {phase === "reveal_info" && currentWork && currentRarity && (
         <>
           <div className="gacha-info" data-rarity={currentRarity}>
-           <div className="gacha-info-inner">
-            {currentWork.image?.recommendedImageUrl && !imageError ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={currentWork.image.recommendedImageUrl}
-                alt={currentWork.title}
-                className="gacha-info-bg"
-                onError={() => setErrorIndex(revealIndex)}
-              />
-            ) : (
-              <div
-                className="gacha-info-bg gacha-info-bg-empty"
-                aria-label="画像なし"
-              >
-                <svg
-                  className="gacha-info-bg-empty-icon"
-                  viewBox="0 0 64 64"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
+            <div className="gacha-info-inner">
+              {currentWork.image?.recommendedImageUrl && !imageError ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={currentWork.image.recommendedImageUrl}
+                  alt={currentWork.title}
+                  className="gacha-info-bg"
+                  onError={() => setErrorIndex(revealIndex)}
+                />
+              ) : (
+                <div
+                  className="gacha-info-bg gacha-info-bg-empty"
+                  aria-label="画像なし"
                 >
-                  <rect x="8" y="12" width="48" height="40" rx="3" />
-                  <circle cx="22" cy="26" r="4" />
-                  <path d="M8 44 L24 30 L36 40 L48 28 L56 36" />
-                </svg>
-                <span className="gacha-info-bg-empty-label">NO IMAGE</span>
-                <span className="gacha-info-bg-empty-sub">
-                  visual unavailable
-                </span>
-              </div>
-            )}
+                  <svg
+                    className="gacha-info-bg-empty-icon"
+                    viewBox="0 0 64 64"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <rect x="8" y="12" width="48" height="40" rx="3" />
+                    <circle cx="22" cy="26" r="4" />
+                    <path d="M8 44 L24 30 L36 40 L48 28 L56 36" />
+                  </svg>
+                  <span className="gacha-info-bg-empty-label">NO IMAGE</span>
+                  <span className="gacha-info-bg-empty-sub">
+                    visual unavailable
+                  </span>
+                </div>
+              )}
 
-            <span className="gacha-info-progress">
-              {revealIndex + 1} / {works.length}
-            </span>
+              <span className="gacha-info-progress">
+                {revealIndex + 1} / {works.length}
+              </span>
 
-            <aside className="gacha-info-paper" aria-label="作品情報">
-              <div className="gacha-info-paper-header">ANIME ARCHIVE</div>
-              <div className="gacha-info-paper-rows">
-                <div className="gacha-info-paper-row">
-                  <div className="gacha-info-paper-label">放送年</div>
-                  <div className="gacha-info-paper-value">
-                    {formatYearSeason(currentWork)}
-                  </div>
-                </div>
-                <div className="gacha-info-paper-row">
-                  <div className="gacha-info-paper-label">メディア</div>
-                  <div className="gacha-info-paper-value">
-                    {currentWork.media
-                      ? MEDIA_LABELS[currentWork.media]
-                      : "情報なし"}
-                  </div>
-                </div>
-                <div className="gacha-info-paper-row">
-                  <div className="gacha-info-paper-label">視聴登録</div>
-                  <div className="gacha-info-paper-value">
-                    {currentWork.watchersCount.toLocaleString()}人
-                  </div>
-                </div>
-                {formatSatisfaction(currentWork.satisfactionRate) && (
+              <aside className="gacha-info-paper" aria-label="作品情報">
+                <div className="gacha-info-paper-header">ANIME ARCHIVE</div>
+                <div className="gacha-info-paper-rows">
                   <div className="gacha-info-paper-row">
-                    <div className="gacha-info-paper-label">満足度</div>
-                    <div className="gacha-info-paper-value gacha-info-paper-value-emph">
-                      {formatSatisfaction(currentWork.satisfactionRate)}
+                    <div className="gacha-info-paper-label">放送年</div>
+                    <div className="gacha-info-paper-value">
+                      {formatYearSeason(currentWork)}
                     </div>
                   </div>
-                )}
-              </div>
-            </aside>
+                  <div className="gacha-info-paper-row">
+                    <div className="gacha-info-paper-label">メディア</div>
+                    <div className="gacha-info-paper-value">
+                      {currentWork.media
+                        ? MEDIA_LABELS[currentWork.media]
+                        : "情報なし"}
+                    </div>
+                  </div>
+                  <div className="gacha-info-paper-row">
+                    <div className="gacha-info-paper-label">視聴登録</div>
+                    <div className="gacha-info-paper-value">
+                      {currentWork.watchersCount.toLocaleString()}人
+                    </div>
+                  </div>
+                  {formatSatisfaction(currentWork.satisfactionRate) && (
+                    <div className="gacha-info-paper-row">
+                      <div className="gacha-info-paper-label">満足度</div>
+                      <div className="gacha-info-paper-value gacha-info-paper-value-emph">
+                        {formatSatisfaction(currentWork.satisfactionRate)}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </aside>
 
-            <div className="gacha-info-titlebar">
-              <div className="gacha-info-titlebar-header">
-                <span
-                  className="gacha-info-titlebar-rarity"
-                  aria-label={`レアリティ${RARITY_STAR[currentRarity]}`}
-                >
-                  {RARITY_STAR[currentRarity]}
-                </span>
-                <h3 className="gacha-info-titlebar-title">
-                  {currentWork.title}
-                </h3>
-              </div>
-              <div className="gacha-info-titlebar-message">
-                <a
-                  href={`https://annict.com/works/${currentWork.annictId}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  Annictで見る
-                </a>
-                {currentOfficialSiteUrl && (
-                  <>
-                    <span className="gacha-info-titlebar-divider">/</span>
-                    <a
-                      href={currentOfficialSiteUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      公式サイト
-                    </a>
-                  </>
-                )}
+              <div className="gacha-info-titlebar">
+                <div className="gacha-info-titlebar-header">
+                  <span
+                    className="gacha-info-titlebar-rarity"
+                    aria-label={`レアリティ${RARITY_STAR[currentRarity]}`}
+                  >
+                    {RARITY_STAR[currentRarity]}
+                  </span>
+                  <h3 className="gacha-info-titlebar-title">
+                    {currentWork.title}
+                  </h3>
+                </div>
+                <div className="gacha-info-titlebar-message">
+                  <a
+                    href={`https://annict.com/works/${currentWork.annictId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    Annictで見る
+                  </a>
+                  {currentOfficialSiteUrl && (
+                    <>
+                      <span className="gacha-info-titlebar-divider">/</span>
+                      <a
+                        href={currentOfficialSiteUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        公式サイト
+                      </a>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
-           </div>
           </div>
           <div className="gacha-hint">
             <span className="gacha-hint-pointer">

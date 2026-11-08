@@ -127,7 +127,8 @@ export default function RootLayout({
               url: SITE_URL,
               inLanguage: "ja",
               isAccessibleForFree: true,
-              browserRequirements: "Requires JavaScript. Modern browser recommended.",
+              browserRequirements:
+                "Requires JavaScript. Modern browser recommended.",
               author: {
                 "@type": "Person",
                 name: "Sliip831143",

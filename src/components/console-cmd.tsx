@@ -73,15 +73,16 @@ export function ConsoleCmd() {
       label: string,
       key: string,
     ) => {
-      const next =
-        arg === "on" ? true : arg === "off" ? false : !readFlag(key);
+      const next = arg === "on" ? true : arg === "off" ? false : !readFlag(key);
       writeFlag(key, next);
       log(label, next);
       notify();
     };
 
     const handler = (input: string) => {
-      const parts = String(input ?? "").trim().split(/\s+/);
+      const parts = String(input ?? "")
+        .trim()
+        .split(/\s+/);
       const head = parts[0];
       const arg = parts[1]?.toLowerCase();
 
@@ -230,7 +231,7 @@ export function ConsoleCmd() {
         }
         if (!all) {
           console.log(
-            "%c  図鑑も含めて初期化する場合は cmd(\"/reset all\")",
+            '%c  図鑑も含めて初期化する場合は cmd("/reset all")',
             "color:#999;font-style:italic",
           );
         }

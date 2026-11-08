@@ -100,9 +100,11 @@ function applyFilters(
     if (w.watchersCount < minWatchers) return false;
     if (highRated) {
       const percent = normalizeSatisfactionPercent(w.satisfactionRate);
-      if (percent == null || percent < HIGH_RATED_THRESHOLD_PERCENT) return false;
+      if (percent == null || percent < HIGH_RATED_THRESHOLD_PERCENT)
+        return false;
     }
-    if (mediaFilter && (w.media == null || !mediaFilter.has(w.media))) return false;
+    if (mediaFilter && (w.media == null || !mediaFilter.has(w.media)))
+      return false;
     // 全期間モード（年・季節とも未指定）では Annict 側の seasons フィルタが効かず、
     // 未来の放送予定作品もプールに混入する。seasonYear/seasonName から判定して除外する。
     if (now && isWorkFutureSeason(w, now)) return false;

@@ -1,0 +1,10 @@
+# 生成物・依存関係
+.next
+coverage
+node_modules
+next-env.d.ts
+pnpm-lock.yaml
+
+# 作業メモ（gitignore 済み）
+.superpowers
+docs/superpowers

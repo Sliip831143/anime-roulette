@@ -40,6 +40,7 @@
 ## 主な機能
 
 ### 検索フィルタ
+
 - 放送年（単年・範囲・未指定）。**「🎲 ランダム」ボタン**で範囲内から1年を自動抽選してバッジ表示
 - **「今期」ボタン**（ランダムの横）: 現在月が属するクール（1〜3月 冬 / 4〜6月 春 / 7〜9月 夏 / 10〜12月 秋）に放送を始めた作品だけから抽選し、「2026年秋アニメで抽選」のようにバッジ表示。前クールからの継続作品は含めない。放送開始直後は視聴登録数・満足度が溜まっておらず 0 件になりやすいため、ON の間は年・季節・人気度・高評価を無効にし、メディア種別と取得件数だけを効かせる（`src/lib/seasons.ts` の `getCurrentSeason`）
 - 季節（春／夏／秋／冬）。年を手入力したとき、または「🎲 ランダム」で本年以外の年が選ばれたときに有効（ランダムで本年が選ばれた場合は未放送の季節を含みうるため無効）※デフォルトは非表示、隠しコマンドで表示
@@ -49,10 +50,12 @@
 - 取得件数 1〜10件（**隠しコマンドで 1〜50件 の数値入力モードへ拡張可能**）。「募集回数: n回」と表示
 
 ### 演出切替
+
 ヘッダー右上の「演出」スイッチでガチャ演出の ON/OFF を切替（デフォルト ON）。`localStorage` に永続化。OFF のときは演出を飛ばして結果を即時表示する。
 以前あった「簡易モード」（shadcn ベースの別テーマ）は廃止し、簡易モードを選んでいた場合は初回ロード時に演出 OFF へ引き継ぐ。**PC（md 以上）では2カラムレイアウト + 区切り線**で配置。
 
 #### 画面テーマ
+
 - 申請書風の UI、レアリティ別の枠発光、ガチャ演出付き。「ガチャを引く」ボタンの左に宝石のアイコンを添える
 - 丸ゴシック（Zen Maru Gothic）
 - ガチャ結果がない間（未抽選・0 件）だけ、フォームの下にアロナの立ち絵（装飾）を表示。フォームの下に残った高さだけを使ってスクロールを出さず、画像の下側は画面下端で見切れさせる。クリックでブルーアーカイブ公式サイトを新しいタブで開く。結果表示中から引き直したときは、取得中〜演出終了まで表示しない
@@ -60,6 +63,7 @@
 - 「超人気のみ」「高評価のみ」のどちらかを選んでいる間と、★3 を含む結果を表示している間は、ページ背景を★3演出と同じパープル／ピンク基調にする。結果の表示中に両方の条件を外した場合は、次に引き直すまで元の背景に戻す
 
 ### ガチャ演出（演出 ON 時）
+
 「ガチャを引く」押下後、フルスクリーンオーバーレイで以下のシーケンスを再生：
 
 1. **intro_1**: アロナが封筒を持って登場（自動 1.0s）
@@ -78,11 +82,12 @@
 > **開発用デモ**: dev サーバで URL に `?gachatest=1` を付けてアクセスすると（例: `http://localhost:3000/?gachatest=1`）、検索を経由せずモックの ★3 作品でガチャ演出を即再生できます。出現頻度の低い「★3＋サムネイルあり」の Ken Burns 演出を素早く確認するための開発用導線で、リロードのたびに再実行できます。`NODE_ENV=production` のビルドでは fixture ごと読み込まれず無効化されます（`src/lib/gacha-test-fixture.ts`）。
 
 ### レアリティ
-| ティア | 条件 | 視覚 |
-|---|---|---|
-| ★3 虹 | `watchersCount >= 22,000` または (`watchersCount >= 10,500` AND `satisfactionRate >= 83%`) | 虹色アクセント、結果カードの虹色発光、ガチャ画面背景もパープル／ピンク基調へ |
-| ★2 金 | `watchersCount >= 5,800`（虹に該当しない） | 金色アクセント、金光発光 |
-| ★1 青 | それ以外（大半） | 青色アクセント |
+
+| ティア | 条件                                                                                       | 視覚                                                                         |
+| ------ | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------- |
+| ★3 虹  | `watchersCount >= 22,000` または (`watchersCount >= 10,500` AND `satisfactionRate >= 83%`) | 虹色アクセント、結果カードの虹色発光、ガチャ画面背景もパープル／ピンク基調へ |
+| ★2 金  | `watchersCount >= 5,800`（虹に該当しない）                                                 | 金色アクセント、金光発光                                                     |
+| ★1 青  | それ以外（大半）                                                                           | 青色アクセント                                                               |
 
 閾値は抽選プール規模（`src/app/api/anime/route.ts` の `POOL_PAGES` = 13 ページ × 200 件 ≒ 2,600 件）に対して ★3 ≈ 2% / ★2 ≈ 10% になるよう実測で調整した値。**プール規模と閾値はセット**なので、`POOL_PAGES` を変えたら閾値も再調整し、`src/lib/rarity.ts`（判定＋doc コメント）/ `src/lib/rarity.test.ts` / 上記の表を揃えて更新する。
 
@@ -91,6 +96,7 @@
 > Annict の視聴登録数など公開指標を「ガチャの当たり度合い」という演出上の見せ方に変換しているだけで、★1 だから作品として劣る／★3 だから優れている、といった意味は一切ありません。視聴登録数が少ない作品にも名作は数多くあり、本アプリはあくまで「次に観るアニメを楽しく選ぶ」ための演出としてレアリティを用いています。
 
 ### 結果表示
+
 - 結果カード（申請書ストライプ風）
 - 画像なし／取得失敗時は同サイズの `NO IMAGE` プレースホルダーへフォールバック
 - **PC（1024px〜）のみ**: 右下に折り畳み可能な「結果一覧パネル」。タイトルクリックで該当カードへスムーズスクロール
@@ -117,6 +123,7 @@
   にしてカード幅を広げない。「観た」作品には丸いハートの **お気に入り** 印を付けられる（詳細は次の「図鑑と抽選除外」）
 
 ### 図鑑と抽選除外（ローカル完結）
+
 - ガチャ結果に表示された作品を **localStorage に自動記録**。視聴状態はサーバーに一切
   送信しない（ログイン不要・ローカル完結の思想）。初回入手時のレアリティ等を
   スナップショットとして保持し、かぶり時は入手回数のみ加算
@@ -139,6 +146,7 @@
   破損・改ざんデータは読み込み時にエントリ単位で検証して黙って捨てる（正常分は温存）
 
 ### エラー体験
+
 - React **Error Boundary**（`app/error.tsx`）で予期しないエラーを捕捉し、「もう一度試す」「トップへ戻る」を提示
 - **オフライン検知**（`navigator.onLine` + online/offline イベント）で接続喪失を toast 通知
 - API 取得失敗時は結果セクション上部に **「もう一度引く」リトライ UI** を表示（直前の検索条件を保持）
@@ -147,6 +155,7 @@
 - **図鑑の保存失敗**（容量超過・ストレージ無効等）はアプリ本体を止めず、`console.warn` ＋初回のみのトーストで通知。localStorage へのアクセス自体が例外を投げる環境（Cookie 全ブロック等）でも設定読み書きは安全にフォールバック
 
 ### レスポンシブ
+
 - スマホ（〜768px）: ガチャ演出のアニメ情報画面はシングルカラム（タイトル → サムネ → 申請書 → リンクの順）
 - スマホ時はアロナを `object-fit: cover` で縦80vh いっぱいに表示
 - フォーム下の立ち絵は PC / スマホで最大の高さと見せる割合を切り替え（スマホは小さめにして袖のあたりまで映す）。残り高さが 120px 未満の画面では非表示
@@ -157,15 +166,15 @@
 
 ブラウザの DevTools コンソールで `cmd("/...")` を実行すると、開発者向けの設定切替や状態確認ができます。状態は localStorage に永続化されます。
 
-| コマンド | 説明 |
-|---|---|
-| `cmd("/help")` | 利用可能コマンド一覧を表示 |
-| `cmd("/state")` | 現在の各種設定を一覧表示 |
-| `cmd("/season")` | 季節フィルタの表示切替（デフォルト非表示） |
-| `cmd("/debug")` | APIリクエスト・レアリティ判定の詳細ログを切替 |
-| `cmd("/max")` | 取得件数 UI を Slider ⇔ 数値入力で切替（1〜50件） |
-| `cmd("/popularity tune <n>")` | 「人気のみ」の視聴登録閾値をカスタマイズ |
-| `cmd("/reset")` | 設定を初期化（蓄積資産の図鑑は保持。`cmd("/reset all")` で図鑑データも削除） |
+| コマンド                      | 説明                                                                         |
+| ----------------------------- | ---------------------------------------------------------------------------- |
+| `cmd("/help")`                | 利用可能コマンド一覧を表示                                                   |
+| `cmd("/state")`               | 現在の各種設定を一覧表示                                                     |
+| `cmd("/season")`              | 季節フィルタの表示切替（デフォルト非表示）                                   |
+| `cmd("/debug")`               | APIリクエスト・レアリティ判定の詳細ログを切替                                |
+| `cmd("/max")`                 | 取得件数 UI を Slider ⇔ 数値入力で切替（1〜50件）                            |
+| `cmd("/popularity tune <n>")` | 「人気のみ」の視聴登録閾値をカスタマイズ                                     |
+| `cmd("/reset")`               | 設定を初期化（蓄積資産の図鑑は保持。`cmd("/reset all")` で図鑑データも削除） |
 
 ページロード時にコンソールに案内が自動出力されます。
 
@@ -229,6 +238,7 @@
 ## PWA / SEO
 
 ### PWA
+
 - `manifest.json` / 192px・512px アイコン / Apple touch icon を完備
 - ホーム画面追加対応、Android はスプラッシュ画面も自動生成
 - **Service Worker は廃止**：本アプリは Annict GraphQL に常時依存するオンライン専用で、SW を使うメリット（静的アセットの再キャッシュ）は Next.js の immutable Cache-Control とブラウザキャッシュで十分代替可能。RSC との相性問題や未捕捉エラーなど運用コストが上回ったため撤去
@@ -236,6 +246,7 @@
   - `src/components/sw-register.tsx` も登録ではなく既存 SW の登録解除を行うクリーンアップコードに置換（二重の保険）
 
 ### SEO
+
 - `metadata` API で title template / description / keywords / authors / openGraph / twitter / robots.googleBot / formatDetection を網羅
 - **静的 OGP**: `src/app/opengraph-image.png` / `twitter-image.png`（ロゴ + 「Anime Roulette」サブタイトルを上下中央配置）を `scripts/generate-meta-assets.mjs` で生成
 - **動的 OGP**: `app/api/og/route.tsx`（`next/og`、Node.js runtime）で「○○が出ました」シェア画像を動的生成。`/share?id=…` から参照。**タイトル・レアリティは URL クエリで受け取らず、id から Annict の実データをサーバー側で取得**する（任意文言のなりすまし画像・ページ生成への対策。id が無効なら既定文言にフォールバック）。レアリティ別の色（★1 青 / ★2 黄 / ★3 ピンク紫）の SVG 星アイコンを描画
@@ -402,20 +413,20 @@ CLAUDE.md                         # プロジェクト固有の Claude 指示（
 
 ## スクリプト
 
-| コマンド | 説明 |
-|---|---|
-| `pnpm dev` | 開発サーバ起動 |
-| `pnpm build` | 本番ビルド |
-| `pnpm start` | 本番サーバ起動 |
-| `pnpm lint` | ESLint 実行 |
-| `pnpm lint:fix` | ESLint で自動修正 |
-| `pnpm typecheck` | `tsc --noEmit` で型チェック |
-| `pnpm test` | Vitest を Watch モードで起動 |
-| `pnpm test:run` | テストを1回実行（CI 向け） |
-| `pnpm test:coverage` | カバレッジレポート生成（`coverage/index.html`） |
-| `pnpm analyze` | `@next/bundle-analyzer` でバンドルサイズの HTML レポートを生成 |
-| `node scripts/convert-images.mjs` | `public/gacha/*.png` を AVIF + WebP に一括変換 |
-| `node scripts/generate-meta-assets.mjs` | OGP / Apple touch icon / PWA アイコンを再生成 |
+| コマンド                                | 説明                                                           |
+| --------------------------------------- | -------------------------------------------------------------- |
+| `pnpm dev`                              | 開発サーバ起動                                                 |
+| `pnpm build`                            | 本番ビルド                                                     |
+| `pnpm start`                            | 本番サーバ起動                                                 |
+| `pnpm lint`                             | ESLint 実行                                                    |
+| `pnpm lint:fix`                         | ESLint で自動修正                                              |
+| `pnpm typecheck`                        | `tsc --noEmit` で型チェック                                    |
+| `pnpm test`                             | Vitest を Watch モードで起動                                   |
+| `pnpm test:run`                         | テストを1回実行（CI 向け）                                     |
+| `pnpm test:coverage`                    | カバレッジレポート生成（`coverage/index.html`）                |
+| `pnpm analyze`                          | `@next/bundle-analyzer` でバンドルサイズの HTML レポートを生成 |
+| `node scripts/convert-images.mjs`       | `public/gacha/*.png` を AVIF + WebP に一括変換                 |
+| `node scripts/generate-meta-assets.mjs` | OGP / Apple touch icon / PWA アイコンを再生成                  |
 
 ---
 
@@ -424,6 +435,7 @@ CLAUDE.md                         # プロジェクト固有の Claude 指示（
 [Vitest](https://vitest.dev/) による単体テストを整備。
 
 ### カバー対象（8 ファイル / 計 141 ケース）
+
 - **`src/lib/rarity.test.ts`**: レアリティ判定（`getRarity`）の境界値テスト（16 ケース、100% カバー）
 - **`src/lib/seasons.test.ts`**: 年→seasons 展開 (`expandSeasons`) / 未来放送予定の判定 (`isWorkFutureSeason`) / 今期の判定 (`getCurrentSeason`) / `isSeason` の境界・順序保持・エラー系
 - **`src/app/api/anime/schema.test.ts`**: API route の zod スキーマ（querySchema）の正常・異常系。デフォルト値、年範囲、count 上下限、enum 検証、`highRated` の boolean 変換まで
@@ -443,6 +455,7 @@ pnpm test:coverage  # カバレッジレポート生成 → coverage/index.html
 ```
 
 ### 設計方針
+
 - **コロケーション**: テストファイルは対象ファイルと同じディレクトリに配置（`rarity.ts` の隣に `rarity.test.ts`）
 - **境界値・null・スケール変換** を重点的に確認し、回帰を防止
 - `src/components/ui/**` （shadcn）は外部ライブラリ扱いでカバレッジ対象外
@@ -528,17 +541,17 @@ curl -o og.png "http://localhost:3005/api/og?id=4168"
 
 ### どこを触るか早見表
 
-| やりたいこと | 主に触るファイル |
-|---|---|
-| 検索フィルタの追加・変更 | `src/app/api/anime/schema.ts`（zod）→ `src/app/api/anime/route.ts`（`applyFilters`）→ `src/components/search-form.tsx` |
+| やりたいこと                    | 主に触るファイル                                                                                                                     |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| 検索フィルタの追加・変更        | `src/app/api/anime/schema.ts`（zod）→ `src/app/api/anime/route.ts`（`applyFilters`）→ `src/components/search-form.tsx`               |
 | Annict から取るフィールドの変更 | `src/lib/annict.ts`（クエリ・型）。`roleOther` / `organizations` / `ratingsCount` は取らないこと（[制約](#annict-api-の制約と対処)） |
-| レアリティの条件 | `src/lib/rarity.ts` + `rarity.test.ts` + README の表（[レアリティ](#レアリティ)） |
-| ガチャ演出 | `src/components/gacha-sequence.tsx` + `src/app/globals.css` |
-| 結果カード / 詳細ダイアログ | `src/components/anime-card.tsx` / `anime-detail-dialog.tsx` |
-| 図鑑・抽選除外 | `src/lib/collection.ts`（純粋関数）/ `use-collection.ts`（永続化）/ `src/components/collection-view.tsx` |
-| シェア文言・OG 画像 | `src/lib/share.ts` / `src/app/share/page.tsx` / `src/app/api/og/route.tsx` |
-| 隠しコマンド | `src/components/console-cmd.tsx` |
-| メタ情報・JSON-LD | `src/app/layout.tsx` |
+| レアリティの条件                | `src/lib/rarity.ts` + `rarity.test.ts` + README の表（[レアリティ](#レアリティ)）                                                    |
+| ガチャ演出                      | `src/components/gacha-sequence.tsx` + `src/app/globals.css`                                                                          |
+| 結果カード / 詳細ダイアログ     | `src/components/anime-card.tsx` / `anime-detail-dialog.tsx`                                                                          |
+| 図鑑・抽選除外                  | `src/lib/collection.ts`（純粋関数）/ `use-collection.ts`（永続化）/ `src/components/collection-view.tsx`                             |
+| シェア文言・OG 画像             | `src/lib/share.ts` / `src/app/share/page.tsx` / `src/app/api/og/route.tsx`                                                           |
+| 隠しコマンド                    | `src/components/console-cmd.tsx`                                                                                                     |
+| メタ情報・JSON-LD               | `src/app/layout.tsx`                                                                                                                 |
 
 ### デプロイと依存更新
 

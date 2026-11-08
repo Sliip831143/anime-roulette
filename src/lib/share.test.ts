@@ -101,7 +101,10 @@ describe("buildBatchTweetText", () => {
 
   it("「…他N件」の N は実際に省略された件数と一致する", () => {
     const works = Array.from({ length: 20 }, (_, i) =>
-      make("非常に長めのアニメ作品名サンプル" + String(i).padStart(2, "0"), "r1"),
+      make(
+        "非常に長めのアニメ作品名サンプル" + String(i).padStart(2, "0"),
+        "r1",
+      ),
     );
     const text = buildBatchTweetText(works);
     const match = text.match(/…他(\d+)件/);

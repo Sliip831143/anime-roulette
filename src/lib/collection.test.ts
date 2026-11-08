@@ -220,14 +220,21 @@ describe("later / favorite", () => {
   it("clearStatus(watched) で favorite も外れ、later / not_interested は残る", () => {
     let data = recordDraws(
       emptyCollection(),
-      [makeWork({ annictId: 1 }), makeWork({ annictId: 2 }), makeWork({ annictId: 3 })],
+      [
+        makeWork({ annictId: 1 }),
+        makeWork({ annictId: 2 }),
+        makeWork({ annictId: 3 }),
+      ],
       1_000,
     );
     data = setFavorite(setStatus(data, 1, "watched"), 1, true);
     data = setStatus(data, 2, "later");
     data = setStatus(data, 3, "not_interested");
     const cleared = clearStatus(data, "watched");
-    expect(cleared.entries["1"]).toMatchObject({ status: "none", favorite: false });
+    expect(cleared.entries["1"]).toMatchObject({
+      status: "none",
+      favorite: false,
+    });
     expect(cleared.entries["2"].status).toBe("later");
     expect(cleared.entries["3"].status).toBe("not_interested");
   });

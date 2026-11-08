@@ -104,9 +104,7 @@ describe("expandSeasons", () => {
     });
 
     it("年範囲が未来年まで及ぶ場合、未来年の全 season が落ちる", () => {
-      expect(
-        expandSeasons({ yearFrom: 2025, yearTo: 2027, now }),
-      ).toEqual([
+      expect(expandSeasons({ yearFrom: 2025, yearTo: 2027, now })).toEqual([
         "2025-spring",
         "2025-summer",
         "2025-autumn",
@@ -210,9 +208,9 @@ describe("isSeasonFilterEnabled", () => {
   });
 
   it("本年を手入力した場合はユーザー意図として有効", () => {
-    expect(
-      isSeasonFilterEnabled({ ...base, yearFrom: currentYear }),
-    ).toBe(true);
+    expect(isSeasonFilterEnabled({ ...base, yearFrom: currentYear })).toBe(
+      true,
+    );
   });
 
   it("ランダムで本年以外が選ばれていれば有効", () => {
@@ -220,9 +218,9 @@ describe("isSeasonFilterEnabled", () => {
   });
 
   it("ランダムで本年が選ばれた場合は無効（未放送の季節を含みうるため）", () => {
-    expect(
-      isSeasonFilterEnabled({ ...base, pickedYear: currentYear }),
-    ).toBe(false);
+    expect(isSeasonFilterEnabled({ ...base, pickedYear: currentYear })).toBe(
+      false,
+    );
   });
 
   it("手入力があってもランダムで本年が選ばれていれば無効（実際に検索する年に揃える）", () => {

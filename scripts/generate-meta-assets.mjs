@@ -65,7 +65,12 @@ async function buildOgpImage(outPath) {
 async function buildFaviconIcon(size, outPath) {
   const faviconBuf = readFileSync(FAVICON_PATH);
   await sharp(faviconBuf)
-    .resize({ width: size, height: size, fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
+    .resize({
+      width: size,
+      height: size,
+      fit: "contain",
+      background: { r: 0, g: 0, b: 0, alpha: 0 },
+    })
     .png({ compressionLevel: 9 })
     .toFile(outPath);
 }
@@ -82,7 +87,9 @@ async function buildSquareIcon(size, outPath) {
   // ロゴを短辺の82%幅にリサイズして中央配置（iOS角丸・Androidマスクで端が切れても安全）
   const logoBuf = readFileSync(LOGO_PATH);
   const logoTargetWidth = Math.round(W * 0.82);
-  const logoResized = await sharp(logoBuf).resize({ width: logoTargetWidth }).toBuffer();
+  const logoResized = await sharp(logoBuf)
+    .resize({ width: logoTargetWidth })
+    .toBuffer();
   const logoMeta = await sharp(logoResized).metadata();
   const logoX = Math.round((W - logoMeta.width) / 2);
   const logoY = Math.round((H - logoMeta.height) / 2);

@@ -20,7 +20,8 @@ import { useCollection } from "@/lib/use-collection";
 import { RARITY_LEVEL, RARITY_STARS, type Rarity } from "@/lib/rarity";
 import { isInteractiveElementClick } from "@/lib/utils";
 
-type Filter = "all" | Rarity | "watched" | "later" | "not_interested" | "favorite";
+type Filter =
+  "all" | Rarity | "watched" | "later" | "not_interested" | "favorite";
 type Sort = "newest" | "oldest" | "rarity";
 
 const FILTERS: { value: Filter; label: string; ariaLabel?: string }[] = [
@@ -398,8 +399,12 @@ export function CollectionView() {
           favorite={
             collection.entries[String(openEntry.annictId)]?.favorite ?? false
           }
-          onFavoriteChange={(on) => handleFavoriteChange(openEntry.annictId, on)}
-          onStatusChange={(next) => handleStatusChange(openEntry.annictId, next)}
+          onFavoriteChange={(on) =>
+            handleFavoriteChange(openEntry.annictId, on)
+          }
+          onStatusChange={(next) =>
+            handleStatusChange(openEntry.annictId, next)
+          }
           onClose={() => setOpenEntry(null)}
         />
       )}
@@ -526,7 +531,9 @@ const CollectionCard = memo(function CollectionCard({
         <div className="flex items-center justify-between gap-1 text-xs">
           <span className={GACHA_STAR_CLASS[entry.rarity]}>
             <span aria-hidden>{RARITY_STARS[entry.rarity]}</span>
-            <span className="sr-only">レアリティ{RARITY_LEVEL[entry.rarity]}</span>
+            <span className="sr-only">
+              レアリティ{RARITY_LEVEL[entry.rarity]}
+            </span>
           </span>
           {entry.drawCount > 1 && (
             <span className="text-muted-foreground">×{entry.drawCount}</span>

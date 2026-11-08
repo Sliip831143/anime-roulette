@@ -188,9 +188,9 @@ export default function Home() {
   const [rareFilterActive, setRareFilterActive] = useState(false);
   // レア条件で★3を引いた後に条件を外しても、★3 の結果が残っていると背景がピンクのまま戻らない。
   // 条件を外した時点の結果を覚えておき、次に引き直すまでは★3 の結果があっても青に戻す
-  const [r3BgDismissedFor, setR3BgDismissedFor] = useState<
-    AnnictWork[] | null
-  >(null);
+  const [r3BgDismissedFor, setR3BgDismissedFor] = useState<AnnictWork[] | null>(
+    null,
+  );
   const [prevRareFilterActive, setPrevRareFilterActive] =
     useState(rareFilterActive);
   if (prevRareFilterActive !== rareFilterActive) {
@@ -285,10 +285,7 @@ export default function Home() {
     const url = `/api/anime?${sp.toString()}`;
     const debug = debugModeRef.current;
     if (debug) {
-      console.group(
-        "%c[debug] gacha submit",
-        "color:#7aa;font-weight:700",
-      );
+      console.group("%c[debug] gacha submit", "color:#7aa;font-weight:700");
       console.log("params:", params);
       console.log("url:", url);
     }
@@ -517,15 +514,11 @@ export default function Home() {
           </section>
         )}
 
-        <Separator
-          className={results != null ? "" : "hidden"}
-        />
+        <Separator className={results != null ? "" : "hidden"} />
 
         <section
           ref={resultsRef}
-          className={`space-y-4 scroll-mt-4${
-            results != null ? "" : " hidden"
-          }`}
+          className={`space-y-4 scroll-mt-4${results != null ? "" : " hidden"}`}
         >
           <div className="flex items-center justify-between gap-3">
             <h2 className="gacha-title text-xl">結果</h2>
@@ -571,17 +564,18 @@ export default function Home() {
               )}
             </p>
           ) : results && results.length > 0 ? (
-            <div
-              key={resultsVersion}
-              className="grid gap-4 results-fade-in"
-            >
+            <div key={resultsVersion} className="grid gap-4 results-fade-in">
               {results.map((work) => (
                 <AnimeCard
                   key={work.annictId}
                   work={work}
-                  status={collection.entries[String(work.annictId)]?.status ?? "none"}
+                  status={
+                    collection.entries[String(work.annictId)]?.status ?? "none"
+                  }
                   onStatusChange={handleStatusChange}
-                  favorite={collection.entries[String(work.annictId)]?.favorite ?? false}
+                  favorite={
+                    collection.entries[String(work.annictId)]?.favorite ?? false
+                  }
                   onFavoriteChange={handleFavoriteChange}
                 />
               ))}
@@ -593,7 +587,9 @@ export default function Home() {
             結果表示中からの引き直しでは、取得中〜演出終了まで出さない。
             クリックでブルーアーカイブ公式サイトを新しいタブで開く */}
         {mascotVisible && (
-          <div className={`gacha-mascot${mascotCheering ? " is-cheering" : ""}`}>
+          <div
+            className={`gacha-mascot${mascotCheering ? " is-cheering" : ""}`}
+          >
             <a
               href="https://bluearchive.jp/"
               target="_blank"

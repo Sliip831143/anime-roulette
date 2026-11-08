@@ -305,10 +305,9 @@ type WorkDetailResponse = {
 export async function getWorkDetail(
   annictId: number,
 ): Promise<AnnictWorkDetail | null> {
-  const data = await requestAnnict<WorkDetailResponse>(
-    WORK_DETAIL_QUERY,
-    { annictIds: [annictId] },
-  );
+  const data = await requestAnnict<WorkDetailResponse>(WORK_DETAIL_QUERY, {
+    annictIds: [annictId],
+  });
   const raw = data.searchWorks.nodes[0];
   if (!raw) return null;
   // connection 形式 ({ nodes: [...] }) を配列に平坦化 + 画像 URL を https 化

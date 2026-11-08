@@ -77,9 +77,7 @@ export const AnimeCard = memo(function AnimeCard({
           <span aria-hidden>{RARITY_STARS[rarity]}</span>
           <span className="sr-only">レアリティ{RARITY_LEVEL[rarity]}</span>
         </span>
-        <h3 className="gacha-card-title">
-          {titleButton("rounded-sm")}
-        </h3>
+        <h3 className="gacha-card-title">{titleButton("rounded-sm")}</h3>
         {favoriteButton("absolute right-3 top-1/2 -translate-y-1/2")}
       </div>
       <CardContent className="gacha-card-body p-0">

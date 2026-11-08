@@ -30,7 +30,10 @@ export const querySchema = z
   })
   .refine(
     (v) => v.yearFrom == null || v.yearTo == null || v.yearFrom <= v.yearTo,
-    { message: "yearFrom must be less than or equal to yearTo", path: ["yearFrom"] },
+    {
+      message: "yearFrom must be less than or equal to yearTo",
+      path: ["yearFrom"],
+    },
   )
   .refine((v) => v.yearFrom != null || v.yearTo != null || !v.seasons?.length, {
     message: "seasons require at least one of yearFrom/yearTo",

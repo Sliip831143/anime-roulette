@@ -14,13 +14,13 @@ README は利用者向けドキュメント、本セクションは Claude が�
 
 ### 検証フロー
 
-コードを変更したら、コミット前に必ず次をすべて green にする。
+コードを変更したら、コミット前に必ず次を green にする（整形チェック → lint → 型チェック → テストを順に実行する）。
 
 ```
-pnpm lint
-pnpm typecheck
-pnpm test:run
+pnpm check
 ```
+
+整形だけ直したいときは `pnpm format`。コミット時は lint-staged が ESLint と Prettier をステージ済みファイルへ自動適用する。
 
 ### Annict GraphQL API の落とし穴
 

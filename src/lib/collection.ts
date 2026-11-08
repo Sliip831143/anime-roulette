@@ -227,7 +227,8 @@ export function setFavorite(
 ): CollectionData {
   const key = String(annictId);
   const entry = data.entries[key];
-  if (!entry || entry.status !== "watched" || entry.favorite === on) return data;
+  if (!entry || entry.status !== "watched" || entry.favorite === on)
+    return data;
   return {
     ...data,
     entries: { ...data.entries, [key]: { ...entry, favorite: on } },
