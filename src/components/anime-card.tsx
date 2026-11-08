@@ -22,14 +22,12 @@ import { isInteractiveElementClick } from "@/lib/utils";
  */
 export const AnimeCard = memo(function AnimeCard({
   work,
-  gachaMode = true,
   status = "none",
   onStatusChange,
   favorite = false,
   onFavoriteChange,
 }: {
   work: AnnictWork;
-  gachaMode?: boolean;
   status?: CollectionStatus;
   onStatusChange?: (annictId: number, next: CollectionStatus) => void;
   favorite?: boolean;
@@ -67,52 +65,7 @@ export const AnimeCard = memo(function AnimeCard({
     </button>
   );
 
-  const card = !gachaMode ? (
-    <Card
-      id={`work-${work.annictId}`}
-      onClick={openFromCardClick}
-      className="relative cursor-pointer overflow-hidden p-0 scroll-mt-4 transition-shadow hover:shadow-md"
-    >
-      {favoriteButton("absolute top-2 right-2")}
-      <div className="flex gap-4 p-4">
-        <div className="shrink-0 w-24 h-36 rounded-md overflow-hidden bg-muted">
-          {hasImage ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={work.image!.recommendedImageUrl!}
-              alt={work.title}
-              className="w-full h-full object-cover"
-              loading="lazy"
-              onError={() => setImageError(true)}
-            />
-          ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-xs text-[oklch(0.45_0.02_250)]">
-              <NoImageIcon className="w-8 h-8" />
-              <span className="text-[10px]">No image</span>
-            </div>
-          )}
-        </div>
-        <div className="flex-1 min-w-0 flex flex-col gap-2">
-          <h3 className="pr-8 font-semibold leading-snug">
-            {titleButton("line-clamp-2 rounded-sm")}
-          </h3>
-          <p className="text-sm text-muted-foreground">{formatSeasonMedia(work)}</p>
-          <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
-            <span>視聴登録 {work.watchersCount.toLocaleString()}人</span>
-            {satisfaction && <span>満足度 {satisfaction}</span>}
-          </div>
-          {onStatusChange && (
-            <div className="mt-auto flex items-center justify-end">
-              <StatusButtons
-                status={status}
-                onChange={(next) => onStatusChange(work.annictId, next)}
-              />
-            </div>
-          )}
-        </div>
-      </div>
-    </Card>
-  ) : (
+  const card = (
     <Card
       id={`work-${work.annictId}`}
       onClick={openFromCardClick}

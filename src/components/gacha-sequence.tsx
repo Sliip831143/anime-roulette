@@ -330,7 +330,10 @@ export function GachaSequence({ works, onClose }: Props) {
               );
             })}
           </div>
-          <div className="gacha-hint">クリック / Enter で開始</div>
+          <div className="gacha-hint">
+            <span className="gacha-hint-pointer">クリック / Enter で開始</span>
+            <span className="gacha-hint-touch">タップで開始</span>
+          </div>
         </>
       )}
 
@@ -493,9 +496,16 @@ export function GachaSequence({ works, onClose }: Props) {
            </div>
           </div>
           <div className="gacha-hint">
-            {revealIndex + 1 < works.length
-              ? "クリック / Enter で次へ"
-              : "クリック / Enter で結果一覧へ"}
+            <span className="gacha-hint-pointer">
+              {revealIndex + 1 < works.length
+                ? "クリック / Enter で次へ"
+                : "クリック / Enter で結果一覧へ"}
+            </span>
+            <span className="gacha-hint-touch">
+              {revealIndex + 1 < works.length
+                ? "タップで次へ"
+                : "タップで結果一覧へ"}
+            </span>
           </div>
         </>
       )}

@@ -130,24 +130,20 @@
 }
 
 /* ============================================================
-   ガチャモード（ブルアカ風）
+   ブルアカ風テーマ（全画面共通）
    ============================================================ */
 
 /* シンプルモード時はガチャ専用要素を非表示 */
 .gacha-halo,
 .gacha-rarity-badge {
-  display: none;
-}
-
-[data-mode="gacha"] .gacha-halo {
-  display: block;
-}
-
-[data-mode="gacha"] .gacha-rarity-badge {
   display: inline-block;
 }
 
-[data-mode="gacha"] {
+.gacha-halo {
+  display: block;
+}
+
+:root {
   --gacha-sky-1: oklch(0.97 0.02 230);
   --gacha-sky-2: oklch(0.92 0.06 230);
   --gacha-sky-3: oklch(0.96 0.03 250);
@@ -157,9 +153,8 @@
   /* r3 = 虹: ultra rare（CSSで多色グラデを直接描画） */
 }
 
-/* ガチャモード時の背景＋丸ゴシック（Zen Maru Gothic） */
-[data-mode="gacha"] body,
-body[data-mode="gacha"] {
+/* ページ背景＋丸ゴシック（Zen Maru Gothic） */
+body {
   font-family: var(--font-rounded), "Hiragino Maru Gothic ProN", "ヒラギノ丸ゴ ProN W3", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
   background:
     radial-gradient(ellipse at 80% 8%, oklch(1 0 0 / 0.85) 0%, transparent 45%),
@@ -170,7 +165,7 @@ body[data-mode="gacha"] {
 }
 
 /* 斜めライン（青系のみ・薄め） */
-[data-mode="gacha"]::before {
+html::before {
   content: "";
   position: fixed;
   inset: -30%;
@@ -194,7 +189,7 @@ body[data-mode="gacha"] {
 }
 
 /* 三角形シルエット（白〜薄水色のみ）＋薄シアン角丸フレーム */
-[data-mode="gacha"]::after {
+html::after {
   content: "";
   position: fixed;
   inset: 0;
@@ -207,7 +202,7 @@ body[data-mode="gacha"] {
 }
 
 /* ★3 狙いの条件選択中・★3 を含む結果の表示中は、★3演出（.gacha-stage.has-rainbow）と同じピンク系背景にする */
-[data-mode="gacha"][data-gacha-bg="rainbow"] body {
+[data-gacha-bg="rainbow"] body {
   background:
     radial-gradient(ellipse at 88% 6%, oklch(1 0 0 / 0.75) 0%, transparent 38%),
     radial-gradient(ellipse at 8% 70%, oklch(0.86 0.11 350 / 0.85) 0%, transparent 55%),
@@ -217,7 +212,7 @@ body[data-mode="gacha"] {
   background-attachment: fixed;
 }
 
-[data-mode="gacha"][data-gacha-bg="rainbow"]::before {
+[data-gacha-bg="rainbow"]::before {
   background:
     repeating-linear-gradient(
       118deg,
@@ -234,7 +229,7 @@ body[data-mode="gacha"] {
     );
 }
 
-[data-mode="gacha"][data-gacha-bg="rainbow"]::after {
+[data-gacha-bg="rainbow"]::after {
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='820' height='820' viewBox='0 0 820 820'><path d='M90 70 L230 70 L160 200 Z' fill='%23ffffff' fill-opacity='0.55'/><path d='M580 180 L720 180 L650 320 Z' fill='%23c8b8ff' fill-opacity='0.5'/><path d='M180 470 L320 470 L250 600 Z' fill='%23ffffff' fill-opacity='0.42'/><path d='M620 600 L760 600 L690 740 Z' fill='%23ffd6e8' fill-opacity='0.55'/><path d='M30 280 L120 280 L75 360 Z' fill='%23b8e8ff' fill-opacity='0.45'/><path d='M430 720 L520 720 L475 800 Z' fill='%23ffffff' fill-opacity='0.4'/><path d='M400 60 L500 60 L450 150 Z' fill='%23ffffff' fill-opacity='0.42'/><rect x='540' y='420' width='180' height='180' rx='12' fill='none' stroke='%2393e0ff' stroke-opacity='0.55' stroke-width='2'/><rect x='720' y='380' width='14' height='14' fill='%23ffd84c' fill-opacity='0.8'/><rect x='760' y='540' width='10' height='10' fill='%23ffd84c' fill-opacity='0.7'/><rect x='60' y='620' width='12' height='12' fill='%23ffd84c' fill-opacity='0.7'/></svg>");
 }
 
@@ -248,7 +243,7 @@ body[data-mode="gacha"] {
   to { background-position: 820px -410px; }
 }
 
-[data-mode="gacha"] main {
+main {
   position: relative;
   z-index: 1;
 }
@@ -266,7 +261,7 @@ body[data-mode="gacha"] {
 }
 
 /* ガチャモード：結果カード（申請書ストライプ風） */
-[data-mode="gacha"] .gacha-card {
+.gacha-card {
   background: oklch(0.995 0.003 80);
   border: none;
   border-radius: 4px;
@@ -279,7 +274,7 @@ body[data-mode="gacha"] {
   transition: transform 200ms ease, box-shadow 300ms ease;
 }
 
-[data-mode="gacha"] .gacha-card:hover {
+.gacha-card:hover {
   transform: translateY(-2px);
   box-shadow:
     0 8px 18px oklch(0 0 0 / 0.18),
@@ -287,7 +282,7 @@ body[data-mode="gacha"] {
 }
 
 /* 上端の濃紺タイトルバー */
-[data-mode="gacha"] .gacha-card-titlebar {
+.gacha-card-titlebar {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -299,7 +294,7 @@ body[data-mode="gacha"] {
   position: relative;
 }
 
-[data-mode="gacha"] .gacha-card-titlebar::after {
+.gacha-card-titlebar::after {
   content: "";
   position: absolute;
   right: 0;
@@ -309,7 +304,7 @@ body[data-mode="gacha"] {
   background: oklch(0.5 0.18 230);
 }
 
-[data-mode="gacha"] .gacha-card-rarity {
+.gacha-card-rarity {
   color: oklch(0.88 0.18 90);
   font-size: 13px;
   letter-spacing: 0.06em;
@@ -320,7 +315,7 @@ body[data-mode="gacha"] {
   flex-shrink: 0;
 }
 
-[data-mode="gacha"] .gacha-card-title {
+.gacha-card-title {
   font-size: 15px;
   font-weight: 800;
   color: oklch(0.99 0 0);
@@ -331,26 +326,26 @@ body[data-mode="gacha"] {
 }
 
 /* レアリティ別アクセント */
-[data-mode="gacha"] .gacha-card[data-rarity="r2"] .gacha-card-titlebar::after {
+.gacha-card[data-rarity="r2"] .gacha-card-titlebar::after {
   background: oklch(0.78 0.18 85);
 }
 
-[data-mode="gacha"] .gacha-card[data-rarity="r2"] .gacha-card-rarity {
+.gacha-card[data-rarity="r2"] .gacha-card-rarity {
   color: oklch(0.88 0.18 85);
 }
 
-[data-mode="gacha"] .gacha-card[data-rarity="r2"] {
+.gacha-card[data-rarity="r2"] {
   box-shadow:
     0 0 22px oklch(0.85 0.18 85 / 0.35),
     0 4px 14px oklch(0 0 0 / 0.15),
     inset 0 0 0 1px oklch(0.85 0.18 85 / 0.4);
 }
 
-[data-mode="gacha"] .gacha-card[data-rarity="r3"] .gacha-card-titlebar {
+.gacha-card[data-rarity="r3"] .gacha-card-titlebar {
   background: linear-gradient(135deg, oklch(0.22 0.05 255), oklch(0.3 0.08 280));
 }
 
-[data-mode="gacha"] .gacha-card[data-rarity="r3"] .gacha-card-titlebar::after {
+.gacha-card[data-rarity="r3"] .gacha-card-titlebar::after {
   background: linear-gradient(180deg,
     oklch(0.72 0.22 25),
     oklch(0.78 0.18 85),
@@ -359,7 +354,7 @@ body[data-mode="gacha"] {
   width: 5px;
 }
 
-[data-mode="gacha"] .gacha-card[data-rarity="r3"] .gacha-card-rarity {
+.gacha-card[data-rarity="r3"] .gacha-card-rarity {
   background: linear-gradient(135deg,
     oklch(0.78 0.22 25),
     oklch(0.85 0.18 85),
@@ -373,7 +368,7 @@ body[data-mode="gacha"] {
   -webkit-text-stroke: 0.6px oklch(0.55 0.12 300 / 0.6);
 }
 
-[data-mode="gacha"] .gacha-card[data-rarity="r3"] {
+.gacha-card[data-rarity="r3"] {
   box-shadow:
     0 0 48px oklch(0.78 0.20 290 / 0.45),
     0 0 72px oklch(0.78 0.18 60 / 0.36),
@@ -382,13 +377,13 @@ body[data-mode="gacha"] {
 }
 
 /* カード本体（画像＋ストライプ） */
-[data-mode="gacha"] .gacha-card-body {
+.gacha-card-body {
   display: flex;
   gap: 14px;
   padding: 14px 18px 12px;
 }
 
-[data-mode="gacha"] .gacha-card-image {
+.gacha-card-image {
   width: 96px;
   height: 136px;
   object-fit: cover;
@@ -398,7 +393,7 @@ body[data-mode="gacha"] {
   box-shadow: inset 0 0 0 1px oklch(0.55 0.08 250 / 0.15);
 }
 
-[data-mode="gacha"] .gacha-card-image-empty {
+.gacha-card-image-empty {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -412,28 +407,28 @@ body[data-mode="gacha"] {
   color: oklch(0.5 0.06 250);
 }
 
-[data-mode="gacha"] .gacha-card-image-empty svg {
+.gacha-card-image-empty svg {
   width: 36px;
   height: 36px;
   color: oklch(0.62 0.06 250 / 0.7);
 }
 
-[data-mode="gacha"] .gacha-card-rows {
+.gacha-card-rows {
   flex: 1;
   display: flex;
   flex-direction: column;
   min-width: 0;
 }
 
-[data-mode="gacha"] .gacha-card-row {
+.gacha-card-row {
   padding: 6px 0;
 }
 
-[data-mode="gacha"] .gacha-card-row + .gacha-card-row {
+.gacha-card-row + .gacha-card-row {
   border-top: 1px dashed oklch(0.78 0.03 250 / 0.5);
 }
 
-[data-mode="gacha"] .gacha-card-label {
+.gacha-card-label {
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.14em;
@@ -444,20 +439,20 @@ body[data-mode="gacha"] {
   margin-bottom: 3px;
 }
 
-[data-mode="gacha"] .gacha-card-value {
+.gacha-card-value {
   font-size: 13px;
   font-weight: 700;
   color: oklch(0.25 0.04 250);
   padding-left: 2px;
 }
 
-[data-mode="gacha"] .gacha-card-value-emph {
+.gacha-card-value-emph {
   color: oklch(0.55 0.20 25);
   font-style: italic;
   font-size: 14px;
 }
 
-[data-mode="gacha"] .gacha-card-links {
+.gacha-card-links {
   display: flex;
   gap: 14px;
   padding: 8px 18px 10px;
@@ -466,18 +461,18 @@ body[data-mode="gacha"] {
   font-size: 11px;
 }
 
-[data-mode="gacha"] .gacha-card-links a {
+.gacha-card-links a {
   color: oklch(0.4 0.15 250);
   font-weight: 700;
   letter-spacing: 0.04em;
   text-decoration: none;
 }
 
-[data-mode="gacha"] .gacha-card-links a:hover {
+.gacha-card-links a:hover {
   text-decoration: underline;
 }
 
-[data-mode="gacha"] .gacha-card-share {
+.gacha-card-share {
   margin-left: auto;
   display: inline-flex;
   align-items: center;
@@ -492,12 +487,12 @@ body[data-mode="gacha"] {
   letter-spacing: 0.04em;
 }
 
-[data-mode="gacha"] .gacha-card-share:hover {
+.gacha-card-share:hover {
   color: oklch(0.4 0.15 250);
 }
 
 /* ヘッダーのタイトル（h2 「結果」用） */
-[data-mode="gacha"] .gacha-title {
+.gacha-title {
   font-weight: 800;
   letter-spacing: -0.02em;
   background: linear-gradient(135deg,
@@ -510,14 +505,14 @@ body[data-mode="gacha"] {
 }
 
 /* メインタイトル：ロゴ画像 */
-[data-mode="gacha"] .gacha-hero {
+.gacha-hero {
   display: inline-flex;
   align-items: center;
   margin: 0;
   line-height: 0;
 }
 
-[data-mode="gacha"] .gacha-hero-logo {
+.gacha-hero-logo {
   height: clamp(64px, 10vw, 88px);
   width: auto;
   display: block;
@@ -527,7 +522,7 @@ body[data-mode="gacha"] {
    - ガチャ結果がない間だけ描画する（page.tsx 側で制御）。flex-basis 0 で「フォームの下に残った高さ」だけを占有し、ページにスクロールを出さない
    - .page-root の下余白（lg 未満 5rem / lg 以上 2rem）は負のマージンで打ち消し、画面の下端まで伸ばす
    - 画像は枠の下端に揃え、下側を overflow で切り落とす（下記 img） */
-[data-mode="gacha"] .gacha-mascot {
+.gacha-mascot {
   flex: 1 1 0;
   min-height: 0;
   margin-bottom: -5rem;
@@ -543,14 +538,14 @@ body[data-mode="gacha"] {
 }
 
 /* 枠自体は横幅いっぱいに広がるためクリックを透過させ、画像（リンク）の上だけクリック可能にする */
-[data-mode="gacha"] .gacha-mascot a {
+.gacha-mascot a {
   display: block;
   flex: none;
   pointer-events: auto;
   border-radius: 8px;
 }
 
-[data-mode="gacha"] .gacha-mascot a:focus-visible {
+.gacha-mascot a:focus-visible {
   outline: 2px solid var(--gacha-accent);
   outline-offset: 4px;
 }
@@ -558,7 +553,7 @@ body[data-mode="gacha"] {
 /* 画像の上から --visible の割合だけを見せ、残りは負のマージンで枠の下へ押し出す。
    高さは「上限 --max-h」「見える部分が枠に収まる高さ」「枠幅に収まる高さ（縦横比 0.775）」の最小値なので、
    枠が低くても光輪が上で切れることはなく、見切れ位置（服のどこで切れるか）は画面サイズによらず一定になる */
-[data-mode="gacha"] .gacha-mascot img {
+.gacha-mascot img {
   --visible: 0.92;
   --max-h: 740px;
   --h: min(var(--max-h), calc(100cqh / var(--visible)), calc(100cqw / 0.775));
@@ -571,7 +566,7 @@ body[data-mode="gacha"] {
 
 /* 一定間隔で出す演出：2 回小さく跳ねる。跳ねる高さは画像を枠の下へ押し出している量より小さくし、
    画像の下端（見切れ位置）が見えないようにする */
-[data-mode="gacha"] .gacha-mascot a {
+.gacha-mascot a {
   position: relative;
 }
 
@@ -579,7 +574,7 @@ body[data-mode="gacha"] {
    コンテナクエリの再評価で両方のアニメーションが最初から再生され、跳ねる動きと吹き出しが何度も繰り返されてしまう。
    そのため跳ねる動き・吹き出しとも、演出の状態（page.tsx の MASCOT_CHEER_MS = 2.6s）より長い 3s にして、
    演出の状態が外れるまでアニメーションが終わらないようにしている（跳ねるのは最初の 0.9s、吹き出しは 2.5s で消える） */
-[data-mode="gacha"] .gacha-mascot.is-cheering img {
+.gacha-mascot.is-cheering img {
   animation: mascot-hop 3s ease-in-out forwards;
 }
 
@@ -589,7 +584,7 @@ body[data-mode="gacha"] {
 }
 
 /* キャラの右上に出すハートの吹き出し */
-[data-mode="gacha"] .gacha-mascot-bubble {
+.gacha-mascot-bubble {
   position: absolute;
   left: 78%;
   top: 2%;
@@ -608,7 +603,7 @@ body[data-mode="gacha"] {
 }
 
 /* キャラ側（左下）へ向けたしっぽ */
-[data-mode="gacha"] .gacha-mascot-bubble::after {
+.gacha-mascot-bubble::after {
   content: "";
   position: absolute;
   left: 6px;
@@ -621,7 +616,7 @@ body[data-mode="gacha"] {
   transform: rotate(-30deg) skewX(-10deg);
 }
 
-[data-mode="gacha"] .gacha-mascot-heart {
+.gacha-mascot-heart {
   width: 22px;
   height: 22px;
   color: oklch(0.7 0.19 355);
@@ -638,65 +633,52 @@ body[data-mode="gacha"] {
 
 /* 残り高さが小さすぎると光輪だけが覗く中途半端な見た目になるため、出さない */
 @container (max-height: 120px) {
-  [data-mode="gacha"] .gacha-mascot img,
-  [data-mode="gacha"] .gacha-mascot-bubble {
+  .gacha-mascot img,
+  .gacha-mascot-bubble {
     display: none;
   }
 }
 
 @media (min-width: 64rem) {
-  [data-mode="gacha"] .gacha-mascot {
+  .gacha-mascot {
     margin-bottom: -2rem;
   }
 }
 
 @media (max-width: 640px) {
   /* スマホは小さめにして、膨らんだ袖（肘のあたり）が半分ほど隠れる位置まで見せる */
-  [data-mode="gacha"] .gacha-mascot img {
+  .gacha-mascot img {
     --visible: 0.87;
     --max-h: 400px;
   }
 
-  [data-mode="gacha"] .gacha-mascot {
+  .gacha-mascot {
     padding-top: 14px;
   }
 
-  [data-mode="gacha"] .gacha-mascot-bubble {
+  .gacha-mascot-bubble {
     width: 36px;
     height: 32px;
     border-radius: 11px;
   }
 
-  [data-mode="gacha"] .gacha-mascot-bubble::after {
+  .gacha-mascot-bubble::after {
     left: 5px;
     bottom: -4px;
     width: 8px;
     height: 8px;
   }
 
-  [data-mode="gacha"] .gacha-mascot-heart {
+  .gacha-mascot-heart {
     width: 17px;
     height: 17px;
   }
 }
 
 /* 簡易モードの検索フォーム（中央寄せのミニマルカード） */
-[data-mode="simple"] .simple-form {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 28px 26px;
-  background: var(--card);
-  box-shadow: 0 1px 3px oklch(0 0 0 / 0.04);
-}
-
-@media (max-width: 768px) {
-  [data-mode="simple"] .simple-form {
-    padding: 28px 24px;
-  }
-}
 
 /* 検索フォーム（白紙の申請書） */
-[data-mode="gacha"] .gacha-form {
+.gacha-form {
   background: oklch(0.995 0.003 80);
   backdrop-filter: none;
   border: none;
@@ -708,8 +690,8 @@ body[data-mode="gacha"] {
     inset 0 0 0 1px oklch(0.55 0.08 250 / 0.15);
 }
 
-[data-mode="gacha"] .gacha-form::before,
-[data-mode="gacha"] .gacha-form::after {
+.gacha-form::before,
+.gacha-form::after {
   content: "";
   position: absolute;
   width: 16px;
@@ -718,14 +700,14 @@ body[data-mode="gacha"] {
   pointer-events: none;
 }
 
-[data-mode="gacha"] .gacha-form::before {
+.gacha-form::before {
   top: 8px;
   left: 8px;
   border-right: none;
   border-bottom: none;
 }
 
-[data-mode="gacha"] .gacha-form::after {
+.gacha-form::after {
   bottom: 8px;
   right: 8px;
   border-left: none;
@@ -733,7 +715,7 @@ body[data-mode="gacha"] {
 }
 
 /* 申請書ヘッダー */
-[data-mode="gacha"] .gacha-form-header {
+.gacha-form-header {
   font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
   font-size: 11px;
   font-weight: 700;
@@ -746,7 +728,7 @@ body[data-mode="gacha"] {
 }
 
 /* フォーム内のラベル（見出し）を薄ブルー帯に */
-[data-mode="gacha"] .gacha-form label[data-slot="label"] {
+.gacha-form label[data-slot="label"] {
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.14em;
@@ -759,7 +741,7 @@ body[data-mode="gacha"] {
 }
 
 /* 「ガチャを引く」CTA ボタン */
-[data-mode="gacha"] .gacha-form button[type="submit"] {
+.gacha-form button[type="submit"] {
   width: 100%;
   background: linear-gradient(135deg, oklch(0.22 0.05 255), oklch(0.32 0.08 280));
   color: oklch(0.99 0 0);
@@ -778,19 +760,19 @@ body[data-mode="gacha"] {
 }
 
 /* 「ガチャを引く」の左に添える宝石。文字の高さに合わせる */
-[data-mode="gacha"] .gacha-submit-gem {
+.gacha-submit-gem {
   display: block;
   width: auto;
   height: 20px;
 }
 
 @media (max-width: 640px) {
-  [data-mode="gacha"] .gacha-submit-gem {
+  .gacha-submit-gem {
     height: 16px;
   }
 }
 
-[data-mode="gacha"] .gacha-form button[type="submit"]::before {
+.gacha-form button[type="submit"]::before {
   content: "";
   position: absolute;
   right: 0;
@@ -804,7 +786,7 @@ body[data-mode="gacha"] {
     oklch(0.62 0.22 290));
 }
 
-[data-mode="gacha"] .gacha-form button[type="submit"]:hover:not(:disabled) {
+.gacha-form button[type="submit"]:hover:not(:disabled) {
   box-shadow:
     0 6px 18px oklch(0 0 0 / 0.34),
     inset 0 0 0 1px oklch(0.4 0.12 270 / 0.7);
@@ -812,13 +794,10 @@ body[data-mode="gacha"] {
 }
 
 /* フォーム送信ボタン（両モード）：ホバー時のカーソルを pointer に */
-[data-mode="gacha"] .gacha-form button[type="submit"]:not(:disabled),
-[data-mode="simple"] .simple-form button[type="submit"]:not(:disabled) {
-  cursor: pointer;
-}
+.gacha-form button[type="submit"]:not(:disabled),
 
 /* キーボードフォーカス時：チェックボックス/ラジオと同色の薄青リングで縁取る */
-[data-mode="gacha"] .gacha-form button[type="submit"]:focus-visible {
+.gacha-form button[type="submit"]:focus-visible {
   outline: none;
   box-shadow:
     0 0 0 3px oklch(0.62 0.16 230 / 0.25),
@@ -826,7 +805,7 @@ body[data-mode="gacha"] {
     inset 0 0 0 1px oklch(0.4 0.12 270 / 0.7);
 }
 
-[data-mode="gacha"] .gacha-form button[type="submit"]:disabled {
+.gacha-form button[type="submit"]:disabled {
   opacity: 0.55;
   cursor: not-allowed;
 }
@@ -836,7 +815,7 @@ body[data-mode="gacha"] {
    ============================================================ */
 
 /* テキストフィールド */
-[data-mode="gacha"] .gacha-form [data-slot="input"] {
+.gacha-form [data-slot="input"] {
   height: 38px;
   background: oklch(0.97 0.01 230);
   border: 1px solid oklch(0.85 0.02 230);
@@ -849,24 +828,24 @@ body[data-mode="gacha"] {
   outline: none;
 }
 
-[data-mode="gacha"] .gacha-form [data-slot="input"]::placeholder {
+.gacha-form [data-slot="input"]::placeholder {
   color: oklch(0.7 0.04 250);
   font-weight: 500;
 }
 
-[data-mode="gacha"] .gacha-form [data-slot="input"]:hover:not(:disabled) {
+.gacha-form [data-slot="input"]:hover:not(:disabled) {
   background: oklch(0.99 0 0);
   border-color: oklch(0.75 0.06 230);
 }
 
-[data-mode="gacha"] .gacha-form [data-slot="input"]:focus-visible {
+.gacha-form [data-slot="input"]:focus-visible {
   background: oklch(0.99 0 0);
   border-color: oklch(0.62 0.16 230);
   box-shadow: 0 0 0 3px oklch(0.62 0.16 230 / 0.18);
 }
 
 /* チェックボックス */
-[data-mode="gacha"] .gacha-form [data-slot="checkbox"] {
+.gacha-form [data-slot="checkbox"] {
   width: 18px;
   height: 18px;
   border: 1.5px solid oklch(0.78 0.03 230);
@@ -875,25 +854,25 @@ body[data-mode="gacha"] {
   transition: border-color 150ms ease, background 150ms ease, box-shadow 150ms ease;
 }
 
-[data-mode="gacha"] .gacha-form [data-slot="checkbox"]:hover:not(:disabled) {
+.gacha-form [data-slot="checkbox"]:hover:not(:disabled) {
   border-color: oklch(0.62 0.16 230);
 }
 
-[data-mode="gacha"] .gacha-form [data-slot="checkbox"][data-checked] {
+.gacha-form [data-slot="checkbox"][data-checked] {
   background: oklch(0.62 0.16 230);
   border-color: oklch(0.62 0.16 230);
 }
 
-[data-mode="gacha"] .gacha-form [data-slot="checkbox"][data-checked]:hover:not(:disabled) {
+.gacha-form [data-slot="checkbox"][data-checked]:hover:not(:disabled) {
   background: oklch(0.58 0.16 235);
   border-color: oklch(0.58 0.16 235);
 }
 
-[data-mode="gacha"] .gacha-form [data-slot="checkbox"]:focus-visible {
+.gacha-form [data-slot="checkbox"]:focus-visible {
   box-shadow: 0 0 0 3px oklch(0.62 0.16 230 / 0.25);
 }
 
-[data-mode="gacha"] .gacha-form [data-slot="checkbox-indicator"] svg {
+.gacha-form [data-slot="checkbox-indicator"] svg {
   color: oklch(0.99 0 0);
   width: 13px;
   height: 13px;
@@ -901,7 +880,7 @@ body[data-mode="gacha"] {
 }
 
 /* ラジオボタン */
-[data-mode="gacha"] .gacha-form [data-slot="radio-group-item"] {
+.gacha-form [data-slot="radio-group-item"] {
   width: 18px;
   height: 18px;
   border: 1.5px solid oklch(0.78 0.03 230);
@@ -909,37 +888,37 @@ body[data-mode="gacha"] {
   transition: border-color 150ms ease, background 150ms ease, box-shadow 150ms ease;
 }
 
-[data-mode="gacha"] .gacha-form [data-slot="radio-group-item"]:hover:not(:disabled) {
+.gacha-form [data-slot="radio-group-item"]:hover:not(:disabled) {
   border-color: oklch(0.62 0.16 230);
 }
 
-[data-mode="gacha"] .gacha-form [data-slot="radio-group-item"][data-checked] {
+.gacha-form [data-slot="radio-group-item"][data-checked] {
   background: oklch(0.62 0.16 230);
   border-color: oklch(0.62 0.16 230);
 }
 
-[data-mode="gacha"] .gacha-form [data-slot="radio-group-item"]:focus-visible {
+.gacha-form [data-slot="radio-group-item"]:focus-visible {
   box-shadow: 0 0 0 3px oklch(0.62 0.16 230 / 0.25);
 }
 
-[data-mode="gacha"] .gacha-form [data-slot="radio-group-item"][data-checked] [data-slot="radio-group-indicator"] span {
+.gacha-form [data-slot="radio-group-item"][data-checked] [data-slot="radio-group-indicator"] span {
   background: oklch(0.99 0 0);
   width: 7px;
   height: 7px;
 }
 
 /* スライダー */
-[data-mode="gacha"] .gacha-form [data-slot="slider-track"] {
+.gacha-form [data-slot="slider-track"] {
   height: 6px !important;
   background: oklch(0.9 0.02 230);
   border-radius: 999px;
 }
 
-[data-mode="gacha"] .gacha-form [data-slot="slider-range"] {
+.gacha-form [data-slot="slider-range"] {
   background: linear-gradient(90deg, oklch(0.68 0.14 220), oklch(0.6 0.16 240));
 }
 
-[data-mode="gacha"] .gacha-form [data-slot="slider-thumb"] {
+.gacha-form [data-slot="slider-thumb"] {
   width: 18px !important;
   height: 18px !important;
   background: oklch(0.99 0 0);
@@ -950,7 +929,7 @@ body[data-mode="gacha"] {
   transition: box-shadow 150ms ease, transform 150ms ease;
 }
 
-[data-mode="gacha"] .gacha-form [data-slot="slider-thumb"]:hover {
+.gacha-form [data-slot="slider-thumb"]:hover {
   box-shadow:
     0 0 0 6px oklch(0.62 0.16 230 / 0.18),
     0 2px 6px oklch(0 0 0 / 0.18),
@@ -960,7 +939,7 @@ body[data-mode="gacha"] {
 /* Base UI の Slider Thumb は内部 input がフォーカスを受けるため :focus-within で拾う。
    隠し input はマウスでフォーカスされないので、実質キーボード時のみ反応する。
    outline を使うのは Tailwind の focus-visible:ring-3 が box-shadow を奪うため。 */
-[data-mode="gacha"] .gacha-form [data-slot="slider-thumb"]:focus-within {
+.gacha-form [data-slot="slider-thumb"]:focus-within {
   outline: 3px solid oklch(0.62 0.16 230 / 0.25);
   outline-offset: 0;
   box-shadow:
@@ -969,10 +948,6 @@ body[data-mode="gacha"] {
 }
 
 /* 簡易モードのスライダー：他フォーム部品と同じグレーリング (shadcn --ring / 50%) */
-[data-mode="simple"] .simple-form [data-slot="slider-thumb"]:focus-within {
-  outline: 3px solid color-mix(in oklab, var(--ring) 50%, transparent);
-  outline-offset: 0;
-}
 
 /* スライダー thumb（両モード）：ボタンと同じ pointer。
    thumb 内には visually-hidden な input[type=range] があり、UA stylesheet で
@@ -990,14 +965,14 @@ body[data-mode="gacha"] {
   width: 44px;
   height: 44px;
   border-radius: 999px;
-  background: oklch(0.18 0 0);
+  background: linear-gradient(135deg, oklch(0.22 0.05 255), oklch(0.32 0.08 280));
   color: oklch(0.99 0 0);
   border: none;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 6px oklch(0 0 0 / 0.18);
+  box-shadow: 0 4px 12px oklch(0 0 0 / 0.28);
   z-index: 50;
   animation: scroll-top-in 0.25s ease-out both;
   transition: transform 150ms ease, box-shadow 150ms ease, filter 150ms ease;
@@ -1005,18 +980,6 @@ body[data-mode="gacha"] {
 
 .scroll-top-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 10px oklch(0 0 0 / 0.16);
-}
-
-/* ガチャモード時：濃紺グラデ */
-[data-mode="gacha"] .scroll-top-btn {
-  background: linear-gradient(135deg, oklch(0.22 0.05 255), oklch(0.32 0.08 280));
-  color: oklch(0.99 0 0);
-  border: none;
-  box-shadow: 0 4px 12px oklch(0 0 0 / 0.28);
-}
-
-[data-mode="gacha"] .scroll-top-btn:hover {
   box-shadow: 0 6px 16px oklch(0 0 0 / 0.34);
   filter: brightness(1.08);
 }
@@ -1042,18 +1005,13 @@ body[data-mode="gacha"] {
   width: 44px;
   height: 44px;
   border-radius: 999px;
-  background: oklch(0.18 0 0);
+  background: linear-gradient(135deg, oklch(0.22 0.05 255), oklch(0.32 0.08 280));
   color: oklch(0.99 0 0);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 6px oklch(0 0 0 / 0.18);
-  z-index: 50;
-}
-
-[data-mode="gacha"] .collection-fab {
-  background: linear-gradient(135deg, oklch(0.22 0.05 255), oklch(0.32 0.08 280));
   box-shadow: 0 4px 12px oklch(0 0 0 / 0.28);
+  z-index: 50;
 }
 
 .collection-fab svg {
@@ -1088,6 +1046,9 @@ body[data-mode="gacha"] {
 /* 結果一覧パネル（PC のみ表示） */
 .results-panel {
   display: none;
+  background: oklch(0.99 0 0);
+  border-color: oklch(0.85 0.04 230);
+  box-shadow: 0 6px 18px oklch(0 0 0 / 0.15);
 }
 
 @media (min-width: 1024px) {
@@ -1114,11 +1075,12 @@ body[data-mode="gacha"] {
   align-items: center;
   justify-content: space-between;
   padding: 10px 12px;
-  background: oklch(0.18 0 0);
+  background: linear-gradient(135deg, oklch(0.22 0.05 255), oklch(0.28 0.06 250));
   color: oklch(0.99 0 0);
   font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  border-bottom: none;
 }
 
 .results-panel-close {
@@ -1129,14 +1091,14 @@ body[data-mode="gacha"] {
   height: 22px;
   border: none;
   background: transparent;
-  color: oklch(0.85 0 0);
+  color: oklch(0.99 0 0);
   cursor: pointer;
   border-radius: 4px;
   transition: background 150ms ease, color 150ms ease;
 }
 
 .results-panel-close:hover {
-  background: oklch(1 0 0 / 0.15);
+  background: oklch(1 0 0 / 0.18);
   color: oklch(0.99 0 0);
 }
 
@@ -1154,7 +1116,7 @@ body[data-mode="gacha"] {
 }
 
 .results-panel-list li + li {
-  border-top: 1px solid oklch(0.94 0 0);
+  border-top: 1px dashed oklch(0.85 0.04 250 / 0.5);
 }
 
 .results-panel-list button {
@@ -1167,71 +1129,30 @@ body[data-mode="gacha"] {
   border: none;
   text-align: left;
   cursor: pointer;
-  color: oklch(0.32 0 0);
+  color: oklch(0.32 0.05 250);
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
   line-height: 1.4;
   transition: background 150ms ease, color 150ms ease;
 }
 
 .results-panel-list button:hover {
-  background: oklch(0.96 0 0);
-  color: oklch(0.15 0 0);
+  background: oklch(0.95 0.04 230);
+  color: oklch(0.4 0.15 250);
 }
 
 .results-panel-index {
   flex-shrink: 0;
   font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
   font-size: 10px;
-  color: oklch(0.45 0 0);
-  background: oklch(0.94 0 0);
+  color: oklch(0.55 0.05 250);
+  background: oklch(0.94 0.04 220 / 0.7);
   padding: 1px 5px;
   border-radius: 2px;
   margin-top: 1px;
 }
 
 /* ガチャモード時：青系の華やかなテーマで上書き */
-[data-mode="gacha"] .results-panel {
-  background: oklch(0.99 0 0);
-  border-color: oklch(0.85 0.04 230);
-  box-shadow: 0 6px 18px oklch(0 0 0 / 0.15);
-}
-
-[data-mode="gacha"] .results-panel-header {
-  background: linear-gradient(135deg, oklch(0.22 0.05 255), oklch(0.28 0.06 250));
-  color: oklch(0.99 0 0);
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  border-bottom: none;
-}
-
-[data-mode="gacha"] .results-panel-close {
-  color: oklch(0.99 0 0);
-}
-
-[data-mode="gacha"] .results-panel-close:hover {
-  background: oklch(1 0 0 / 0.18);
-  color: oklch(0.99 0 0);
-}
-
-[data-mode="gacha"] .results-panel-list li + li {
-  border-top: 1px dashed oklch(0.85 0.04 250 / 0.5);
-}
-
-[data-mode="gacha"] .results-panel-list button {
-  color: oklch(0.32 0.05 250);
-  font-weight: 600;
-}
-
-[data-mode="gacha"] .results-panel-list button:hover {
-  background: oklch(0.95 0.04 230);
-  color: oklch(0.4 0.15 250);
-}
-
-[data-mode="gacha"] .results-panel-index {
-  color: oklch(0.55 0.05 250);
-  background: oklch(0.94 0.04 220 / 0.7);
-}
 
 .results-panel-title {
   flex: 1;
@@ -1247,51 +1168,6 @@ body[data-mode="gacha"] {
 }
 
 /* モード切替セグメントピル（デフォルト：ミニマル） */
-.mode-toggle {
-  display: inline-flex;
-  border-radius: 999px;
-  border: 1px solid oklch(0.88 0 0);
-  background: oklch(0.97 0 0);
-  padding: 2px;
-  gap: 2px;
-  flex-shrink: 0;
-}
-
-.mode-toggle-btn {
-  font-size: 12px;
-  font-weight: 500;
-  padding: 6px 14px;
-  border-radius: 999px;
-  color: oklch(0.5 0 0);
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  transition: background 150ms ease, color 150ms ease, box-shadow 150ms ease;
-  white-space: nowrap;
-  line-height: 1;
-}
-
-.mode-toggle-btn:hover:not(.is-active) {
-  color: oklch(0.2 0 0);
-}
-
-.mode-toggle-btn.is-active {
-  background: oklch(0.2 0 0);
-  color: oklch(0.99 0 0);
-  box-shadow: 0 1px 2px oklch(0 0 0 / 0.15);
-}
-
-.mode-toggle-btn:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px oklch(0.6 0 0 / 0.25);
-}
-
-/* 簡易モード × スマホ：ヘッダー上の余白 */
-@media (max-width: 640px) {
-  [data-mode="simple"] .page-root {
-    padding-top: 24px;
-  }
-}
 
 /* メイン画面の初期表示フェードイン（テーマフラッシュ抑制の visibility:hidden 解除後に走る） */
 .page-fade-in {
@@ -1303,43 +1179,42 @@ body[data-mode="gacha"] {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* ガチャモード時：水色トーン */
-[data-mode="gacha"] .mode-toggle {
-  border-color: oklch(0.82 0.03 230);
-  background: oklch(0.97 0.01 230);
+/* ヘッダーの演出 ON/OFF スイッチ */
+.anim-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  font-size: 12px;
+  color: oklch(0.42 0.05 250);
+  white-space: nowrap;
+  cursor: pointer;
 }
 
-[data-mode="gacha"] .mode-toggle-btn {
-  color: oklch(0.5 0.04 250);
+@media (max-width: 640px) {
+  .anim-toggle {
+    font-size: 11px;
+  }
+
+  /* ロゴの文字は画像の下半分にあるため、スマホでは上下中央ではなく文字のベースライン寄りにスイッチを置く */
+  .header-actions {
+    align-self: flex-end;
+    margin-bottom: 7px;
+  }
 }
 
-[data-mode="gacha"] .mode-toggle-btn:hover:not(.is-active) {
-  color: oklch(0.32 0.06 250);
-}
-
-[data-mode="gacha"] .mode-toggle-btn.is-active {
-  background: linear-gradient(135deg, oklch(0.68 0.14 220), oklch(0.58 0.17 240));
-  color: oklch(0.99 0 0);
-  box-shadow: 0 1px 3px oklch(0 0 0 / 0.2);
-}
-
-[data-mode="gacha"] .mode-toggle-btn:focus-visible {
-  box-shadow: 0 0 0 3px oklch(0.62 0.16 230 / 0.25);
-}
-
-/* ヘッダーのモード切替スイッチ */
-[data-mode="gacha"] [data-slot="switch"] {
+[data-slot="switch"] {
   border: 1px solid oklch(0.75 0.04 230);
   box-shadow: inset 0 1px 2px oklch(0 0 0 / 0.08);
   transition: background 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
 }
 
-[data-mode="gacha"] [data-slot="switch"][data-unchecked] {
+[data-slot="switch"][data-unchecked] {
   background: oklch(0.9 0.02 230);
   border-color: oklch(0.78 0.04 230);
 }
 
-[data-mode="gacha"] [data-slot="switch"][data-checked] {
+[data-slot="switch"][data-checked] {
   background: linear-gradient(135deg, oklch(0.68 0.14 220), oklch(0.58 0.17 240));
   border-color: oklch(0.5 0.17 240);
   box-shadow:
@@ -1347,7 +1222,7 @@ body[data-mode="gacha"] {
     0 0 8px oklch(0.62 0.16 230 / 0.35);
 }
 
-[data-mode="gacha"] [data-slot="switch-thumb"] {
+[data-slot="switch-thumb"] {
   background: oklch(0.99 0 0);
   box-shadow: 0 1px 2px oklch(0 0 0 / 0.28);
 }
@@ -1356,20 +1231,20 @@ body[data-mode="gacha"] {
    スマホ表示：トップ画面のフォームカードを画面内に収める
    ============================================================ */
 @media (max-width: 768px) {
-  [data-mode="gacha"] .gacha-hero-logo {
+  .gacha-hero-logo {
     height: 52px;
   }
 
-  [data-mode="gacha"] .gacha-form {
+  .gacha-form {
     padding: 14px 14px 18px;
   }
 
-  [data-mode="gacha"] .gacha-form-header {
+  .gacha-form-header {
     padding-bottom: 8px;
     margin-bottom: 10px;
   }
 
-  [data-mode="gacha"] .gacha-form button[type="submit"] {
+  .gacha-form button[type="submit"] {
     padding: 11px 20px;
     font-size: 14px;
   }
@@ -1379,23 +1254,23 @@ body[data-mode="gacha"] {
    SP (640px 以下) でさらに縦余白を詰める：放送年バッジ込みでも収まるよう
    ============================================================ */
 @media (max-width: 640px) {
-  [data-mode="gacha"] .gacha-form {
+  .gacha-form {
     padding: 12px 14px 14px;
   }
 
-  [data-mode="gacha"] .gacha-form-header {
+  .gacha-form-header {
     font-size: 8px;
     padding-bottom: 6px;
     margin-bottom: 8px;
   }
 
-  [data-mode="gacha"] .gacha-form button[type="submit"] {
+  .gacha-form button[type="submit"] {
     padding: 9px 18px;
     font-size: 13px;
   }
 
   /* 各セクション内のラベル↔コンテンツ間を 8px → 6px に詰める */
-  [data-mode="gacha"] .gacha-form .space-y-2 > :not([hidden]) ~ :not([hidden]) {
+  .gacha-form .space-y-2 > :not([hidden]) ~ :not([hidden]) {
     margin-top: 6px;
   }
 }
@@ -1659,6 +1534,20 @@ body[data-mode="gacha"] {
   animation: hint-pulse 1.4s ease-in-out infinite;
   pointer-events: none;
   z-index: 10;
+}
+
+/* 操作ヒントの文言を入力手段で出し分ける。SSR 時点では端末が分からないため JS ではなくメディアクエリで切り替える */
+.gacha-hint-touch {
+  display: none;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .gacha-hint-pointer {
+    display: none;
+  }
+  .gacha-hint-touch {
+    display: inline;
+  }
 }
 
 @keyframes hint-pulse {
@@ -2328,18 +2217,6 @@ body[data-mode="gacha"] {
    マイクロインタラクション
    ============================================================ */
 
-/* シンプルモードの結果カード hover：軽く浮き上がる */
-[data-mode="simple"] [data-slot="card"] {
-  transition: transform 220ms cubic-bezier(0.2, 0.7, 0.3, 1.1), box-shadow 240ms ease;
-}
-
-[data-mode="simple"] [data-slot="card"]:hover {
-  transform: translateY(-2px);
-  box-shadow:
-    0 8px 18px oklch(0 0 0 / 0.10),
-    0 2px 4px oklch(0 0 0 / 0.06);
-}
-
 /* ガチャカード・ガチャ情報パネルのリンク hover：underline がスライドイン */
 .gacha-card-links a,
 .gacha-info-titlebar-message a {
@@ -2388,8 +2265,8 @@ body[data-mode="gacha"] {
   .gacha-rays,
   .gacha-shapes,
   .gacha-particles,
-  [data-mode="gacha"] body::before,
-  [data-mode="gacha"] body::after {
+  body::before,
+  body::after {
     animation: none !important;
   }
 

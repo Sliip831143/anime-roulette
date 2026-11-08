@@ -18,7 +18,6 @@ import {
 } from "@/lib/collection";
 import { useCollection } from "@/lib/use-collection";
 import { RARITY_LEVEL, RARITY_STARS, type Rarity } from "@/lib/rarity";
-import { SETTINGS_CHANGED_EVENT, readSettings } from "@/lib/settings";
 import { isInteractiveElementClick } from "@/lib/utils";
 
 type Filter = "all" | Rarity | "watched" | "later" | "not_interested" | "favorite";
@@ -61,8 +60,6 @@ export function CollectionView() {
   const [pendingConfirm, setPendingConfirm] = useState<
     "reset-watched" | "reset-collection" | null
   >(null);
-  // No image 表示・星の色をトップページのモードに合わせて出し分けるために参照する
-  const [gachaMode, setGachaMode] = useState(true);
   // 無限スクロール：描画する件数（データは全件メモリ上にあり、描画だけ間引く）
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
@@ -77,17 +74,6 @@ export function CollectionView() {
     handleScroll();
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  useEffect(() => {
-    // localStorage はクライアント限定のため、マウント後に読み込む。
-    // 隠しコマンドでモードが変わった場合も追従する
-    /* eslint-disable react-hooks/set-state-in-effect */
-    setGachaMode(readSettings().gachaMode);
-    /* eslint-enable react-hooks/set-state-in-effect */
-    const handler = () => setGachaMode(readSettings().gachaMode);
-    window.addEventListener(SETTINGS_CHANGED_EVENT, handler);
-    return () => window.removeEventListener(SETTINGS_CHANGED_EVENT, handler);
   }, []);
 
   const stats = useMemo(() => statsOf(collection), [collection]);
@@ -254,33 +240,21 @@ export function CollectionView() {
                 <dd className="text-lg font-bold">{stats.unique}</dd>
               </div>
               <div className="flex items-baseline gap-1.5">
-                <dt
-                  className={
-                    gachaMode ? GACHA_STAR_CLASS.r3 : "text-muted-foreground"
-                  }
-                >
+                <dt className={GACHA_STAR_CLASS.r3}>
                   <span aria-hidden>★★★</span>
                   <span className="sr-only">レアリティ3</span>
                 </dt>
                 <dd className="font-semibold">{stats.byRarity.r3}</dd>
               </div>
               <div className="flex items-baseline gap-1.5">
-                <dt
-                  className={
-                    gachaMode ? GACHA_STAR_CLASS.r2 : "text-muted-foreground"
-                  }
-                >
+                <dt className={GACHA_STAR_CLASS.r2}>
                   <span aria-hidden>★★</span>
                   <span className="sr-only">レアリティ2</span>
                 </dt>
                 <dd className="font-semibold">{stats.byRarity.r2}</dd>
               </div>
               <div className="flex items-baseline gap-1.5">
-                <dt
-                  className={
-                    gachaMode ? GACHA_STAR_CLASS.r1 : "text-muted-foreground"
-                  }
-                >
+                <dt className={GACHA_STAR_CLASS.r1}>
                   <span aria-hidden>★</span>
                   <span className="sr-only">レアリティ1</span>
                 </dt>
@@ -386,7 +360,6 @@ export function CollectionView() {
                 <li key={entry.annictId}>
                   <CollectionCard
                     entry={entry}
-                    gachaMode={gachaMode}
                     onOpen={handleOpen}
                     onStatusChange={handleGridStatusChange}
                     onFavoriteChange={handleGridFavoriteChange}
@@ -497,19 +470,17 @@ export function CollectionView() {
  * 実 button に集約し、カード全体には冗長なマウス用 onClick だけを付ける
  * （カード自体を role="button" にすると内側の StatusButtons が
  * ARIA 的に無効化されるため）。内側の button 起点のクリックは無視する。
- * 画像の読み込み失敗はエントリごとに保持し、トップページのモードに合わせた
- * No image 表示に切り替える（ガチャ＝.gacha-card-image-empty 相当）。
+ * 画像の読み込み失敗はエントリごとに保持し、結果カードと同じ
+ * No image 表示（.gacha-card-image-empty 相当）に切り替える。
  * 状態トグル時に表示中の全カードが再レンダーされないよう memo 化している。
  */
 const CollectionCard = memo(function CollectionCard({
   entry,
-  gachaMode,
   onOpen,
   onStatusChange,
   onFavoriteChange,
 }: {
   entry: CollectionEntry;
-  gachaMode: boolean;
   onOpen: (entry: CollectionEntry) => void;
   onStatusChange: (annictId: number, next: CollectionStatus) => void;
   onFavoriteChange: (annictId: number, on: boolean) => void;
@@ -538,21 +509,9 @@ const CollectionCard = memo(function CollectionCard({
             onError={() => setImageError(true)}
           />
         ) : (
-          <div
-            className={
-              gachaMode
-                ? "flex h-full w-full flex-col items-center justify-center gap-1.5 border border-dashed border-[oklch(0.7_0.06_250/0.45)] bg-[linear-gradient(135deg,oklch(0.96_0.03_230),oklch(0.97_0.02_290))] font-mono text-[9px] tracking-[0.18em] text-[oklch(0.5_0.06_250)]"
-                : "flex h-full w-full flex-col items-center justify-center gap-1 text-xs text-[oklch(0.45_0.02_250)]"
-            }
-          >
-            <NoImageIcon
-              className={
-                gachaMode ? "h-9 w-9 text-[oklch(0.62_0.06_250/0.7)]" : "h-8 w-8"
-              }
-            />
-            {gachaMode ? <span>NO IMAGE</span> : (
-              <span className="text-[10px]">No image</span>
-            )}
+          <div className="flex h-full w-full flex-col items-center justify-center gap-1.5 border border-dashed border-[oklch(0.7_0.06_250/0.45)] bg-[linear-gradient(135deg,oklch(0.96_0.03_230),oklch(0.97_0.02_290))] font-mono text-[9px] tracking-[0.18em] text-[oklch(0.5_0.06_250)]">
+            <NoImageIcon className="h-9 w-9 text-[oklch(0.62_0.06_250/0.7)]" />
+            <span>NO IMAGE</span>
           </div>
         )}
         {entry.status === "watched" && (
@@ -565,9 +524,7 @@ const CollectionCard = memo(function CollectionCard({
       </div>
       <div className="flex flex-1 flex-col gap-1 p-2">
         <div className="flex items-center justify-between gap-1 text-xs">
-          <span
-            className={gachaMode ? GACHA_STAR_CLASS[entry.rarity] : undefined}
-          >
+          <span className={GACHA_STAR_CLASS[entry.rarity]}>
             <span aria-hidden>{RARITY_STARS[entry.rarity]}</span>
             <span className="sr-only">レアリティ{RARITY_LEVEL[entry.rarity]}</span>
           </span>

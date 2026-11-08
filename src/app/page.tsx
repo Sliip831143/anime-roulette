@@ -2,16 +2,17 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { toast } from "sonner";
 import { SearchForm, type SearchParams } from "@/components/search-form";
 import { AnimeCard } from "@/components/anime-card";
-import { GachaSequence } from "@/components/gacha-sequence";
 import { usePeriodicCheer } from "@/components/use-periodic-cheer";
 import { BookMarked, Heart } from "lucide-react";
 import { XLogo } from "@/components/x-logo";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { openBatchTweetIntent } from "@/lib/share";
 import type { AnnictWork } from "@/lib/annict";
 import { getRarity, RARITY_STARS } from "@/lib/rarity";
@@ -27,13 +28,21 @@ import {
   DEBUG_MODE_KEY,
   DEFAULT_POPULAR_THRESHOLD,
   EXTENDED_COUNT_KEY,
-  MODE_STORAGE_KEY,
   POPULAR_THRESHOLD_KEY,
   SEASON_VISIBLE_KEY,
   SETTINGS_CHANGED_EVENT,
   readSettings,
   safeSetItem,
 } from "@/lib/settings";
+
+// ガチャ演出は「ガチャを引く」まで使われず、演出 OFF の人は一度も使わないため、
+// 初期バンドルから切り離して必要になったときだけ読み込む。
+// 先読み（loadGachaSequence）と描画用コンポーネント（GachaSequence）で同じチャンクを共有する
+const loadGachaSequence = () => import("@/components/gacha-sequence");
+const GachaSequence = dynamic(
+  () => loadGachaSequence().then((m) => m.GachaSequence),
+  { ssr: false },
+);
 
 // 立ち絵の表示中、この間隔ごとに立ち絵が跳ねて吹き出しを出す（操作の有無に関係なく繰り返す）
 const MASCOT_CHEER_INTERVAL_MS = 20_000;
@@ -50,7 +59,6 @@ export default function Home() {
   const [redrawing, setRedrawing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [lastCount, setLastCount] = useState(5);
-  const [gachaMode, setGachaMode] = useState(true);
   const [mounted, setMounted] = useState(false);
   const [seasonVisible, setSeasonVisible] = useState(false);
   const [debugMode, setDebugMode] = useState(false);
@@ -69,7 +77,6 @@ export default function Home() {
     useCollection();
   const debugModeRef = useRef(false);
   const animDisabledRef = useRef(false);
-  const gachaModeRef = useRef(true);
   const popularThresholdRef = useRef(DEFAULT_POPULAR_THRESHOLD);
   const resultsRef = useRef<HTMLElement>(null);
 
@@ -80,10 +87,6 @@ export default function Home() {
   useEffect(() => {
     animDisabledRef.current = animDisabled;
   }, [animDisabled]);
-
-  useEffect(() => {
-    gachaModeRef.current = gachaMode;
-  }, [gachaMode]);
 
   useEffect(() => {
     popularThresholdRef.current = popularThreshold;
@@ -134,7 +137,6 @@ export default function Home() {
   // 図鑑（collection）の読み込み・保存・再読込は useCollection が担う
   const applyStoredSettings = useCallback(() => {
     const s = readSettings();
-    setGachaMode(s.gachaMode);
     setSeasonVisible(s.seasonVisible);
     setDebugMode(s.debugMode);
     setAnimDisabled(s.animDisabled);
@@ -181,16 +183,8 @@ export default function Home() {
     };
   }, []);
 
-  useEffect(() => {
-    // mounted 前は初期値（gacha）のままなので書き込まない。
-    // ここで書くと localStorage の保存値を上書きし、直後の読み込みが誤った値を拾う
-    if (!mounted) return;
-    document.documentElement.dataset.mode = gachaMode ? "gacha" : "simple";
-    safeSetItem(MODE_STORAGE_KEY, gachaMode ? "gacha" : "simple");
-  }, [gachaMode, mounted]);
-
   // ★3 が出やすい条件（超人気のみ／高評価のみ）を選んでいる間と、★3 を含む結果を表示している間は、
-  // ガチャモードのページ背景を★3演出と同じピンク系に切り替える
+  // ページ背景を★3演出と同じピンク系に切り替える
   const [rareFilterActive, setRareFilterActive] = useState(false);
   // レア条件で★3を引いた後に条件を外しても、★3 の結果が残っていると背景がピンクのまま戻らない。
   // 条件を外した時点の結果を覚えておき、次に引き直すまでは★3 の結果があっても青に戻す
@@ -209,9 +203,8 @@ export default function Home() {
       (w) => getRarity(w.watchersCount, w.satisfactionRate) === "r3",
     ) ??
       false);
-  const rainbowBg = gachaMode && (rareFilterActive || hasR3Result);
+  const rainbowBg = rareFilterActive || hasR3Result;
   const mascotVisible =
-    gachaMode &&
     (results == null || results.length === 0) &&
     !(redrawing && (loading || pendingWorks != null));
   // 一定間隔で立ち絵が跳ねて吹き出しを出す
@@ -240,6 +233,8 @@ export default function Home() {
   }, [debugMode, mounted]);
 
   useEffect(() => {
+    // mounted 前は初期値のままなので書き込まない。
+    // ここで書くと localStorage の保存値を上書きし、直後の読み込みが誤った値を拾う
     if (!mounted) return;
     safeSetItem(ANIM_DISABLED_KEY, animDisabled ? "1" : "0");
   }, [animDisabled, mounted]);
@@ -260,6 +255,15 @@ export default function Home() {
     setLastCount(params.count);
     setLastParams(params);
     setLastError(null);
+    // 演出のチャンクを Annict API の通信と並行して先読みする。読み込みに失敗したとき
+    // （オフライン、デプロイ直後で古いページが参照するチャンクが消えている等）は
+    // 演出を飛ばして結果を直接表示し、画面が止まったように見えるのを避ける
+    const sequenceReady = animDisabledRef.current
+      ? Promise.resolve(false)
+      : loadGachaSequence().then(
+          () => true,
+          () => false,
+        );
     const sp = new URLSearchParams();
     if (params.yearFrom != null) sp.set("yearFrom", String(params.yearFrom));
     if (params.yearTo != null) sp.set("yearTo", String(params.yearTo));
@@ -355,9 +359,9 @@ export default function Home() {
           toast.info("条件に合うアニメが見つかりませんでした");
         }
       } else if (
-        gachaModeRef.current &&
         !animDisabledRef.current &&
-        picked.length <= 10
+        picked.length <= 10 &&
+        (await sequenceReady)
       ) {
         setResults(null);
         setPendingWorks(picked);
@@ -414,25 +418,19 @@ export default function Home() {
       style={!mounted ? { visibility: "hidden" } : undefined}
     >
       <main
-        className={`w-full max-w-3xl space-y-4 sm:space-y-6${gachaMode ? " flex flex-1 flex-col" : ""}${mounted ? " page-fade-in" : ""}`}
+        className={`flex w-full max-w-3xl flex-1 flex-col space-y-4 sm:space-y-6${mounted ? " page-fade-in" : ""}`}
       >
         <header className="space-y-2">
           <div className="flex items-center justify-between gap-4">
-            {gachaMode ? (
-              <h1 className="gacha-hero">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/logo.png"
-                  alt="アニメルーレット"
-                  className="gacha-hero-logo"
-                />
-              </h1>
-            ) : (
-              <h1 className="text-xl md:text-[1.375rem] font-semibold tracking-tight">
-                アニメルーレット
-              </h1>
-            )}
-            <div className="flex items-center gap-2">
+            <h1 className="gacha-hero">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/logo.png"
+                alt="アニメルーレット"
+                className="gacha-hero-logo"
+              />
+            </h1>
+            <div className="header-actions flex items-center gap-2">
               <Link
                 href="/collection"
                 aria-label={
@@ -453,57 +451,39 @@ export default function Home() {
                   </span>
                 )}
               </Link>
-              <div
-                className="mode-toggle"
-                role="group"
-                aria-label="モード切り替え"
-              >
-                <button
-                  type="button"
-                  className={`mode-toggle-btn${!gachaMode ? " is-active" : ""}`}
-                  onClick={() => setGachaMode(false)}
-                  aria-pressed={!gachaMode}
-                >
-                  簡易
-                </button>
-                <button
-                  type="button"
-                  className={`mode-toggle-btn${gachaMode ? " is-active" : ""}`}
-                  onClick={() => setGachaMode(true)}
-                  aria-pressed={gachaMode}
-                >
-                  ガチャ
-                </button>
-              </div>
+              <label className="anim-toggle">
+                <span id="anim-toggle-label">演出</span>
+                <Switch
+                  checked={!animDisabled}
+                  onCheckedChange={(on) => setAnimDisabled(!on)}
+                  aria-labelledby="anim-toggle-label"
+                />
+              </label>
             </div>
           </div>
         </header>
 
-        <section className={gachaMode ? "gacha-form" : "simple-form"}>
-          {gachaMode && (
-            <div className="gacha-form-header">CONDITIONS</div>
-          )}
+        <section className="gacha-form">
+          <div className="gacha-form-header">CONDITIONS</div>
           <SearchForm
             loading={loading}
             onSubmit={handleSubmit}
-            submitLabel={gachaMode ? "ガチャを引く" : "候補を取得"}
+            submitLabel="ガチャを引く"
             submitIcon={
-              gachaMode ? (
-                <picture>
-                  <source srcSet="/gacha/gem.avif" type="image/avif" />
-                  <source srcSet="/gacha/gem.webp" type="image/webp" />
-                  <img
-                    src="/gacha/gem.png"
-                    alt=""
-                    width={58}
-                    height={72}
-                    className="gacha-submit-gem"
-                  />
-                </picture>
-              ) : undefined
+              <picture>
+                <source srcSet="/gacha/gem.avif" type="image/avif" />
+                <source srcSet="/gacha/gem.webp" type="image/webp" />
+                <img
+                  src="/gacha/gem.png"
+                  alt=""
+                  width={58}
+                  height={72}
+                  className="gacha-submit-gem"
+                />
+              </picture>
             }
-            countLabel={gachaMode ? (n) => `募集回数: ${n}回` : undefined}
-            loadingLabel={gachaMode ? "Loading..." : "取得中..."}
+            countLabel={(n) => `募集回数: ${n}回`}
+            loadingLabel="Loading..."
             showSeason={seasonVisible}
             extendedCount={extendedCount}
             popularThreshold={popularThreshold}
@@ -548,13 +528,7 @@ export default function Home() {
           }`}
         >
           <div className="flex items-center justify-between gap-3">
-            <h2
-              className={
-                gachaMode ? "gacha-title text-xl" : "text-xl font-semibold"
-              }
-            >
-              結果
-            </h2>
+            <h2 className="gacha-title text-xl">結果</h2>
             {results && results.length > 0 && (
               <button
                 type="button"
@@ -605,7 +579,6 @@ export default function Home() {
                 <AnimeCard
                   key={work.annictId}
                   work={work}
-                  gachaMode={gachaMode}
                   status={collection.entries[String(work.annictId)]?.status ?? "none"}
                   onStatusChange={handleStatusChange}
                   favorite={collection.entries[String(work.annictId)]?.favorite ?? false}

@@ -7,7 +7,8 @@
  */
 
 export const STORAGE_PREFIX = "anime-roulette-";
-export const MODE_STORAGE_KEY = `${STORAGE_PREFIX}mode`;
+/** 廃止した「簡易モード」の保存キー。readSettings が演出設定へ引き継いだうえで削除する */
+export const LEGACY_MODE_STORAGE_KEY = `${STORAGE_PREFIX}mode`;
 export const SEASON_VISIBLE_KEY = `${STORAGE_PREFIX}season-visible`;
 export const DEBUG_MODE_KEY = `${STORAGE_PREFIX}debug`;
 export const ANIM_DISABLED_KEY = `${STORAGE_PREFIX}anim-disabled`;
@@ -20,7 +21,6 @@ export const DEFAULT_POPULAR_THRESHOLD = 1000;
 export const SETTINGS_CHANGED_EVENT = "anime-roulette:settings-changed";
 
 export type Settings = {
-  gachaMode: boolean;
   seasonVisible: boolean;
   debugMode: boolean;
   animDisabled: boolean;
@@ -50,12 +50,34 @@ export function safeSetItem(key: string, value: string): void {
   }
 }
 
+export function safeRemoveItem(key: string): void {
+  try {
+    localStorage.removeItem(key);
+  } catch {
+    // 消せなくても致命ではない
+  }
+}
+
+/**
+ * 廃止した「簡易モード」（演出なしの別テーマ）を演出 OFF へ引き継ぐ。
+ * 簡易モードを選んでいた人が、突然ガチャ演出が始まる体験にならないようにするための一度きりの移行で、
+ * 演出設定を明示的に保存済みならそちらを優先する。旧キーは消して二度と参照しない。
+ */
+function migrateLegacyMode(): void {
+  const legacy = safeGetItem(LEGACY_MODE_STORAGE_KEY);
+  if (legacy === null) return;
+  if (legacy === "simple" && safeGetItem(ANIM_DISABLED_KEY) === null) {
+    safeSetItem(ANIM_DISABLED_KEY, "1");
+  }
+  safeRemoveItem(LEGACY_MODE_STORAGE_KEY);
+}
+
 /** localStorage から設定を読み込む（キーなし・不正値・読取不可は既定値）。クライアント専用。 */
 export function readSettings(): Settings {
+  migrateLegacyMode();
   const storedPopular = safeGetItem(POPULAR_THRESHOLD_KEY);
   const popular = storedPopular === null ? NaN : Number(storedPopular);
   return {
-    gachaMode: safeGetItem(MODE_STORAGE_KEY) !== "simple",
     seasonVisible: safeGetItem(SEASON_VISIBLE_KEY) === "1",
     debugMode: safeGetItem(DEBUG_MODE_KEY) === "1",
     animDisabled: safeGetItem(ANIM_DISABLED_KEY) === "1",

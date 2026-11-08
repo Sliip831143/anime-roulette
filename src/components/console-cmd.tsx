@@ -3,7 +3,6 @@
 import { useEffect } from "react";
 import { COLLECTION_STORAGE_KEY } from "@/lib/collection";
 import {
-  ANIM_DISABLED_KEY,
   DEBUG_MODE_KEY,
   DEFAULT_POPULAR_THRESHOLD,
   EXTENDED_COUNT_KEY,
@@ -27,12 +26,8 @@ const CMD_DEFS: CmdDef[] = [
     desc: "APIリクエスト・レアリティ判定の詳細ログを切替",
   },
   {
-    usage: 'cmd("/anim"|"/anim on"|"/anim off")',
-    desc: "ガチャ演出のON/OFF切替（OFFで即結果表示）",
-  },
-  {
     usage: 'cmd("/max"|"/max on"|"/max off")',
-    desc: "取得件数UIを切替（Slider 1〜10 ⇔ 数値入力 1〜50、ONで演出も自動OFF）",
+    desc: "取得件数UIを切替（Slider 1〜10 ⇔ 数値入力 1〜50）",
   },
   {
     usage: 'cmd("/popularity tune <n>"|"/popularity reset")',
@@ -110,7 +105,6 @@ export function ConsoleCmd() {
         const s = readSettings();
         const onOff = (b: boolean) => (b ? "ON" : "OFF");
         const items: { label: string; value: string }[] = [
-          { label: "mode", value: s.gachaMode ? "gacha" : "simple" },
           { label: "season filter", value: onOff(s.seasonVisible) },
           { label: "debug log", value: onOff(s.debugMode) },
           {
@@ -153,20 +147,6 @@ export function ConsoleCmd() {
         return;
       }
 
-      if (head === "/anim") {
-        // /anim on = 演出ON(animDisabled=false)、/anim off = 演出OFF(animDisabled=true)
-        const enabled =
-          arg === "on"
-            ? true
-            : arg === "off"
-              ? false
-              : readFlag(ANIM_DISABLED_KEY);
-        writeFlag(ANIM_DISABLED_KEY, !enabled);
-        log("anim", enabled);
-        notify();
-        return;
-      }
-
       if (head === "/max") {
         const on =
           arg === "on"
@@ -175,19 +155,7 @@ export function ConsoleCmd() {
               ? false
               : !readFlag(EXTENDED_COUNT_KEY);
         writeFlag(EXTENDED_COUNT_KEY, on);
-        console.log(
-          `%c[cmd] max (extended count UI): %c${on ? "ON" : "OFF"}`,
-          "color:#7aa;font-weight:600",
-          on ? "color:#3a7;font-weight:700" : "color:#a55;font-weight:700",
-        );
-        if (on) {
-          writeFlag(ANIM_DISABLED_KEY, true);
-          console.log(
-            `%c[cmd] anim: %cauto-OFF (件数拡張中はガチャ演出を自動停止)`,
-            "color:#7aa;font-weight:600",
-            "color:#a55;font-weight:700",
-          );
-        }
+        log("max (extended count UI)", on);
         notify();
         return;
       }
@@ -251,8 +219,6 @@ export function ConsoleCmd() {
           localStorage.removeItem(key);
           removed.push(key);
         }
-        // モードは既定（ガチャ）に戻る。表示中ページの背景等へも即反映する
-        document.documentElement.dataset.mode = "gacha";
         console.group(
           `%c[cmd] /reset — localStorage を初期化しました${all ? "（図鑑含む）" : "（図鑑は保持）"}`,
           "color:#7aa;font-weight:700",
