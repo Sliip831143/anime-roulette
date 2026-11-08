@@ -548,13 +548,9 @@ export default function Home() {
           ) : null}
         </section>
 
-        {/* 装飾用のキャラ画像。通常フローの最後に置き、フォームや結果カードに重ならないようにする。
-            結果がない間は画面の残り高さだけを使い（スクロールを出さない）、結果表示後は固定高にする */}
-        {gachaMode && (
-          <div
-            className={`gacha-mascot${results != null ? " has-results" : ""}`}
-            aria-hidden
-          >
+        {/* 装飾用のキャラ画像。ガチャ結果がない間（未抽選・0 件）だけ、フォームの下に残った高さを使って表示する */}
+        {gachaMode && (results == null || results.length === 0) && (
+          <div className="gacha-mascot" aria-hidden>
             <picture>
               <source srcSet="/gacha/arona_3.avif" type="image/avif" />
               <source srcSet="/gacha/arona_3.webp" type="image/webp" />

@@ -489,7 +489,7 @@ body[data-mode="gacha"] {
 }
 
 /* ページ最下部のキャラ画像。元画像は下端が切れている前提の素材なので、画面下端で見切れさせる。
-   - 結果がない間: flex-basis 0 で「フォームの下に残った高さ」だけを占有し、ページにスクロールを出さない
+   - ガチャ結果がない間だけ描画する（page.tsx 側で制御）。flex-basis 0 で「フォームの下に残った高さ」だけを占有し、ページにスクロールを出さない
    - .page-root の下余白（lg 未満 5rem / lg 以上 2rem）は負のマージンで打ち消し、画面の下端まで伸ばす
    - 画像は枠の下端に揃え、下側を overflow で切り落とす（下記 img） */
 [data-mode="gacha"] .gacha-mascot {
@@ -505,12 +505,6 @@ body[data-mode="gacha"] {
   padding-top: 36px;
   pointer-events: none;
   user-select: none;
-}
-
-/* 結果表示後はページがスクロールする前提になるので、結果の下に固定高で置く */
-[data-mode="gacha"] .gacha-mascot.has-results {
-  flex: none;
-  height: 440px;
 }
 
 /* 画像の上から --visible の割合だけを見せ、残りは負のマージンで枠の下へ押し出す。
@@ -549,10 +543,6 @@ body[data-mode="gacha"] {
 
   [data-mode="gacha"] .gacha-mascot {
     padding-top: 26px;
-  }
-
-  [data-mode="gacha"] .gacha-mascot.has-results {
-    height: 320px;
   }
 }
 
