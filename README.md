@@ -376,7 +376,7 @@ public/
 ├── logo.png                      # メインロゴ
 ├── icon-192.png / icon-512.png   # PWA icons
 ├── sw.js                         # 旧 Service Worker の tombstone（自己 unregister + caches 削除）
-└── gacha/                        # アロナ画像 / カード裏面 / ボタンの宝石アイコン（PNG + WebP + AVIF）
+└── gacha/                        # アロナ画像 / カード裏面 / ボタンの宝石アイコン / 図鑑ボタンのアイコン（PNG + WebP + AVIF）
 
 scripts/
 ├── convert-images.mjs            # PNG → AVIF + WebP 一括変換
