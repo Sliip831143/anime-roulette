@@ -44,6 +44,7 @@ const drawGacha = async () => {
 describe("Home: 演出スイッチ", () => {
   beforeEach(() => {
     localStorage.clear();
+    delete document.documentElement.dataset.gachaBg;
     vi.stubGlobal(
       "fetch",
       vi.fn(async () => ({
@@ -110,5 +111,35 @@ describe("Home: 演出スイッチ", () => {
       await screen.findByRole("button", { name: "「作品1」の詳細を見る" }),
     ).toBeTruthy();
     expect(screen.queryByTestId("gacha-sequence")).toBeNull();
+  });
+  it("★3 を含む結果なら、演出の表示中からページ背景がピンクになり結果表示後も続く", async () => {
+    // watchersCount 22,000 以上は ★3（src/lib/rarity.ts）
+    const r3 = { ...makeWork(9), watchersCount: 30_000 };
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({ works: [r3] }),
+    } as Response);
+    render(<Home />);
+    await screen.findByRole("switch", { name: "演出" });
+
+    await drawGacha();
+
+    await screen.findByTestId("gacha-sequence");
+    expect(document.documentElement.dataset.gachaBg).toBe("rainbow");
+
+    fireEvent.click(screen.getByRole("button", { name: "演出を閉じる" }));
+    await screen.findByRole("button", { name: "「作品9」の詳細を見る" });
+    expect(document.documentElement.dataset.gachaBg).toBe("rainbow");
+  });
+
+  it("★3 を含まない結果ならページ背景は青のまま", async () => {
+    render(<Home />);
+    await screen.findByRole("switch", { name: "演出" });
+
+    await drawGacha();
+
+    await screen.findByTestId("gacha-sequence");
+    expect(document.documentElement.dataset.gachaBg).toBeUndefined();
   });
 });

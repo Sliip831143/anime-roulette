@@ -197,9 +197,13 @@ export default function Home() {
     setPrevRareFilterActive(rareFilterActive);
     if (!rareFilterActive) setR3BgDismissedFor(results);
   }
+  // 演出中は results が null なので pendingWorks で判定する。結果が入ってから切り替えると、
+  // 演出が消えていくフェードの間に青い背景が見え、結果表示と同時にピンクへ切り替わるのが目に付く。
+  // 演出の裏で先に切り替えておけば、演出が消えた時点でもうピンクになっている
+  const shownWorks = results ?? pendingWorks;
   const hasR3Result =
-    results !== r3BgDismissedFor &&
-    (results?.some(
+    shownWorks !== r3BgDismissedFor &&
+    (shownWorks?.some(
       (w) => getRarity(w.watchersCount, w.satisfactionRate) === "r3",
     ) ??
       false);
