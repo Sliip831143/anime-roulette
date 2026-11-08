@@ -1193,7 +1193,7 @@ body[data-mode="gacha"] {
 
 /* メイン画面の初期表示フェードイン（テーマフラッシュ抑制の visibility:hidden 解除後に走る） */
 .page-fade-in {
-  animation: page-fade-in 0.5s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+  animation: page-fade-in 0.9s cubic-bezier(0.2, 0.7, 0.3, 1) both;
 }
 
 @keyframes page-fade-in {
