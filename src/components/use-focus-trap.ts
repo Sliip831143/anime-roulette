@@ -26,6 +26,12 @@ const FOCUSABLE_SELECTOR = [
 export function useFocusTrap(
   ref: RefObject<HTMLElement | null>,
   active: boolean = true,
+  /**
+   * 活性化時の初期フォーカス先。既定はコンテナ内の最初のフォーカス可能要素。
+   * "container" はコンテナ自身（tabIndex=-1 が必要）。Enter / Space を画面全体の操作に
+   * 使うガチャ演出では、SKIP ボタンに初期フォーカスが乗ると案内どおりの Enter がスキップになってしまう
+   */
+  initialFocus: "first" | "container" = "first",
 ): void {
   useEffect(() => {
     if (!active) return;
@@ -42,7 +48,11 @@ export function useFocusTrap(
         container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
       ).filter((el) => el.getClientRects().length > 0);
 
-    (getFocusables()[0] ?? container).focus();
+    if (initialFocus === "container") {
+      container.focus();
+    } else {
+      (getFocusables()[0] ?? container).focus();
+    }
 
     const handleKeydown = (e: KeyboardEvent) => {
       if (e.key !== "Tab") return;
@@ -74,5 +84,5 @@ export function useFocusTrap(
       // （図鑑のリセット確認、フィルタ対象から外れたカードの詳細など）。その場合の退避先は呼び出し側が決める
       if (previouslyFocused?.isConnected) previouslyFocused.focus();
     };
-  }, [ref, active]);
+  }, [ref, active, initialFocus]);
 }

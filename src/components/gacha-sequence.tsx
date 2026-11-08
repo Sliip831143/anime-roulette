@@ -91,9 +91,10 @@ export function GachaSequence({ works, onClose }: Props) {
   const cardsReady = phase === "cards" && cardsDecoded;
 
   // 演出中は背後のフォームへ Tab で抜けないようにフォーカスを閉じ込める。
-  // アンマウント時（演出終了）に元のフォーカス位置（ガチャを引くボタン）へ復帰する。
+  // 初期フォーカスはステージ自身に置く（SKIP ボタンに乗せると「Enter で開始」の案内どおりに
+  // Enter を押したときスキップになってしまう）。Tab で SKIP へ移動できる
   const stageRef = useRef<HTMLDivElement | null>(null);
-  useFocusTrap(stageRef, phase !== "done");
+  useFocusTrap(stageRef, phase !== "done", "container");
 
   // revealIndex が進むたびに次の画像を preload して有効性を確認
   useEffect(() => {
@@ -262,6 +263,7 @@ export function GachaSequence({ works, onClose }: Props) {
       role="dialog"
       aria-modal="true"
       aria-label="ガチャ演出"
+      tabIndex={-1}
     >
       <div className="gacha-rays" aria-hidden="true" />
       <div className="gacha-particles" aria-hidden="true" />

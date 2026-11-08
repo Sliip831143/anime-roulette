@@ -19,6 +19,13 @@ const work: AnnictWork = {
 };
 
 describe("GachaSequence: キー操作", () => {
+  it("初期フォーカスは SKIP ボタンではなくステージに置く（案内どおりの Enter で開始できる）", () => {
+    render(<GachaSequence works={[work]} onClose={vi.fn()} />);
+    expect(document.activeElement).toBe(
+      screen.getByRole("dialog", { name: "ガチャ演出" }),
+    );
+  });
+
   it("SKIP ボタンにフォーカスがあるときの Enter / Space は既定動作（クリック）を妨げない", () => {
     render(<GachaSequence works={[work]} onClose={vi.fn()} />);
     const skip = screen.getByRole("button", { name: "演出をスキップ" });

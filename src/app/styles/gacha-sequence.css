@@ -32,6 +32,11 @@
   animation: stage-in 0.4s ease-out both;
 }
 
+/* 初期フォーカスはステージ自身（tabIndex=-1）に置く。操作対象ではないので枠は出さない */
+.gacha-stage:focus {
+  outline: none;
+}
+
 /* ★3を含む場合：紫＋ピンクが混じったパステル背景 */
 .gacha-stage.has-rainbow {
   background:
