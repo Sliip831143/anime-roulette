@@ -2,23 +2,14 @@
 
 import { useEffect, useState } from "react";
 
-const ACTIVITY_EVENTS = [
-  "pointermove",
-  "pointerdown",
-  "keydown",
-  "scroll",
-  "touchstart",
-  "wheel",
-] as const;
-
 /**
- * 操作が idleMs 続かなかったら cheerMs の間だけ true を返し、操作がなければ同じ間隔で繰り返す。
- * 操作があるたびに待ち時間を数え直す（表示中の演出は途中で打ち切らない）。
+ * enabled の間、intervalMs 待つごとに cheerMs の間だけ true を返す（操作の有無に関係なく繰り返す）。
+ * 次の待ちは演出が終わった時点から数える。
  * OS で「動きを減らす」設定をしている環境では常に false。
  */
-export function useIdleCheer(
+export function usePeriodicCheer(
   enabled: boolean,
-  idleMs: number,
+  intervalMs: number,
   cheerMs: number,
 ): boolean {
   const [cheering, setCheering] = useState(false);
@@ -27,42 +18,24 @@ export function useIdleCheer(
     if (!enabled) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-    let idleTimer: ReturnType<typeof setTimeout> | undefined;
-    let cheerTimer: ReturnType<typeof setTimeout> | undefined;
-    let isCheering = false;
+    let timer: ReturnType<typeof setTimeout>;
 
-    const scheduleIdle = () => {
-      clearTimeout(idleTimer);
-      idleTimer = setTimeout(startCheer, idleMs);
+    const scheduleCheer = () => {
+      timer = setTimeout(() => {
+        setCheering(true);
+        timer = setTimeout(() => {
+          setCheering(false);
+          scheduleCheer();
+        }, cheerMs);
+      }, intervalMs);
     };
 
-    const startCheer = () => {
-      isCheering = true;
-      setCheering(true);
-      cheerTimer = setTimeout(() => {
-        isCheering = false;
-        setCheering(false);
-        scheduleIdle();
-      }, cheerMs);
-    };
-
-    const handleActivity = () => {
-      if (!isCheering) scheduleIdle();
-    };
-
-    scheduleIdle();
-    for (const type of ACTIVITY_EVENTS) {
-      window.addEventListener(type, handleActivity, { passive: true });
-    }
+    scheduleCheer();
     return () => {
-      clearTimeout(idleTimer);
-      clearTimeout(cheerTimer);
-      for (const type of ACTIVITY_EVENTS) {
-        window.removeEventListener(type, handleActivity);
-      }
+      clearTimeout(timer);
       setCheering(false);
     };
-  }, [enabled, idleMs, cheerMs]);
+  }, [enabled, intervalMs, cheerMs]);
 
   return cheering;
 }

@@ -566,7 +566,7 @@ body[data-mode="gacha"] {
   margin-bottom: calc(var(--h) * (var(--visible) - 1));
 }
 
-/* 放置時の演出：2 回小さく跳ねる。跳ねる高さは画像を枠の下へ押し出している量より小さくし、
+/* 一定間隔で出す演出：2 回小さく跳ねる。跳ねる高さは画像を枠の下へ押し出している量より小さくし、
    画像の下端（見切れ位置）が見えないようにする */
 [data-mode="gacha"] .gacha-mascot a {
   position: relative;
