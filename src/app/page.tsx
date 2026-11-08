@@ -363,7 +363,7 @@ export default function Home() {
       style={!mounted ? { visibility: "hidden" } : undefined}
     >
       <main
-        className={`w-full max-w-3xl space-y-4 sm:space-y-6${mounted ? " page-fade-in" : ""}`}
+        className={`w-full max-w-3xl space-y-4 sm:space-y-6${gachaMode ? " flex flex-1 flex-col" : ""}${mounted ? " page-fade-in" : ""}`}
       >
         <header className="space-y-2">
           <div className="flex items-center justify-between gap-4">
@@ -547,6 +547,28 @@ export default function Home() {
             </div>
           ) : null}
         </section>
+
+        {/* 装飾用のキャラ画像。通常フローの最後に置き、フォームや結果カードに重ならないようにする。
+            結果がない間は画面の残り高さだけを使い（スクロールを出さない）、結果表示後は固定高にする */}
+        {gachaMode && (
+          <div
+            className={`gacha-mascot${results != null ? " has-results" : ""}`}
+            aria-hidden
+          >
+            <picture>
+              <source srcSet="/gacha/arona_3.avif" type="image/avif" />
+              <source srcSet="/gacha/arona_3.webp" type="image/webp" />
+              <img
+                src="/gacha/arona_3.png"
+                alt=""
+                width={760}
+                height={981}
+                loading="lazy"
+                decoding="async"
+              />
+            </picture>
+          </div>
+        )}
       </main>
       {pendingWorks && (
         <GachaSequence works={pendingWorks} onClose={handleSequenceClose} />
