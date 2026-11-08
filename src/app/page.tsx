@@ -92,12 +92,20 @@ export default function Home() {
     popularThresholdRef.current = popularThreshold;
   }, [popularThreshold]);
 
+  const resultsHeadingRef = useRef<HTMLHeadingElement>(null);
+
   useEffect(() => {
     if (resultsVersion === 0) return;
     const el = resultsRef.current;
     if (!el) return;
     const top = el.getBoundingClientRect().top + window.scrollY - 16;
     window.scrollTo({ top, behavior: "smooth" });
+    // 取得中は「ガチャを引く」ボタンが disabled になりフォーカスが body に落ちる
+    // （演出のフォーカストラップも復帰先として body を覚える）。結果が出た時点で
+    // どこにもフォーカスが無ければ「結果」見出しへ移し、キーボード・SR 利用者が現在地を見失わないようにする
+    if (document.activeElement === document.body) {
+      resultsHeadingRef.current?.focus({ preventScroll: true });
+    }
   }, [resultsVersion]);
 
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -525,7 +533,13 @@ export default function Home() {
           className={`space-y-4 scroll-mt-4${results != null ? "" : " hidden"}`}
         >
           <div className="flex items-center justify-between gap-3">
-            <h2 className="gacha-title text-xl">結果</h2>
+            <h2
+              ref={resultsHeadingRef}
+              tabIndex={-1}
+              className="gacha-title text-xl"
+            >
+              結果
+            </h2>
             {results && results.length > 0 && (
               <button
                 type="button"

@@ -112,6 +112,25 @@ describe("Home: 演出スイッチ", () => {
     ).toBeTruthy();
     expect(screen.queryByTestId("gacha-sequence")).toBeNull();
   });
+
+  it("結果が出たときにフォーカスが body に落ちていれば「結果」見出しへ移す", async () => {
+    localStorage.setItem(ANIM_DISABLED_KEY, "1");
+    render(<Home />);
+    await screen.findByRole("switch", { name: "演出" });
+
+    await drawGacha();
+    await screen.findByRole("button", { name: "「作品1」の詳細を見る" });
+
+    // 取得中にボタンが disabled になってフォーカスが失われた状況を再現
+    (document.activeElement as HTMLElement | null)?.blur();
+    expect(document.activeElement).toBe(document.body);
+    // 実装は結果確定時の effect で移すため、改めて結果を出し直して確認する
+    await drawGacha();
+    await screen.findByRole("button", { name: "「作品1」の詳細を見る" });
+    expect(document.activeElement).toBe(
+      screen.getByRole("heading", { name: "結果" }),
+    );
+  });
   it("★3 を含む結果なら、演出の表示中からページ背景がピンクになり結果表示後も続く", async () => {
     // watchersCount 22,000 以上は ★3（src/lib/rarity.ts）
     const r3 = { ...makeWork(9), watchersCount: 30_000 };
