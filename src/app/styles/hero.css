@@ -73,7 +73,8 @@
    コンテナクエリの再評価で両方のアニメーションが最初から再生され、跳ねる動きと吹き出しが何度も繰り返されてしまう。
    そのため跳ねる動き・吹き出しとも、演出の状態（page.tsx の MASCOT_CHEER_MS = 2.6s）より長い 3s にして、
    演出の状態が外れるまでアニメーションが終わらないようにしている（跳ねるのは最初の 0.9s、吹き出しは 2.5s で消える） */
-.gacha-mascot.is-cheering img {
+.gacha-mascot.is-cheering img,
+.gacha-mascot-docked.is-cheering img {
   animation: mascot-hop 3s ease-in-out forwards;
 }
 
@@ -164,6 +165,56 @@
 @media (min-width: 64rem) {
   .gacha-mascot {
     margin-bottom: -2rem;
+  }
+}
+
+/* 画面の高さが足りずフォームの下に立ち絵を出せないときの右下固定版（page.tsx が切り替える）。
+   フォーム（max-w-3xl = 48rem）の右に立ち絵が収まる余白がある 80rem 以上の幅でだけ出す。
+   フォームから目線を奪わないよう、高さは「上限 340px」「画面高の 48%」「フォーム右側の余白（左右 24px ずつ空ける）に収まる高さの 8 割」の最小値 */
+.gacha-mascot-docked {
+  display: none;
+}
+
+@media (min-width: 80rem) {
+  .gacha-mascot-docked {
+    display: block;
+    position: fixed;
+    right: 24px;
+    bottom: 0;
+    z-index: 10;
+    pointer-events: none;
+    user-select: none;
+    animation: mascot-docked-in 0.6s ease-out both;
+  }
+
+  .gacha-mascot-docked a {
+    display: block;
+    position: relative;
+    pointer-events: auto;
+    border-radius: 8px;
+  }
+
+  .gacha-mascot-docked a:focus-visible {
+    outline: 2px solid var(--gacha-accent);
+    outline-offset: 4px;
+  }
+
+  .gacha-mascot-docked img {
+    --visible: 0.92;
+    --h: min(340px, 48vh, calc((50vw - 24rem - 48px) / 0.775 * 0.8));
+    display: block;
+    height: var(--h);
+    width: auto;
+    margin-bottom: calc(var(--h) * (var(--visible) - 1));
+  }
+}
+
+@keyframes mascot-docked-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
 

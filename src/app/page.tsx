@@ -49,6 +49,8 @@ const MASCOT_CHEER_INTERVAL_MS = 20_000;
 // 演出の状態を保つ時間。globals.css の mascot-hop / mascot-bubble（3s）より短くすること
 // （アニメーションが先に終わると、跳ねる動きと吹き出しが最初から繰り返されてしまう）
 const MASCOT_CHEER_MS = 2_600;
+// フォームの下に残った高さがこれ以下だと立ち絵を出さない（hero.css の @container (max-height: 120px) と同じ値）
+const MASCOT_MIN_SLOT_HEIGHT = 120;
 
 export default function Home() {
   const [results, setResults] = useState<AnnictWork[] | null>(null);
@@ -224,6 +226,45 @@ export default function Home() {
     mascotVisible,
     MASCOT_CHEER_INTERVAL_MS,
     MASCOT_CHEER_MS,
+  );
+  // 画面の高さが足りずフォームの下に立ち絵を出す余地がないとき、代わりに画面右下へ固定表示する。
+  // 横幅の条件（フォームの左右に余白があるか）は hero.css の media query で判定する
+  const mascotSlotRef = useRef<HTMLDivElement>(null);
+  const [mascotDocked, setMascotDocked] = useState(false);
+  useEffect(() => {
+    const slot = mascotSlotRef.current;
+    if (!slot) return;
+    const observer = new ResizeObserver(([entry]) => {
+      setMascotDocked(entry.contentRect.height <= MASCOT_MIN_SLOT_HEIGHT);
+    });
+    observer.observe(slot);
+    return () => observer.disconnect();
+  }, [mascotVisible]);
+  const mascotLink = (
+    <a
+      href="https://bluearchive.jp/"
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="ブルーアーカイブ公式サイト（新しいタブで開く）"
+    >
+      <picture>
+        <source srcSet="/gacha/arona_3.avif" type="image/avif" />
+        <source srcSet="/gacha/arona_3.webp" type="image/webp" />
+        <img
+          src="/gacha/arona_3.png"
+          alt=""
+          width={760}
+          height={981}
+          loading="lazy"
+          decoding="async"
+        />
+      </picture>
+      {mascotCheering && (
+        <span className="gacha-mascot-bubble" aria-hidden>
+          <Heart className="gacha-mascot-heart" />
+        </span>
+      )}
+    </a>
   );
 
   useEffect(() => {
@@ -613,38 +654,25 @@ export default function Home() {
 
         {/* キャラ画像。ガチャ結果がない間（未抽選・0 件）だけ、フォームの下に残った高さを使って表示する。
             結果表示中からの引き直しでは、取得中〜演出終了まで出さない。
+            残った高さが足りないときは中身を出さず、main の外の右下固定版に切り替える。
             クリックでブルーアーカイブ公式サイトを新しいタブで開く */}
         {mascotVisible && (
           <div
+            ref={mascotSlotRef}
             className={`gacha-mascot${mascotCheering ? " is-cheering" : ""}`}
           >
-            <a
-              href="https://bluearchive.jp/"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="ブルーアーカイブ公式サイト（新しいタブで開く）"
-            >
-              <picture>
-                <source srcSet="/gacha/arona_3.avif" type="image/avif" />
-                <source srcSet="/gacha/arona_3.webp" type="image/webp" />
-                <img
-                  src="/gacha/arona_3.png"
-                  alt=""
-                  width={760}
-                  height={981}
-                  loading="lazy"
-                  decoding="async"
-                />
-              </picture>
-              {mascotCheering && (
-                <span className="gacha-mascot-bubble" aria-hidden>
-                  <Heart className="gacha-mascot-heart" />
-                </span>
-              )}
-            </a>
+            {!mascotDocked && mascotLink}
           </div>
         )}
       </main>
+      {/* 右下固定の立ち絵。main はフェードインの transform で position: fixed の基準になってしまうため、main の外に置く */}
+      {mascotVisible && mascotDocked && (
+        <div
+          className={`gacha-mascot-docked${mascotCheering ? " is-cheering" : ""}`}
+        >
+          {mascotLink}
+        </div>
+      )}
       {pendingWorks && (
         <GachaSequence works={pendingWorks} onClose={handleSequenceClose} />
       )}
