@@ -16,6 +16,7 @@ import {
   getCurrentSeason,
   isSeasonFilterEnabled,
   type Season,
+  getJstYearMonth,
 } from "@/lib/seasons";
 
 const DEFAULT_POPULAR_THRESHOLD = 1000;
@@ -87,6 +88,15 @@ export function SearchForm({
   const [pickedYear, setPickedYear] = useState<number | null>(null);
   const [selectedSeasons, setSelectedSeasons] = useState<Season[]>([]);
   const [count, setCount] = useState(5);
+  // /max 拡張時の数値入力は、入力途中の文字列（空・範囲外）をそのまま保持する。
+  // count（数値）を直接 value にすると、無効な途中状態を React が即座に元の値へ戻してしまい、
+  // Backspace で消してから打ち直すことができない
+  const [countText, setCountText] = useState(String(count));
+  const [prevCount, setPrevCount] = useState(count);
+  if (prevCount !== count) {
+    setPrevCount(count);
+    setCountText(String(count));
+  }
   const [popularity, setPopularity] = useState<Popularity>("all");
   const [highRated, setHighRated] = useState(false);
   const [selectedMedia, setSelectedMedia] = useState<Media[]>(["TV"]);
@@ -104,7 +114,7 @@ export function SearchForm({
 
   const yearFrom = parseYear(yearFromText);
   const yearTo = parseYear(yearToText);
-  const currentYear = new Date().getFullYear();
+  const currentYear = getJstYearMonth().year;
   // 季節指定の有効条件は isSeasonFilterEnabled に集約（境界は seasons.test.ts で検証）。
   const seasonsEnabled =
     !currentSeasonMode &&
@@ -437,13 +447,21 @@ export function SearchForm({
             inputMode="numeric"
             min={1}
             max={EXTENDED_MAX_COUNT}
-            value={count}
+            value={countText}
             onChange={(e) => {
-              const n = Number(e.target.value);
-              if (Number.isInteger(n) && n >= 1 && n <= EXTENDED_MAX_COUNT) {
+              const raw = e.target.value;
+              setCountText(raw);
+              const n = Number(raw);
+              if (
+                raw !== "" &&
+                Number.isInteger(n) &&
+                n >= 1 &&
+                n <= EXTENDED_MAX_COUNT
+              ) {
                 setCount(n);
               }
             }}
+            onBlur={() => setCountText(String(count))}
             className="w-24"
           />
           <p className="text-[11px] text-muted-foreground sm:text-xs">

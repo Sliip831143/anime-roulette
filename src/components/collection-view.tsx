@@ -166,6 +166,7 @@ export function CollectionView() {
 
   // グリッド上のカードからのトグル専用。フィルタ表示中はトグルで該当カードが即座に消える。
   // ダイアログ内のトグルはダイアログが開いたままなので対象外（handleStatusChange を直接使う）。
+  // 閉じた時点でカードが消えているケースは、ダイアログの onClose 側で退避する。
   const handleGridStatusChange = useCallback(
     (annictId: number, next: CollectionStatus) => {
       const removesCard =
@@ -198,6 +199,8 @@ export function CollectionView() {
   const confirmResetWatched = () => {
     setCollection((prev) => clearStatus(prev, "watched"));
     setPendingConfirm(null);
+    // 「観た」が 0 件になるとこのボタン自体が消え、確認ダイアログからのフォーカス復帰先が無くなる
+    focusCurrentChipIfLost();
     toast.success("「観た」をすべて抽選対象に戻しました");
   };
 
@@ -210,6 +213,7 @@ export function CollectionView() {
     setCollection(emptyCollection());
     setVisibleCount(PAGE_SIZE);
     setPendingConfirm(null);
+    focusCurrentChipIfLost();
     toast.success("図鑑をリセットしました");
   };
 
@@ -405,7 +409,11 @@ export function CollectionView() {
           onStatusChange={(next) =>
             handleStatusChange(openEntry.annictId, next)
           }
-          onClose={() => setOpenEntry(null)}
+          onClose={() => {
+            setOpenEntry(null);
+            // ダイアログ内で状態を変えてフィルタ対象から外れたカードは、閉じた時点で消えている
+            focusCurrentChipIfLost();
+          }}
         />
       )}
       {pendingConfirm === "reset-watched" && (

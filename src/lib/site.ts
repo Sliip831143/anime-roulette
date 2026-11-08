@@ -4,8 +4,10 @@
  * デプロイ先変更時に修正漏れのリスクがあったためここに集約した。
  * NEXT_PUBLIC_SITE_URL で上書き可能（未設定時は Vercel の本番 URL）。
  */
-export const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://anime-roulette-inky.vercel.app";
+// `${SITE_URL}/share` のように連結して使うため、環境変数に末尾スラッシュが付いていても二重にならないよう落とす
+export const SITE_URL = (
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://anime-roulette-inky.vercel.app"
+).replace(/\/+$/, "");
 
 /** OG 画像のフッター等に表示するホスト名（プロトコルなし） */
 export const SITE_HOST = new URL(SITE_URL).host;

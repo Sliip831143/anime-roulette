@@ -7,7 +7,8 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const paramsSchema = z.object({
-  id: z.coerce.number().int().min(1),
+  // GraphQL の Int（32bit）に収まらない id は Annict へ投げても拒否されるだけなので、ここで 400 にする
+  id: z.coerce.number().int().min(1).max(2_147_483_647),
 });
 
 export async function GET(

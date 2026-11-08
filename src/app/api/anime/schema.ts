@@ -1,16 +1,17 @@
 import { z } from "zod";
 import { MEDIA_VALUES } from "@/lib/annict";
-import { MIN_YEAR, SEASONS } from "@/lib/seasons";
+import { MIN_YEAR, SEASONS, getJstYearMonth } from "@/lib/seasons";
 
 // 年は「Annict にデータが存在する範囲（MIN_YEAR〜現在年）」にサーバー側でもクランプする。
 // UI の制約と揃えるだけでなく、任意の年範囲でキャッシュキーを無限に作られて
 // キャッシュミス→Annict への 13 ページフェッチを誘発される DoS 経路を塞ぐ意味がある。
 // 上限（現在年）はインスタンスが年をまたいで生存しても正しく判定できるよう parse 時に評価する。
+// 現在年は JST で取る（サーバーは UTC のため、1月1日 0〜9 時 JST はまだ前年で、クライアントの今期指定が 400 になる）。
 const yearSchema = z.coerce
   .number()
   .int()
   .min(MIN_YEAR)
-  .refine((y) => y <= new Date().getFullYear(), {
+  .refine((y) => y <= getJstYearMonth().year, {
     message: `year must be between ${MIN_YEAR} and the current year`,
   });
 

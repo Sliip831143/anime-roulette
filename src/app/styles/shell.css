@@ -272,14 +272,22 @@
   cursor: pointer;
 }
 
+/* ロゴの文字は画像の下半分にあるため、ヘッダー右側（図鑑リンク・演出スイッチ）は
+   上下中央ではなく文字のベースライン寄りに置く */
+.header-actions {
+  align-self: flex-end;
+  margin-bottom: 10px;
+}
+
 @media (max-width: 640px) {
   .anim-toggle {
     font-size: 11px;
   }
+}
 
-  /* ロゴの文字は画像の下半分にあるため、スマホでは上下中央ではなく文字のベースライン寄りにスイッチを置く */
+/* ロゴが 52px に縮む幅（responsive.css と同じ 768px）では下側の余白も合わせて詰める */
+@media (max-width: 768px) {
   .header-actions {
-    align-self: flex-end;
     margin-bottom: 7px;
   }
 }

@@ -70,7 +70,9 @@ export function useFocusTrap(
     document.addEventListener("keydown", handleKeydown, true);
     return () => {
       document.removeEventListener("keydown", handleKeydown, true);
-      previouslyFocused?.focus();
+      // 開く前にフォーカスしていた要素が、状態変更でボタンごと消えていることがある
+      // （図鑑のリセット確認、フィルタ対象から外れたカードの詳細など）。その場合の退避先は呼び出し側が決める
+      if (previouslyFocused?.isConnected) previouslyFocused.focus();
     };
   }, [ref, active]);
 }

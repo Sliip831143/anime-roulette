@@ -6,6 +6,7 @@ import {
   isSeasonFilterEnabled,
   isWorkFutureSeason,
   SEASONS,
+  getJstYearMonth,
 } from "./seasons";
 
 describe("expandSeasons", () => {
@@ -290,5 +291,39 @@ describe("getCurrentSeason", () => {
       year: 2027,
       season: "winter",
     });
+  });
+});
+
+describe("JST 基準の年月判定（サーバーが UTC でも日本時間で判定する）", () => {
+  // 2026-03-31T16:00Z = 2026-04-01 01:00 JST（UTC ではまだ 3 月）
+  const aprilFirstJst = new Date("2026-03-31T16:00:00Z");
+  // 2025-12-31T16:00Z = 2026-01-01 01:00 JST（UTC ではまだ 2025 年）
+  const newYearJst = new Date("2025-12-31T16:00:00Z");
+
+  it("getJstYearMonth は JST の年月を返す", () => {
+    expect(getJstYearMonth(aprilFirstJst)).toEqual({ year: 2026, month: 4 });
+    expect(getJstYearMonth(newYearJst)).toEqual({ year: 2026, month: 1 });
+  });
+
+  it("JST で 4 月 1 日になった時点で春クールを未来扱いしない", () => {
+    expect(expandSeasons({ yearFrom: 2026, now: aprilFirstJst })).toContain(
+      "2026-spring",
+    );
+    expect(
+      isWorkFutureSeason(
+        { seasonYear: 2026, seasonName: "SPRING" },
+        aprilFirstJst,
+      ),
+    ).toBe(false);
+  });
+
+  it("JST で年が明けた時点で今期は新年の冬になる", () => {
+    expect(getCurrentSeason(newYearJst)).toEqual({
+      year: 2026,
+      season: "winter",
+    });
+    expect(expandSeasons({ yearFrom: 2026, now: newYearJst })).toEqual([
+      "2026-winter",
+    ]);
   });
 });

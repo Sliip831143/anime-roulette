@@ -54,19 +54,42 @@ export function AnimeDetailDialog({
   const panelRef = useRef<HTMLDivElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
   // プレビュー表示中は本体側のトラップを止め、トラップが同時に 2 つ動かないようにする
-  useFocusTrap(panelRef, !previewOpen);
-  useFocusTrap(previewRef, previewOpen);
+  // プレビューは画像があるときだけ存在する。画像の読み込み失敗でプレビューが消えた後も previewOpen が
+  // 残ると、本体側のトラップが止まったまま（Tab で背後へ抜ける・Esc が 1 回効かない）になるため、
+  // 「表示中」で判定する
+  const hasImage = !!detail?.image?.recommendedImageUrl && !imageFailed;
+  const previewVisible = previewOpen && hasImage;
+  useFocusTrap(panelRef, !previewVisible);
+  useFocusTrap(previewRef, previewVisible);
 
   useEffect(() => {
     let cancelled = false;
     fetch(`/api/anime/${annictId}`)
-      .then(async (res) => ({ ok: res.ok, data: await res.json() }))
-      .then(({ ok, data }) => {
+      .then(async (res) => {
+        // Vercel の関数タイムアウト (504) 等は text/plain で返るため、JSON として読めなければ null にする
+        // （そのまま res.json() すると "Unexpected token" の例外文が画面に出る）
+        let data: { error?: unknown; work?: AnnictWorkDetail } | null = null;
+        try {
+          data = await res.json();
+        } catch {
+          data = null;
+        }
+        return { ok: res.ok, status: res.status, data };
+      })
+      .then(({ ok, status, data }) => {
         if (cancelled) return;
         if (!ok) {
-          setError(data?.error ?? "詳細の取得に失敗しました");
+          setError(
+            typeof data?.error === "string"
+              ? data.error
+              : status === 504
+                ? "サーバが混雑しています。少し待ってからもう一度開いてください"
+                : `詳細の取得に失敗しました（HTTP ${status}）`,
+          );
+        } else if (data?.work) {
+          setDetail(data.work);
         } else {
-          setDetail(data.work as AnnictWorkDetail);
+          setError("詳細の取得に失敗しました");
         }
       })
       .catch((e) => {
@@ -101,7 +124,7 @@ export function AnimeDetailDialog({
   // プレビュー表示中は Esc でプレビューのみ閉じる（ダイアログは閉じない）。
   // capture フェーズ + stopPropagation で上のダイアログ用ハンドラより先に処理する。
   useEffect(() => {
-    if (!previewOpen) return;
+    if (!previewVisible) return;
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
@@ -111,11 +134,10 @@ export function AnimeDetailDialog({
     };
     window.addEventListener("keydown", handleKey, true);
     return () => window.removeEventListener("keydown", handleKey, true);
-  }, [previewOpen]);
+  }, [previewVisible]);
 
   const work = detail;
   const rarity = getRarity(initial.watchersCount, initial.satisfactionRate);
-  const hasImage = !!work?.image?.recommendedImageUrl && !imageFailed;
   const annictUrl = `https://annict.com/works/${annictId}`;
   // Annict 由来の URL は javascript: 等の危険スキーム混入に備えて無害化してから使う
   const officialSiteUrl = safeHttpUrl(work?.officialSiteUrl);
@@ -384,7 +406,7 @@ export function AnimeDetailDialog({
         </div>
       </div>
 
-      {previewOpen && hasImage && (
+      {previewVisible && (
         <div
           ref={previewRef}
           role="dialog"

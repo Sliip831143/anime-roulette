@@ -12,6 +12,23 @@ export const SEASON_LABELS_JA: Record<Season, string> = {
   winter: "冬",
 };
 
+// Annict の放送クールは日本時間基準。サーバー（Vercel は UTC）でもブラウザでも同じ判定になるよう、
+// 「今」の年月は常に JST で取る（UTC のままだと JST の 0〜9 時に年・季節が 1 つ前になる）
+const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
+export function getJstYearMonth(now: Date = new Date()): {
+  year: number;
+  month: number;
+} {
+  const shifted = new Date(now.getTime() + JST_OFFSET_MS);
+  return { year: shifted.getUTCFullYear(), month: shifted.getUTCMonth() + 1 };
+}
+
+/** 指定の年・月（1〜12）が JST の今より未来か */
+function isFutureMonth(year: number, month: number, now: Date): boolean {
+  const cur = getJstYearMonth(now);
+  return year > cur.year || (year === cur.year && month > cur.month);
+}
+
 // Annict GraphQL に放送ステータス系のフィールドは無いため、未来の放送予定作品を
 // プールから除くには「未来 season をリクエスト側で投げない」しかない。
 // クライアント側で seasonYear/seasonName から開始月を逆算して除外する。
@@ -44,8 +61,7 @@ export function isWorkFutureSeason(
 ): boolean {
   if (work.seasonYear == null || work.seasonName == null) return false;
   const startMonth = ANNICT_SEASON_START_MONTH[work.seasonName];
-  const seasonStart = new Date(work.seasonYear, startMonth - 1, 1);
-  return seasonStart > now;
+  return isFutureMonth(work.seasonYear, startMonth, now);
 }
 
 export type ExpandSeasonsInput = {
@@ -79,9 +95,7 @@ export function expandSeasons({
       // seasons を明示指定された場合はユーザー意図を尊重して未来でも展開する。
       // 未指定（年だけ指定）のときのみ、まだ放送が始まっていない season を除外する。
       if (!explicitSeasons) {
-        const startMonth = SEASON_START_MONTH[season];
-        const seasonStart = new Date(year, startMonth - 1, 1);
-        if (seasonStart > now) continue;
+        if (isFutureMonth(year, SEASON_START_MONTH[season], now)) continue;
       }
       result.push(`${year}-${season}`);
     }
@@ -97,13 +111,13 @@ export function getCurrentSeason(now: Date = new Date()): {
   year: number;
   season: Season;
 } {
-  const month = now.getMonth() + 1;
+  const { year, month } = getJstYearMonth(now);
   const season =
     SEASONS.find((s) => {
       const start = SEASON_START_MONTH[s];
       return month >= start && month < start + 3;
     }) ?? "winter";
-  return { year: now.getFullYear(), season };
+  return { year, season };
 }
 
 export function isSeason(value: string): value is Season {

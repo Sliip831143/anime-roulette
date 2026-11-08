@@ -68,10 +68,9 @@ function countX(s: string): number {
 
 /** URL を 23 文字固定でカウントして合計を返す */
 function countXWithUrl(text: string, url: string): number {
-  // URL を仮の 1 文字に置換してカウント、その分 (URL の元カウント) を引いて 23 を足す
+  // URL を取り除いてカウントし、URL 分として固定の 23 を足す
   if (!text.includes(url)) return countX(text);
-  const replaced = text.replace(url, "");
-  return countX(replaced) - 1 + X_URL_COUNT;
+  return countX(text.replace(url, "")) + X_URL_COUNT;
 }
 
 /**
@@ -101,8 +100,11 @@ export function buildBatchTweetText(works: BatchShareTarget[]): string {
     ) {
       const last = body.lastIndexOf("\n");
       if (last <= 0) {
+        // 残り 1 行も入らない：全件省略になるので N も全件に合わせる
         body = "";
         included = 0;
+        suffix = `
+…他${works.length}件`;
         break;
       }
       body = body.slice(0, last);

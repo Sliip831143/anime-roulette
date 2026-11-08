@@ -68,6 +68,13 @@ function LocalPicture({ src, alt, ...imgProps }: LocalPictureProps) {
 
 export function GachaSequence({ works, onClose }: Props) {
   const [phase, setPhase] = useState<Phase>("intro_1");
+  // onClose は親の再描画ごとに作り直される。フェーズタイマーの effect の依存に入れると、
+  // 演出中に親が再描画されるたび（立ち絵の定期演出・スクロール・オンライン復帰など）に
+  // タイマーが張り直されて演出が延びるため、ref に逃がして依存から外す
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
   const [revealIndex, setRevealIndex] = useState(0);
   // 画像エラーは「失敗した index」で保持し、imageError は現在の revealIndex と比較した派生値。
   // これで revealIndex 更新時に setState で reset する必要がなくなり、cascading render を避けられる。
@@ -197,24 +204,29 @@ export function GachaSequence({ works, onClose }: Props) {
         t = setTimeout(() => setPhase("done"), 600);
         break;
       case "done":
-        onClose();
+        onCloseRef.current();
         break;
     }
     return () => {
       if (t) clearTimeout(t);
     };
-  }, [phase, revealIndex, works, onClose, imageError]);
+  }, [phase, revealIndex, works, imageError]);
 
   // キー入力で進行
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        advance();
-      } else if (e.key === "Escape") {
+      if (e.isComposing) return;
+      if (e.key === "Escape") {
         e.preventDefault();
         setPhase("closing");
+        return;
       }
+      if (e.key !== "Enter" && e.key !== " ") return;
+      // SKIP ボタンやリンクにフォーカスがあるときは、その要素の既定動作（クリック・遷移）を優先する。
+      // ここで preventDefault すると、キーボード操作では SKIP もリンクも押せなくなる（マウス経路は handleStageClick で除外済み）
+      if (e.target instanceof Element && e.target.closest("button, a")) return;
+      e.preventDefault();
+      advance();
     };
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);

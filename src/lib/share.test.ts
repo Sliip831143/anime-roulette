@@ -27,7 +27,7 @@ function countX(s: string): number {
 function countXWithUrl(text: string): number {
   if (!text.includes(SHARE_URL)) return countX(text);
   const replaced = text.replace(SHARE_URL, "");
-  return countX(replaced) - 1 + 23;
+  return countX(replaced) + 23;
 }
 
 describe("buildShareUrl", () => {
@@ -126,5 +126,15 @@ describe("buildBatchTweetText", () => {
     const text = buildBatchTweetText(works);
     expect(countXWithUrl(text)).toBeLessThanOrEqual(280);
     expect(text).toContain("…他");
+  });
+});
+
+describe("buildBatchTweetText: 全件省略", () => {
+  it("1 件目すら入らない長さなら本文を空にし、「…他N件」の N は全件数になる", () => {
+    const works = [make("あ".repeat(150), "r1"), make("い".repeat(150), "r1")];
+    const text = buildBatchTweetText(works);
+    expect(text).toContain("…他2件");
+    expect(text.split("\n").filter((l) => l.startsWith("★")).length).toBe(0);
+    expect(countXWithUrl(text)).toBeLessThanOrEqual(280);
   });
 });
