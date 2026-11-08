@@ -224,7 +224,9 @@ export function CollectionView() {
       className="flex flex-col flex-1 items-center px-4 py-5 pb-20 sm:py-8 sm:pb-20 lg:pb-8"
       style={!loaded ? { visibility: "hidden" } : undefined}
     >
-      <main className="w-full max-w-3xl space-y-4 sm:space-y-6">
+      <main
+        className={`w-full max-w-3xl space-y-4 sm:space-y-6${loaded ? " page-fade-in" : ""}`}
+      >
         <header className="space-y-4">
           {/* 左右を同じ 1fr にして、左の「トップへ」の幅に関係なく見出しをページ中央に置く */}
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
