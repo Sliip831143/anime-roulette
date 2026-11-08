@@ -413,20 +413,23 @@ CLAUDE.md                         # プロジェクト固有の Claude 指示（
 
 ## スクリプト
 
-| コマンド                                | 説明                                                           |
-| --------------------------------------- | -------------------------------------------------------------- |
-| `pnpm dev`                              | 開発サーバ起動                                                 |
-| `pnpm build`                            | 本番ビルド                                                     |
-| `pnpm start`                            | 本番サーバ起動                                                 |
-| `pnpm lint`                             | ESLint 実行                                                    |
-| `pnpm lint:fix`                         | ESLint で自動修正                                              |
-| `pnpm typecheck`                        | `tsc --noEmit` で型チェック                                    |
-| `pnpm test`                             | Vitest を Watch モードで起動                                   |
-| `pnpm test:run`                         | テストを1回実行（CI 向け）                                     |
-| `pnpm test:coverage`                    | カバレッジレポート生成（`coverage/index.html`）                |
-| `pnpm analyze`                          | `@next/bundle-analyzer` でバンドルサイズの HTML レポートを生成 |
-| `node scripts/convert-images.mjs`       | `public/gacha/*.png` を AVIF + WebP に一括変換                 |
-| `node scripts/generate-meta-assets.mjs` | OGP / Apple touch icon / PWA アイコンを再生成                  |
+| コマンド                                | 説明                                                                               |
+| --------------------------------------- | ---------------------------------------------------------------------------------- |
+| `pnpm dev`                              | 開発サーバ起動                                                                     |
+| `pnpm build`                            | 本番ビルド                                                                         |
+| `pnpm start`                            | 本番サーバ起動                                                                     |
+| `pnpm lint`                             | ESLint 実行                                                                        |
+| `pnpm lint:fix`                         | ESLint で自動修正                                                                  |
+| `pnpm format`                           | Prettier で全ファイルを整形                                                        |
+| `pnpm format:check`                     | 整形チェックのみ（CI 向け）                                                        |
+| `pnpm typecheck`                        | `tsc --noEmit` で型チェック                                                        |
+| `pnpm test`                             | Vitest を Watch モードで起動                                                       |
+| `pnpm test:run`                         | テストを1回実行（CI 向け）                                                         |
+| `pnpm test:coverage`                    | カバレッジレポート生成（`coverage/index.html`）                                    |
+| `pnpm check`                            | 整形チェック → lint → 型チェック → テストを順に実行（コミット前の検証はこれ 1 本） |
+| `pnpm analyze`                          | `@next/bundle-analyzer` でバンドルサイズの HTML レポートを生成                     |
+| `node scripts/convert-images.mjs`       | `public/gacha/*.png` を AVIF + WebP に一括変換                                     |
+| `node scripts/generate-meta-assets.mjs` | OGP / Apple touch icon / PWA アイコンを再生成                                      |
 
 ---
 
@@ -480,7 +483,7 @@ pnpm test:coverage  # カバレッジレポート生成 → coverage/index.html
 - **Vercel Speed Insights**: Core Web Vitals（LCP / FID / CLS）の継続モニタリング
 - **Google Search Console**: 検索パフォーマンス・構造化データ・インデックス状況のモニタリング（meta verification 済み）
 - **Lighthouse CI**（`.github/workflows/lighthouse.yml`）: PR/push ごとに Lighthouse スコアを自動計測。アサートは **カテゴリスコア (performance / accessibility / best-practices / seo) のみ・すべて `warn` 判定**で運用（個別 audit は無視し、CI を緑のまま継続モニタリング）
-- **CI / verify**（`.github/workflows/ci.yml`）: PR/push ごとに `pnpm lint` → `pnpm typecheck` → `pnpm test:run` を実行。Node バージョンは `.nvmrc` から取得（**Node 22 LTS**）
+- **CI / verify**（`.github/workflows/ci.yml`）: PR/push ごとに `pnpm format:check` → `pnpm lint` → `pnpm typecheck` → `pnpm test:run` を実行。Node バージョンは `.nvmrc` から取得（**Node 22 LTS**）
 
 ## 開発体験（DX）
 
