@@ -328,14 +328,17 @@ src/
 │   └── twitter-image.png         # Twitter Card 画像（静的フォールバック）
 ├── components/
 │   ├── search-form.tsx           # 検索フォーム（PC md 以上で2カラム配置）
+│   ├── search-form.test.tsx      # /max 拡張時の件数入力（空にしてから打ち直せる・範囲外は確定しない）
 │   ├── anime-card.tsx            # 結果カード（申請書ストライプ風、クリックで詳細ダイアログ、視聴状態・お気に入り）
 │   ├── anime-detail-dialog.tsx   # 結果カード詳細モーダル（Portal + Esc クローズ、外部リンク集約）
+│   ├── anime-detail-dialog.test.tsx # 詳細取得の非 JSON エラー応答（504 等）を案内文に変換すること
 │   ├── collection-view.tsx       # 図鑑画面本体（統計 / フィルタ / 無限スクロール / リセット）
 │   ├── status-buttons.tsx        # 視聴状態（観た / 後で観る / 興味なし）の 3 分割ピル（結果カード・詳細・図鑑で共用）
 │   ├── favorite-button.tsx       # お気に入り（丸枠ハート）トグル。「観た」作品にだけホストが描画
 │   ├── confirm-dialog.tsx        # テーマ準拠の確認ダイアログ（alertdialog、初期フォーカス=キャンセル）
 │   ├── console-cmd.tsx           # DevTools 隠しコマンド window.cmd の登録（layout でマウント。一覧は lib/hidden-commands.ts）
 │   ├── gacha-sequence.tsx        # ガチャ演出のフルスクリーンオーバーレイ（intro〜reveal〜closing）
+│   ├── gacha-sequence.test.tsx   # 演出中のキー操作（SKIP・リンク上の Enter は既定動作を妨げない / Esc / IME 中は無視）
 │   ├── no-image-icon.tsx         # No image プレースホルダ共通アイコン（結果カード・図鑑で共用）
 │   ├── x-logo.tsx                # X（旧 Twitter）公式ロゴ SVG（currentColor 追従）
 │   ├── use-focus-trap.ts         # モーダル用フォーカストラップ（Tab 循環 + クローズ時フォーカス復帰）
@@ -348,7 +351,7 @@ src/
     ├── annict.ts                 # GraphQL クライアント / クエリ / ページネーション
     ├── annict-rate-limit.ts      # Annict レート制限（429）の Retry-After 解釈・短時間待機再試行・専用エラー
     ├── annict-rate-limit.test.ts # Retry-After の解釈（秒数 / HTTP-date / 不正値）と再試行方針のテスト
-    ├── seasons.ts                # 年→seasons 配列の展開 + 未来放送予定の判定（isWorkFutureSeason）+ 今期の判定（getCurrentSeason）
+    ├── seasons.ts                # 年→seasons 配列の展開 + 未来放送予定の判定（isWorkFutureSeason）+ 今期の判定（getCurrentSeason）。年月の判定は JST 基準（getJstYearMonth）
     ├── seasons.test.ts           # seasons 展開・未来判定・今期判定の境界値・順序保持テスト
     ├── rarity.ts                 # レアリティ判定（watchersCount + satisfactionRate）
     ├── rarity.test.ts            # レアリティ判定の単体テスト（100% カバー）
@@ -406,7 +409,7 @@ CLAUDE.md                         # プロジェクト固有の Claude 指示（
 
 - API には年単独・年範囲のフィルタが存在せず `seasons: [String!]`（例 `"2024-spring"`）のみ。クライアント側で年×季節を展開して送る（`src/lib/seasons.ts`）
 - `WorkOrderField` は `WATCHERS_COUNT` / `SEASON` / `CREATED_AT` の3種のみ。「人気アニメ」は `WATCHERS_COUNT DESC` で代用
-- **`Work` に放送ステータス系のフィールドが存在しない**（`releasedOn` / `status` / `WorkState` などは無し）。Annict には放送開始前の作品も「予定」として登録されるため、放っておくとガチャに未来作品が混入する。対処として `seasonYear` / `seasonName` から season 開始月（spring=4 / summer=7 / autumn=10 / winter=1）を逆算してクライアント側で除外（`src/lib/seasons.ts` の `isWorkFutureSeason`）。年指定モードでは `expandSeasons` が未来 season をそもそも展開せず、全期間モード（年・季節とも未指定）では `applyFilters` が作品単位で除外する。なお `seasons` を明示指定した場合はユーザー意図を尊重して未来でも展開する
+- **`Work` に放送ステータス系のフィールドが存在しない**（`releasedOn` / `status` / `WorkState` などは無し）。Annict には放送開始前の作品も「予定」として登録されるため、放っておくとガチャに未来作品が混入する。対処として `seasonYear` / `seasonName` から season 開始月（spring=4 / summer=7 / autumn=10 / winter=1）を逆算してクライアント側で除外（`src/lib/seasons.ts` の `isWorkFutureSeason`。年月の判定はサーバーが UTC でも日本時間になるよう JST 基準）。年指定モードでは `expandSeasons` が未来 season をそもそも展開せず、全期間モード（年・季節とも未指定）では `applyFilters` が作品単位で除外する。なお `seasons` を明示指定した場合はユーザー意図を尊重して未来でも展開する
 - **ランダム抽出は「上位最大2,600件（200件×13ページのカーソルページネーション）をプール → サーバーでフィルタ → シャッフル → 指定件数を返却」で実現**（`src/app/api/anime/route.ts`、`searchAnimeWorksPaginated`）
   - 200件のみだとプールが人気作偏重になり、ガチャの低レアが出ないため深掘りしている
   - プールは seasons の組み合わせごとに **`unstable_cache`（Vercel Data Cache）でキャッシュ（TTL 24時間）**。以前は module スコープの Map だったが、それだとサーバーレスインスタンスごとに独立しコールドスタートのたびに 13 ページ逐次フェッチ（30秒超）が発生するため、インスタンス横断で永続する Data Cache（ローカルは `.next/cache`）へ移行した。カーソルページネーションは直列のためページ数に比例して取得が遅くなるが、2回目以降のガチャはキャッシュ命中で Annict 取得ゼロ（フィルタ＋シャッフルのみ）で即応答する
@@ -465,6 +468,9 @@ CLAUDE.md                         # プロジェクト固有の Claude 指示（
 - **`src/lib/hidden-commands.test.ts`**: ページ読み込み時のコンソール案内で `%c` の数とスタイル引数の数が一致すること、全コマンドが案内に含まれること
 - **`src/app/page.test.tsx`**: トップ画面（jsdom 環境）。演出スイッチの初期値・保存・ラベルクリック、演出 OFF 時は演出を挟まず結果表示、演出 ON 時は演出表示 → 閉じると結果表示
 - **`src/app/page.chunk-failure.test.tsx`**: 演出チャンク（`next/dynamic`）の読み込みが失敗しても演出を飛ばして結果を直接表示すること
+- **`src/components/gacha-sequence.test.tsx`**: 演出中のキー操作。SKIP ボタン・リンク上の Enter / Space は既定動作を妨げない、ステージ上の Enter は進行に使う、Esc で終了、IME 変換中は無視
+- **`src/components/search-form.test.tsx`**: `/max` 拡張時の件数入力。空にしてから打ち直せること、範囲外の途中入力は件数に反映せずフォーカスが外れたら確定値に戻ること
+- **`src/components/anime-detail-dialog.test.tsx`**: 詳細取得の非 JSON エラー応答（504 等）を例外文ではなく案内文として表示すること
 
 ### 実行
 
