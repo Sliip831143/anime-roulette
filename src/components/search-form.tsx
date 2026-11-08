@@ -238,8 +238,8 @@ export function SearchForm({
           </span>
         </div>
       )}
-      <p className="text-xs text-muted-foreground">
-        単年なら片方だけ、未指定なら全期間から抽出します。
+      <p className="text-[11px] text-muted-foreground sm:text-xs">
+        単年なら片方だけ指定してください。
         <br />
         「ランダム」で範囲内から1年を抽選します。
       </p>
@@ -291,7 +291,7 @@ export function SearchForm({
             <RadioGroupItem value={opt.value} className="mt-1" />
             <span className="flex flex-col">
               <span className="text-sm">{opt.label}</span>
-              <span className="text-xs text-muted-foreground">{opt.hint}</span>
+              <span className="text-[11px] text-muted-foreground sm:text-xs">{opt.hint}</span>
             </span>
           </label>
         ))}
@@ -309,7 +309,7 @@ export function SearchForm({
         />
         <span className="flex flex-col">
           <span className="text-sm">高評価のみ</span>
-          <span className="text-xs text-muted-foreground">
+          <span className="text-[11px] text-muted-foreground sm:text-xs">
             満足度70%以上
           </span>
         </span>
@@ -331,8 +331,8 @@ export function SearchForm({
           </label>
         ))}
       </div>
-      <p className="text-xs text-muted-foreground">
-        未選択ですべて対象。一部だけ選ぶと該当種別に絞り込みます。
+      <p className="text-[11px] text-muted-foreground sm:text-xs">
+        未選択はすべて対象となります。
       </p>
     </div>
   );
@@ -356,7 +356,7 @@ export function SearchForm({
             }}
             className="w-24"
           />
-          <p className="text-xs text-muted-foreground">
+          <p className="text-[11px] text-muted-foreground sm:text-xs">
             1〜{EXTENDED_MAX_COUNT}件で指定（<code>/max</code> による拡張中）
           </p>
         </div>
