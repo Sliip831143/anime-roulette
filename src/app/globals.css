@@ -507,6 +507,19 @@ body[data-mode="gacha"] {
   user-select: none;
 }
 
+/* 枠自体は横幅いっぱいに広がるためクリックを透過させ、画像（リンク）の上だけクリック可能にする */
+[data-mode="gacha"] .gacha-mascot a {
+  display: block;
+  flex: none;
+  pointer-events: auto;
+  border-radius: 8px;
+}
+
+[data-mode="gacha"] .gacha-mascot a:focus-visible {
+  outline: 2px solid var(--gacha-accent);
+  outline-offset: 4px;
+}
+
 /* 画像の上から --visible の割合だけを見せ、残りは負のマージンで枠の下へ押し出す。
    高さは「上限 --max-h」「見える部分が枠に収まる高さ」「枠幅に収まる高さ（縦横比 0.775）」の最小値なので、
    枠が低くても光輪が上で切れることはなく、見切れ位置（服のどこで切れるか）は画面サイズによらず一定になる */

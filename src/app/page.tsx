@@ -548,21 +548,29 @@ export default function Home() {
           ) : null}
         </section>
 
-        {/* 装飾用のキャラ画像。ガチャ結果がない間（未抽選・0 件）だけ、フォームの下に残った高さを使って表示する */}
+        {/* キャラ画像。ガチャ結果がない間（未抽選・0 件）だけ、フォームの下に残った高さを使って表示する。
+            クリックでブルーアーカイブ公式サイトを新しいタブで開く */}
         {gachaMode && (results == null || results.length === 0) && (
-          <div className="gacha-mascot" aria-hidden>
-            <picture>
-              <source srcSet="/gacha/arona_3.avif" type="image/avif" />
-              <source srcSet="/gacha/arona_3.webp" type="image/webp" />
-              <img
-                src="/gacha/arona_3.png"
-                alt=""
-                width={760}
-                height={981}
-                loading="lazy"
-                decoding="async"
-              />
-            </picture>
+          <div className="gacha-mascot">
+            <a
+              href="https://bluearchive.jp/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="ブルーアーカイブ公式サイト（新しいタブで開く）"
+            >
+              <picture>
+                <source srcSet="/gacha/arona_3.avif" type="image/avif" />
+                <source srcSet="/gacha/arona_3.webp" type="image/webp" />
+                <img
+                  src="/gacha/arona_3.png"
+                  alt=""
+                  width={760}
+                  height={981}
+                  loading="lazy"
+                  decoding="async"
+                />
+              </picture>
+            </a>
           </div>
         )}
       </main>
