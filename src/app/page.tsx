@@ -38,6 +38,9 @@ export default function Home() {
   const [results, setResults] = useState<AnnictWork[] | null>(null);
   const [resultsVersion, setResultsVersion] = useState(0);
   const [pendingWorks, setPendingWorks] = useState<AnnictWork[] | null>(null);
+  // 結果カードを表示した状態から引き直したか。演出中は結果を一旦空にするため、
+  // これがないと演出の裏と終了フェード中に立ち絵が一瞬出てしまう
+  const [redrawing, setRedrawing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [lastCount, setLastCount] = useState(5);
   const [gachaMode, setGachaMode] = useState(true);
@@ -179,11 +182,6 @@ export default function Home() {
     safeSetItem(MODE_STORAGE_KEY, gachaMode ? "gacha" : "simple");
   }, [gachaMode, mounted]);
 
-  useEffect(() => {
-    if (!mounted) return;
-    safeSetItem(SEASON_VISIBLE_KEY, seasonVisible ? "1" : "0");
-  }, [seasonVisible, mounted]);
-
   // ★3 が出やすい条件（超人気のみ／高評価のみ）を選んでいる間と、★3 を含む結果を表示している間は、
   // ガチャモードのページ背景を★3演出と同じピンク系に切り替える
   const [rareFilterActive, setRareFilterActive] = useState(false);
@@ -199,6 +197,11 @@ export default function Home() {
       delete document.documentElement.dataset.gachaBg;
     }
   }, [rainbowBg]);
+
+  useEffect(() => {
+    if (!mounted) return;
+    safeSetItem(SEASON_VISIBLE_KEY, seasonVisible ? "1" : "0");
+  }, [seasonVisible, mounted]);
 
   useEffect(() => {
     if (!mounted) return;
@@ -221,6 +224,7 @@ export default function Home() {
   }, [popularThreshold, mounted]);
 
   const handleSubmit = async (params: SearchParams) => {
+    setRedrawing(results != null && results.length > 0);
     setLoading(true);
     setLastCount(params.count);
     setLastParams(params);
@@ -566,8 +570,11 @@ export default function Home() {
         </section>
 
         {/* キャラ画像。ガチャ結果がない間（未抽選・0 件）だけ、フォームの下に残った高さを使って表示する。
+            結果表示中からの引き直しでは、取得中〜演出終了まで出さない。
             クリックでブルーアーカイブ公式サイトを新しいタブで開く */}
-        {gachaMode && (results == null || results.length === 0) && (
+        {gachaMode &&
+          (results == null || results.length === 0) &&
+          !(redrawing && (loading || pendingWorks != null)) && (
           <div className="gacha-mascot">
             <a
               href="https://bluearchive.jp/"
