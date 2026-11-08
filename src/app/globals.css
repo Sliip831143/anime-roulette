@@ -206,6 +206,38 @@ body[data-mode="gacha"] {
   animation: gacha-shapes-drift 90s linear infinite;
 }
 
+/* ★3 狙いの条件選択中・★3 を含む結果の表示中は、★3演出（.gacha-stage.has-rainbow）と同じピンク系背景にする */
+[data-mode="gacha"][data-gacha-bg="rainbow"] body {
+  background:
+    radial-gradient(ellipse at 88% 6%, oklch(1 0 0 / 0.75) 0%, transparent 38%),
+    radial-gradient(ellipse at 8% 70%, oklch(0.86 0.11 350 / 0.85) 0%, transparent 55%),
+    radial-gradient(ellipse at 92% 88%, oklch(0.85 0.12 295 / 0.78) 0%, transparent 55%),
+    radial-gradient(ellipse at 40% 30%, oklch(0.92 0.06 230 / 0.55) 0%, transparent 55%),
+    linear-gradient(135deg, oklch(0.9 0.08 240) 0%, oklch(0.88 0.10 295) 50%, oklch(0.91 0.08 340) 100%);
+  background-attachment: fixed;
+}
+
+[data-mode="gacha"][data-gacha-bg="rainbow"]::before {
+  background:
+    repeating-linear-gradient(
+      118deg,
+      transparent 0px,
+      transparent 110px,
+      oklch(0.82 0.18 200 / 0.5) 110px,
+      oklch(0.82 0.18 200 / 0.5) 112px,
+      transparent 112px,
+      transparent 190px,
+      oklch(0.78 0.18 340 / 0.45) 190px,
+      oklch(0.78 0.18 340 / 0.45) 192px,
+      transparent 192px,
+      transparent 300px
+    );
+}
+
+[data-mode="gacha"][data-gacha-bg="rainbow"]::after {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='820' height='820' viewBox='0 0 820 820'><path d='M90 70 L230 70 L160 200 Z' fill='%23ffffff' fill-opacity='0.55'/><path d='M580 180 L720 180 L650 320 Z' fill='%23c8b8ff' fill-opacity='0.5'/><path d='M180 470 L320 470 L250 600 Z' fill='%23ffffff' fill-opacity='0.42'/><path d='M620 600 L760 600 L690 740 Z' fill='%23ffd6e8' fill-opacity='0.55'/><path d='M30 280 L120 280 L75 360 Z' fill='%23b8e8ff' fill-opacity='0.45'/><path d='M430 720 L520 720 L475 800 Z' fill='%23ffffff' fill-opacity='0.4'/><path d='M400 60 L500 60 L450 150 Z' fill='%23ffffff' fill-opacity='0.42'/><rect x='540' y='420' width='180' height='180' rx='12' fill='none' stroke='%2393e0ff' stroke-opacity='0.55' stroke-width='2'/><rect x='720' y='380' width='14' height='14' fill='%23ffd84c' fill-opacity='0.8'/><rect x='760' y='540' width='10' height='10' fill='%23ffd84c' fill-opacity='0.7'/><rect x='60' y='620' width='12' height='12' fill='%23ffd84c' fill-opacity='0.7'/></svg>");
+}
+
 @keyframes gacha-rays-drift {
   from { transform: translate(0, 0); }
   to { transform: translate(-360px, 190px); }

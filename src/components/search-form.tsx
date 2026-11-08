@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Dices, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -60,6 +60,8 @@ type Props = {
   showSeason?: boolean;
   extendedCount?: boolean;
   popularThreshold?: number;
+  /** 「超人気のみ」または「高評価のみ」が選ばれているかを親へ通知する（ガチャモードの背景切り替えに使う） */
+  onRareFilterChange?: (active: boolean) => void;
 };
 
 export function SearchForm({
@@ -70,6 +72,7 @@ export function SearchForm({
   showSeason = true,
   extendedCount = false,
   popularThreshold = DEFAULT_POPULAR_THRESHOLD,
+  onRareFilterChange,
 }: Props) {
   const [yearFromText, setYearFromText] = useState("");
   const [yearToText, setYearToText] = useState("");
@@ -79,6 +82,11 @@ export function SearchForm({
   const [popularity, setPopularity] = useState<Popularity>("all");
   const [highRated, setHighRated] = useState(false);
   const [selectedMedia, setSelectedMedia] = useState<Media[]>(["TV"]);
+
+  const rareFilterActive = popularity === "very_popular" || highRated;
+  useEffect(() => {
+    onRareFilterChange?.(rareFilterActive);
+  }, [rareFilterActive, onRareFilterChange]);
 
   const yearFrom = parseYear(yearFromText);
   const yearTo = parseYear(yearToText);

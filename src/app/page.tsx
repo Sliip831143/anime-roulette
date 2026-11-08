@@ -184,6 +184,22 @@ export default function Home() {
     safeSetItem(SEASON_VISIBLE_KEY, seasonVisible ? "1" : "0");
   }, [seasonVisible, mounted]);
 
+  // ★3 が出やすい条件（超人気のみ／高評価のみ）を選んでいる間と、★3 を含む結果を表示している間は、
+  // ガチャモードのページ背景を★3演出と同じピンク系に切り替える
+  const [rareFilterActive, setRareFilterActive] = useState(false);
+  const hasR3Result =
+    results?.some(
+      (w) => getRarity(w.watchersCount, w.satisfactionRate) === "r3",
+    ) ?? false;
+  const rainbowBg = gachaMode && (rareFilterActive || hasR3Result);
+  useEffect(() => {
+    if (rainbowBg) {
+      document.documentElement.dataset.gachaBg = "rainbow";
+    } else {
+      delete document.documentElement.dataset.gachaBg;
+    }
+  }, [rainbowBg]);
+
   useEffect(() => {
     if (!mounted) return;
     safeSetItem(DEBUG_MODE_KEY, debugMode ? "1" : "0");
@@ -440,6 +456,7 @@ export default function Home() {
             showSeason={seasonVisible}
             extendedCount={extendedCount}
             popularThreshold={popularThreshold}
+            onRareFilterChange={setRareFilterActive}
           />
         </section>
 
