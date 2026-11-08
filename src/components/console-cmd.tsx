@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { COLLECTION_STORAGE_KEY } from "@/lib/collection";
+import { HIDDEN_COMMANDS } from "@/lib/hidden-commands";
 import {
   DEBUG_MODE_KEY,
   DEFAULT_POPULAR_THRESHOLD,
@@ -12,32 +13,6 @@ import {
   STORAGE_PREFIX,
   readSettings,
 } from "@/lib/settings";
-
-type CmdDef = { usage: string; desc: string };
-const CMD_DEFS: CmdDef[] = [
-  { usage: 'cmd("/help")', desc: "利用可能コマンド一覧を表示" },
-  { usage: 'cmd("/state")', desc: "現在の各種設定を一覧表示" },
-  {
-    usage: 'cmd("/season"|"/season on"|"/season off")',
-    desc: "季節フィルタの表示切替（デフォルト非表示）",
-  },
-  {
-    usage: 'cmd("/debug"|"/debug on"|"/debug off")',
-    desc: "APIリクエスト・レアリティ判定の詳細ログを切替",
-  },
-  {
-    usage: 'cmd("/max"|"/max on"|"/max off")',
-    desc: "取得件数UIを切替（Slider 1〜10 ⇔ 数値入力 1〜50）",
-  },
-  {
-    usage: 'cmd("/popularity tune <n>"|"/popularity reset")',
-    desc: `「人気のみ」の視聴登録閾値をカスタマイズ（デフォルト${DEFAULT_POPULAR_THRESHOLD}）`,
-  },
-  {
-    usage: 'cmd("/reset"|"/reset all")',
-    desc: "localStorageの設定を初期化（all 指定で図鑑データも削除）",
-  },
-];
 
 declare global {
   interface Window {
@@ -91,7 +66,7 @@ export function ConsoleCmd() {
           "%c[cmd] /help — 利用可能コマンド",
           "color:#7aa;font-weight:700",
         );
-        CMD_DEFS.forEach((c) => {
+        HIDDEN_COMMANDS.forEach((c) => {
           console.log(
             `  %c${c.usage}%c  ${c.desc}`,
             "color:#3a7;font-weight:600",
