@@ -41,6 +41,7 @@
 
 ### 検索フィルタ
 - 放送年（単年・範囲・未指定）。**「🎲 ランダム」ボタン**で範囲内から1年を自動抽選してバッジ表示
+- **「今期」ボタン**（ランダムの横）: 現在月が属するクール（1〜3月 冬 / 4〜6月 春 / 7〜9月 夏 / 10〜12月 秋）に放送を始めた作品だけから抽選し、「2026年秋アニメで抽選」のようにバッジ表示。前クールからの継続作品は含めない。放送開始直後は視聴登録数・満足度が溜まっておらず 0 件になりやすいため、ON の間は年・季節・人気度・高評価を無効にし、メディア種別と取得件数だけを効かせる（`src/lib/seasons.ts` の `getCurrentSeason`）
 - 季節（春／夏／秋／冬）。年を手入力したとき、または「🎲 ランダム」で本年以外の年が選ばれたときに有効（ランダムで本年が選ばれた場合は未放送の季節を含みうるため無効）※デフォルトは非表示、隠しコマンドで表示
 - 人気度ティア（すべて／人気のみ／超人気のみ）。**「人気のみ」の閾値は隠しコマンドでカスタマイズ可能**
 - 高評価のみ（満足度70%以上）
@@ -325,8 +326,8 @@ src/
     ├── annict.ts                 # GraphQL クライアント / クエリ / ページネーション
     ├── annict-rate-limit.ts      # Annict レート制限（429）の Retry-After 解釈・短時間待機再試行・専用エラー
     ├── annict-rate-limit.test.ts # Retry-After の解釈（秒数 / HTTP-date / 不正値）と再試行方針のテスト
-    ├── seasons.ts                # 年→seasons 配列の展開 + 未来放送予定の判定（isWorkFutureSeason）
-    ├── seasons.test.ts           # seasons 展開・未来判定の境界値・順序保持テスト
+    ├── seasons.ts                # 年→seasons 配列の展開 + 未来放送予定の判定（isWorkFutureSeason）+ 今期の判定（getCurrentSeason）
+    ├── seasons.test.ts           # seasons 展開・未来判定・今期判定の境界値・順序保持テスト
     ├── rarity.ts                 # レアリティ判定（watchersCount + satisfactionRate）
     ├── rarity.test.ts            # レアリティ判定の単体テスト（100% カバー）
     ├── collection.ts             # 図鑑のデータモデルと純粋関数（記録 / 状態 / 除外 / 統計 / 検証）
@@ -424,7 +425,7 @@ CLAUDE.md                         # プロジェクト固有の Claude 指示（
 
 ### カバー対象（8 ファイル / 計 141 ケース）
 - **`src/lib/rarity.test.ts`**: レアリティ判定（`getRarity`）の境界値テスト（16 ケース、100% カバー）
-- **`src/lib/seasons.test.ts`**: 年→seasons 展開 (`expandSeasons`) / 未来放送予定の判定 (`isWorkFutureSeason`) / `isSeason` の境界・順序保持・エラー系
+- **`src/lib/seasons.test.ts`**: 年→seasons 展開 (`expandSeasons`) / 未来放送予定の判定 (`isWorkFutureSeason`) / 今期の判定 (`getCurrentSeason`) / `isSeason` の境界・順序保持・エラー系
 - **`src/app/api/anime/schema.test.ts`**: API route の zod スキーマ（querySchema）の正常・異常系。デフォルト値、年範囲、count 上下限、enum 検証、`highRated` の boolean 変換まで
 - **`src/lib/share.test.ts`**: 一括シェアテキスト (`buildBatchTweetText`) の境界値。X 仕様のカウント（CJK 2 / URL 23 / 上限 280）、超過時の「…他N件」省略、ヘッダー/フッター整形を保証
 - **`src/lib/safe-url.test.ts`**: 外部 URL 無害化の境界値（`javascript:` / `data:` / 相対 URL 等の拒否）
