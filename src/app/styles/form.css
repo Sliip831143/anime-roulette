@@ -1,0 +1,307 @@
+/* ============================================================
+   検索フォーム（申請書風カード・CTA ボタン・テキスト/チェック/ラジオ/スライダー）
+   globals.css から読み込む。ファイル間の順序はカスケード（後勝ち）に影響する
+   ============================================================ */
+
+/* 検索フォーム（白紙の申請書） */
+.gacha-form {
+  background: oklch(0.995 0.003 80);
+  backdrop-filter: none;
+  border: none;
+  border-radius: 4px;
+  padding: 18px 26px 20px;
+  position: relative;
+  box-shadow:
+    0 6px 18px oklch(0 0 0 / 0.14),
+    inset 0 0 0 1px oklch(0.55 0.08 250 / 0.15);
+}
+
+.gacha-form::before,
+.gacha-form::after {
+  content: "";
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid oklch(0.55 0.08 250 / 0.55);
+  pointer-events: none;
+}
+
+.gacha-form::before {
+  top: 8px;
+  left: 8px;
+  border-right: none;
+  border-bottom: none;
+}
+
+.gacha-form::after {
+  bottom: 8px;
+  right: 8px;
+  border-left: none;
+  border-top: none;
+}
+
+/* 申請書ヘッダー */
+.gacha-form-header {
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: oklch(0.45 0.06 250);
+  text-align: center;
+  padding-bottom: 8px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid oklch(0.7 0.04 250 / 0.4);
+}
+
+/* フォーム内のラベル（見出し）を薄ブルー帯に */
+.gacha-form label[data-slot="label"] {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: oklch(0.45 0.06 250);
+  background: oklch(0.94 0.04 220 / 0.7);
+  padding: 3px 10px;
+  margin-bottom: 6px;
+  display: inline-block;
+  border-radius: 0;
+}
+
+/* 「ガチャを引く」CTA ボタン */
+.gacha-form button[type="submit"] {
+  width: 100%;
+  background: linear-gradient(
+    135deg,
+    oklch(0.22 0.05 255),
+    oklch(0.32 0.08 280)
+  );
+  color: oklch(0.99 0 0);
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  font-size: 15px;
+  padding: 14px 24px;
+  position: relative;
+  border-radius: 4px;
+  border: none;
+  box-shadow:
+    0 4px 14px oklch(0 0 0 / 0.28),
+    inset 0 0 0 1px oklch(0.4 0.12 270 / 0.6);
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease,
+    filter 150ms ease;
+  overflow: hidden;
+}
+
+/* 「ガチャを引く」の左に添える宝石。文字の高さに合わせる */
+.gacha-submit-gem {
+  display: block;
+  width: auto;
+  height: 20px;
+}
+
+@media (max-width: 640px) {
+  .gacha-submit-gem {
+    height: 16px;
+  }
+}
+
+.gacha-form button[type="submit"]::before {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 100%;
+  width: 4px;
+  background: linear-gradient(
+    180deg,
+    oklch(0.72 0.22 25),
+    oklch(0.78 0.18 85),
+    oklch(0.78 0.2 145),
+    oklch(0.62 0.22 290)
+  );
+}
+
+.gacha-form button[type="submit"]:hover:not(:disabled) {
+  box-shadow:
+    0 6px 18px oklch(0 0 0 / 0.34),
+    inset 0 0 0 1px oklch(0.4 0.12 270 / 0.7);
+  filter: brightness(1.08);
+}
+
+/* フォーム送信ボタン：ホバー時のカーソルを pointer に */
+.gacha-form button[type="submit"]:not(:disabled) {
+  cursor: pointer;
+}
+
+/* キーボードフォーカス時：チェックボックス/ラジオと同色の薄青リングで縁取る */
+.gacha-form button[type="submit"]:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 3px oklch(0.62 0.16 230 / 0.25),
+    0 6px 18px oklch(0 0 0 / 0.34),
+    inset 0 0 0 1px oklch(0.4 0.12 270 / 0.7);
+}
+
+.gacha-form button[type="submit"]:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ============================================================
+   フォーム部品（ブルアカ風）
+   ============================================================ */
+
+/* テキストフィールド */
+.gacha-form [data-slot="input"] {
+  height: 38px;
+  background: oklch(0.97 0.01 230);
+  border: 1px solid oklch(0.85 0.02 230);
+  border-radius: 4px;
+  padding: 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: oklch(0.22 0.05 250);
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    background 150ms ease;
+  outline: none;
+}
+
+.gacha-form [data-slot="input"]::placeholder {
+  color: oklch(0.7 0.04 250);
+  font-weight: 500;
+}
+
+.gacha-form [data-slot="input"]:hover:not(:disabled) {
+  background: oklch(0.99 0 0);
+  border-color: oklch(0.75 0.06 230);
+}
+
+.gacha-form [data-slot="input"]:focus-visible {
+  background: oklch(0.99 0 0);
+  border-color: oklch(0.62 0.16 230);
+  box-shadow: 0 0 0 3px oklch(0.62 0.16 230 / 0.18);
+}
+
+/* チェックボックス */
+.gacha-form [data-slot="checkbox"] {
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid oklch(0.78 0.03 230);
+  border-radius: 4px;
+  background: oklch(0.99 0 0);
+  transition:
+    border-color 150ms ease,
+    background 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.gacha-form [data-slot="checkbox"]:hover:not(:disabled) {
+  border-color: oklch(0.62 0.16 230);
+}
+
+.gacha-form [data-slot="checkbox"][data-checked] {
+  background: oklch(0.62 0.16 230);
+  border-color: oklch(0.62 0.16 230);
+}
+
+.gacha-form [data-slot="checkbox"][data-checked]:hover:not(:disabled) {
+  background: oklch(0.58 0.16 235);
+  border-color: oklch(0.58 0.16 235);
+}
+
+.gacha-form [data-slot="checkbox"]:focus-visible {
+  box-shadow: 0 0 0 3px oklch(0.62 0.16 230 / 0.25);
+}
+
+.gacha-form [data-slot="checkbox-indicator"] svg {
+  color: oklch(0.99 0 0);
+  width: 13px;
+  height: 13px;
+  stroke-width: 3;
+}
+
+/* ラジオボタン */
+.gacha-form [data-slot="radio-group-item"] {
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid oklch(0.78 0.03 230);
+  background: oklch(0.99 0 0);
+  transition:
+    border-color 150ms ease,
+    background 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.gacha-form [data-slot="radio-group-item"]:hover:not(:disabled) {
+  border-color: oklch(0.62 0.16 230);
+}
+
+.gacha-form [data-slot="radio-group-item"][data-checked] {
+  background: oklch(0.62 0.16 230);
+  border-color: oklch(0.62 0.16 230);
+}
+
+.gacha-form [data-slot="radio-group-item"]:focus-visible {
+  box-shadow: 0 0 0 3px oklch(0.62 0.16 230 / 0.25);
+}
+
+.gacha-form
+  [data-slot="radio-group-item"][data-checked]
+  [data-slot="radio-group-indicator"]
+  span {
+  background: oklch(0.99 0 0);
+  width: 7px;
+  height: 7px;
+}
+
+/* スライダー */
+.gacha-form [data-slot="slider-track"] {
+  height: 6px !important;
+  background: oklch(0.9 0.02 230);
+  border-radius: 999px;
+}
+
+.gacha-form [data-slot="slider-range"] {
+  background: linear-gradient(90deg, oklch(0.68 0.14 220), oklch(0.6 0.16 240));
+}
+
+.gacha-form [data-slot="slider-thumb"] {
+  width: 18px !important;
+  height: 18px !important;
+  background: oklch(0.99 0 0);
+  border: 2px solid oklch(0.55 0.18 240);
+  box-shadow:
+    0 2px 6px oklch(0 0 0 / 0.18),
+    inset 0 0 0 2px oklch(1 0 0);
+  transition:
+    box-shadow 150ms ease,
+    transform 150ms ease;
+}
+
+.gacha-form [data-slot="slider-thumb"]:hover {
+  box-shadow:
+    0 0 0 6px oklch(0.62 0.16 230 / 0.18),
+    0 2px 6px oklch(0 0 0 / 0.18),
+    inset 0 0 0 2px oklch(1 0 0);
+}
+
+/* Base UI の Slider Thumb は内部 input がフォーカスを受けるため :focus-within で拾う。
+   隠し input はマウスでフォーカスされないので、実質キーボード時のみ反応する。
+   outline を使うのは Tailwind の focus-visible:ring-3 が box-shadow を奪うため。 */
+.gacha-form [data-slot="slider-thumb"]:focus-within {
+  outline: 3px solid oklch(0.62 0.16 230 / 0.25);
+  outline-offset: 0;
+  box-shadow:
+    0 2px 6px oklch(0 0 0 / 0.18),
+    inset 0 0 0 2px oklch(1 0 0);
+}
+
+/* スライダー thumb：ボタンと同じ pointer。
+   thumb 内には visually-hidden な input[type=range] があり、UA stylesheet で
+   cursor:default が当たって thumb の指定を上書きするため、input にも適用する。 */
+[data-slot="slider-thumb"],
+[data-slot="slider-thumb"] input {
+  cursor: pointer;
+}

@@ -1,0 +1,198 @@
+/* ============================================================
+   トップ画面のロゴと、結果がない間だけ出すキャラ画像（立ち絵・吹き出し）
+   globals.css から読み込む。ファイル間の順序はカスケード（後勝ち）に影響する
+   ============================================================ */
+
+/* メインタイトル：ロゴ画像 */
+.gacha-hero {
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+  line-height: 0;
+}
+
+.gacha-hero-logo {
+  height: clamp(64px, 10vw, 88px);
+  width: auto;
+  display: block;
+}
+
+/* ページ最下部のキャラ画像。元画像は下端が切れている前提の素材なので、画面下端で見切れさせる。
+   - ガチャ結果がない間だけ描画する（page.tsx 側で制御）。flex-basis 0 で「フォームの下に残った高さ」だけを占有し、ページにスクロールを出さない
+   - .page-root の下余白（lg 未満 5rem / lg 以上 2rem）は負のマージンで打ち消し、画面の下端まで伸ばす
+   - 画像は枠の下端に揃え、下側を overflow で切り落とす（下記 img） */
+.gacha-mascot {
+  flex: 1 1 0;
+  min-height: 0;
+  margin-bottom: -5rem;
+  container-type: size;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  /* フォームとの間隔。container-type: size の cqh は内容ボックス基準なので、この分だけ画像も縮む */
+  padding-top: 36px;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* 枠自体は横幅いっぱいに広がるためクリックを透過させ、画像（リンク）の上だけクリック可能にする */
+.gacha-mascot a {
+  display: block;
+  flex: none;
+  pointer-events: auto;
+  border-radius: 8px;
+}
+
+.gacha-mascot a:focus-visible {
+  outline: 2px solid var(--gacha-accent);
+  outline-offset: 4px;
+}
+
+/* 画像の上から --visible の割合だけを見せ、残りは負のマージンで枠の下へ押し出す。
+   高さは「上限 --max-h」「見える部分が枠に収まる高さ」「枠幅に収まる高さ（縦横比 0.775）」の最小値なので、
+   枠が低くても光輪が上で切れることはなく、見切れ位置（服のどこで切れるか）は画面サイズによらず一定になる */
+.gacha-mascot img {
+  --visible: 0.92;
+  --max-h: 740px;
+  --h: min(var(--max-h), calc(100cqh / var(--visible)), calc(100cqw / 0.775));
+  display: block;
+  flex: none;
+  height: var(--h);
+  width: auto;
+  margin-bottom: calc(var(--h) * (var(--visible) - 1));
+}
+
+/* 一定間隔で出す演出：2 回小さく跳ねる。跳ねる高さは画像を枠の下へ押し出している量より小さくし、
+   画像の下端（見切れ位置）が見えないようにする */
+.gacha-mascot a {
+  position: relative;
+}
+
+/* .gacha-mascot は container-type: size のコンテナで、中のアニメーションが途中で終わると
+   コンテナクエリの再評価で両方のアニメーションが最初から再生され、跳ねる動きと吹き出しが何度も繰り返されてしまう。
+   そのため跳ねる動き・吹き出しとも、演出の状態（page.tsx の MASCOT_CHEER_MS = 2.6s）より長い 3s にして、
+   演出の状態が外れるまでアニメーションが終わらないようにしている（跳ねるのは最初の 0.9s、吹き出しは 2.5s で消える） */
+.gacha-mascot.is-cheering img {
+  animation: mascot-hop 3s ease-in-out forwards;
+}
+
+@keyframes mascot-hop {
+  0%,
+  15%,
+  30%,
+  100% {
+    transform: translateY(0);
+  }
+  7.5%,
+  22.5% {
+    transform: translateY(-14px);
+  }
+}
+
+/* キャラの右上に出すハートの吹き出し */
+.gacha-mascot-bubble {
+  position: absolute;
+  left: 78%;
+  top: 2%;
+  width: 46px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  background: oklch(1 0 0);
+  border: 1px solid oklch(0.88 0.04 350);
+  box-shadow: 0 4px 12px oklch(0.55 0.1 330 / 0.18);
+  pointer-events: none;
+  transform-origin: 0% 100%;
+  animation: mascot-bubble 3s ease-out forwards;
+}
+
+/* キャラ側（左下）へ向けたしっぽ */
+.gacha-mascot-bubble::after {
+  content: "";
+  position: absolute;
+  left: 6px;
+  bottom: -5px;
+  width: 10px;
+  height: 10px;
+  background: inherit;
+  border-left: inherit;
+  border-bottom: inherit;
+  transform: rotate(-30deg) skewX(-10deg);
+}
+
+.gacha-mascot-heart {
+  width: 22px;
+  height: 22px;
+  color: oklch(0.7 0.19 355);
+  fill: currentColor;
+}
+
+@keyframes mascot-bubble {
+  0% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  8% {
+    opacity: 1;
+    transform: scale(1.12);
+  }
+  13% {
+    transform: scale(1);
+  }
+  68% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  83%,
+  100% {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+/* 残り高さが小さすぎると光輪だけが覗く中途半端な見た目になるため、出さない */
+@container (max-height: 120px) {
+  .gacha-mascot img,
+  .gacha-mascot-bubble {
+    display: none;
+  }
+}
+
+@media (min-width: 64rem) {
+  .gacha-mascot {
+    margin-bottom: -2rem;
+  }
+}
+
+@media (max-width: 640px) {
+  /* スマホは小さめにして、膨らんだ袖（肘のあたり）が半分ほど隠れる位置まで見せる */
+  .gacha-mascot img {
+    --visible: 0.87;
+    --max-h: 400px;
+  }
+
+  .gacha-mascot {
+    padding-top: 14px;
+  }
+
+  .gacha-mascot-bubble {
+    width: 36px;
+    height: 32px;
+    border-radius: 11px;
+  }
+
+  .gacha-mascot-bubble::after {
+    left: 5px;
+    bottom: -4px;
+    width: 8px;
+    height: 8px;
+  }
+
+  .gacha-mascot-heart {
+    width: 17px;
+    height: 17px;
+  }
+}
