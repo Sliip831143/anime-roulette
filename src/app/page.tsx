@@ -474,6 +474,7 @@ export default function Home() {
             loading={loading}
             onSubmit={handleSubmit}
             submitLabel={gachaMode ? "ガチャを引く" : "候補を取得"}
+            countLabel={gachaMode ? (n) => `募集回数: ${n}回` : undefined}
             loadingLabel={gachaMode ? "Loading..." : "取得中..."}
             showSeason={seasonVisible}
             extendedCount={extendedCount}

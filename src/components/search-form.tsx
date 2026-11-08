@@ -60,6 +60,7 @@ type Props = {
   loadingLabel?: string;
   showSeason?: boolean;
   extendedCount?: boolean;
+  countLabel?: (count: number) => string;
   popularThreshold?: number;
   /** 「超人気のみ」または「高評価のみ」が選ばれているかを親へ通知する（ガチャモードの背景切り替えに使う） */
   onRareFilterChange?: (active: boolean) => void;
@@ -73,6 +74,7 @@ export function SearchForm({
   showSeason = true,
   extendedCount = false,
   popularThreshold = DEFAULT_POPULAR_THRESHOLD,
+  countLabel = (n) => `取得件数: ${n}件`,
   onRareFilterChange,
 }: Props) {
   const [yearFromText, setYearFromText] = useState("");
@@ -413,7 +415,7 @@ export function SearchForm({
 
   const countSection = (
     <div className="space-y-2 md:mb-3">
-      <Label>取得件数: {count}件</Label>
+      <Label>{countLabel(count)}</Label>
       {extendedCount ? (
         <div className="space-y-1.5">
           <Input
