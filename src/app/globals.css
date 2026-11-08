@@ -313,7 +313,10 @@ body[data-mode="gacha"] {
   color: oklch(0.88 0.18 90);
   font-size: 13px;
   letter-spacing: 0.06em;
-  text-shadow: 0 0 8px oklch(0.88 0.18 90 / 0.6);
+  /* 明るい金色が白地に溶けないよう、同系色を暗くした細い輪郭線を付ける。
+     paint-order で線を塗りの下に描き、星の内側が痩せないようにする */
+  -webkit-text-stroke: 1px oklch(0.6 0.12 75 / 0.85);
+  paint-order: stroke fill;
   flex-shrink: 0;
 }
 
@@ -334,7 +337,6 @@ body[data-mode="gacha"] {
 
 [data-mode="gacha"] .gacha-card[data-rarity="r2"] .gacha-card-rarity {
   color: oklch(0.88 0.18 85);
-  text-shadow: 0 0 10px oklch(0.88 0.18 85 / 0.75);
 }
 
 [data-mode="gacha"] .gacha-card[data-rarity="r2"] {
@@ -367,7 +369,8 @@ body[data-mode="gacha"] {
   background-clip: text;
   color: transparent;
   text-shadow: none;
-  filter: drop-shadow(0 0 6px oklch(0.85 0.18 85 / 0.7));
+  /* 塗りが透明なため線は縁の上に乗る。虹色を潰さないよう細く淡い紫にする */
+  -webkit-text-stroke: 0.6px oklch(0.55 0.12 300 / 0.6);
 }
 
 [data-mode="gacha"] .gacha-card[data-rarity="r3"] {

@@ -41,14 +41,14 @@ const RARITY_ORDER: Record<Rarity, number> = { r3: 0, r2: 1, r1: 2 };
 // 途中ロード時に行が欠けないようにする
 const PAGE_SIZE = 24;
 
-// ガチャモード時の星の色。ガチャ結果カード（.gacha-card-rarity）の意匠
-// （★1=金、★2=金＋強グロー、★3=虹グラデーション）を踏襲した白地用の変種。
-// 明度はユーザー要望で華やかさ最優先（L≈0.84）。白地とのコントラストは
+// ガチャモード時の星の色。ガチャ結果カード（.gacha-card-rarity）と同じ色にしている
+// （★1・★2=金、★3=虹グラデーション）。白地とのコントラストは
 // WCAG 基準を大きく下回るが、レアリティ情報は sr-only テキストで補完している。
+// 白地に溶けないよう、同系色を暗くした細い輪郭線を付ける（★3 は塗りが透明なので細く淡い紫）。
 const GACHA_STAR_CLASS: Record<Rarity, string> = {
-  r1: "text-[oklch(0.84_0.17_90)] [text-shadow:0_0_8px_oklch(0.85_0.18_90/0.65)]",
-  r2: "text-[oklch(0.82_0.18_85)] [text-shadow:0_0_10px_oklch(0.85_0.18_85/0.8)]",
-  r3: "bg-[linear-gradient(135deg,oklch(0.82_0.22_25),oklch(0.86_0.18_85),oklch(0.82_0.2_145),oklch(0.76_0.22_290))] bg-clip-text text-transparent [filter:drop-shadow(0_0_5px_oklch(0.85_0.18_85/0.65))]",
+  r1: "text-[oklch(0.88_0.18_90)] [-webkit-text-stroke:1px_oklch(0.6_0.12_75/0.85)] [paint-order:stroke_fill]",
+  r2: "text-[oklch(0.88_0.18_85)] [-webkit-text-stroke:1px_oklch(0.6_0.12_75/0.85)] [paint-order:stroke_fill]",
+  r3: "bg-[linear-gradient(135deg,oklch(0.78_0.22_25),oklch(0.85_0.18_85),oklch(0.78_0.2_145),oklch(0.72_0.22_290))] bg-clip-text text-transparent [-webkit-text-stroke:0.6px_oklch(0.55_0.12_300/0.6)]",
 };
 
 export function CollectionView() {
