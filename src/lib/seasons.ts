@@ -89,6 +89,23 @@ export function expandSeasons({
   return result;
 }
 
+/**
+ * 「今期」= 現在月が属する放送クール（1〜3月 冬 / 4〜6月 春 / 7〜9月 夏 / 10〜12月 秋）を返す。
+ * 前クールから継続中の作品は含めず、今期に放送を始めた作品だけを対象にする前提。
+ */
+export function getCurrentSeason(now: Date = new Date()): {
+  year: number;
+  season: Season;
+} {
+  const month = now.getMonth() + 1;
+  const season =
+    SEASONS.find((s) => {
+      const start = SEASON_START_MONTH[s];
+      return month >= start && month < start + 3;
+    }) ?? "winter";
+  return { year: now.getFullYear(), season };
+}
+
 export function isSeason(value: string): value is Season {
   return (SEASONS as readonly string[]).includes(value);
 }

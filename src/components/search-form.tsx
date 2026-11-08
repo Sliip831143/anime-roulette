@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Dices, X } from "lucide-react";
+import { Dices, Tv, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +13,7 @@ import {
   MIN_YEAR,
   SEASONS,
   SEASON_LABELS_JA,
+  getCurrentSeason,
   isSeasonFilterEnabled,
   type Season,
 } from "@/lib/seasons";
@@ -82,8 +83,14 @@ export function SearchForm({
   const [popularity, setPopularity] = useState<Popularity>("all");
   const [highRated, setHighRated] = useState(false);
   const [selectedMedia, setSelectedMedia] = useState<Media[]>(["TV"]);
+  // 「今期」ON の間は今の季節に放送を始めた作品だけから引く。放送開始直後で視聴登録数・満足度が
+  // まだ溜まっておらず人気度・高評価で絞ると 0 件になりやすいため、年・季節と合わせて無効にする
+  const [currentSeasonMode, setCurrentSeasonMode] = useState(false);
+  const currentSeason = getCurrentSeason();
+  const currentSeasonLabel = `${currentSeason.year}年${SEASON_LABELS_JA[currentSeason.season]}アニメ`;
 
-  const rareFilterActive = popularity === "very_popular" || highRated;
+  const rareFilterActive =
+    !currentSeasonMode && (popularity === "very_popular" || highRated);
   useEffect(() => {
     onRareFilterChange?.(rareFilterActive);
   }, [rareFilterActive, onRareFilterChange]);
@@ -92,12 +99,14 @@ export function SearchForm({
   const yearTo = parseYear(yearToText);
   const currentYear = new Date().getFullYear();
   // 季節指定の有効条件は isSeasonFilterEnabled に集約（境界は seasons.test.ts で検証）。
-  const seasonsEnabled = isSeasonFilterEnabled({
-    yearFrom,
-    yearTo,
-    pickedYear,
-    currentYear,
-  });
+  const seasonsEnabled =
+    !currentSeasonMode &&
+    isSeasonFilterEnabled({
+      yearFrom,
+      yearTo,
+      pickedYear,
+      currentYear,
+    });
   const currentMaxCount = extendedCount ? EXTENDED_MAX_COUNT : SLIDER_MAX_COUNT;
   const popularityOptions = useMemo(
     () => buildPopularityOptions(popularThreshold),
@@ -112,6 +121,7 @@ export function SearchForm({
   }
 
   const error = useMemo(() => {
+    if (currentSeasonMode) return null;
     if (yearFromText && yearFrom == null)
       return `開始年は${MIN_YEAR}〜${currentYear}の整数で入力してください`;
     if (yearToText && yearTo == null)
@@ -119,11 +129,23 @@ export function SearchForm({
     if (yearFrom != null && yearTo != null && yearFrom > yearTo)
       return "開始年は終了年以下にしてください";
     return null;
-  }, [yearFromText, yearToText, yearFrom, yearTo, currentYear]);
+  }, [currentSeasonMode, yearFromText, yearToText, yearFrom, yearTo, currentYear]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (error) return;
+    if (currentSeasonMode) {
+      onSubmit({
+        yearFrom: currentSeason.year,
+        yearTo: currentSeason.year,
+        seasons: [currentSeason.season],
+        count,
+        popularity: "all",
+        highRated: false,
+        media: selectedMedia,
+      });
+      return;
+    }
     const effectiveFrom = pickedYear ?? yearFrom ?? undefined;
     const effectiveTo = pickedYear ?? yearTo ?? undefined;
     onSubmit({
@@ -168,6 +190,11 @@ export function SearchForm({
     setPickedYear(picked);
   };
 
+  const toggleCurrentSeasonMode = () => {
+    setCurrentSeasonMode((on) => !on);
+    setPickedYear(null);
+  };
+
   const toggleSeason = (season: Season, checked: boolean) => {
     setSelectedSeasons((prev) =>
       checked ? [...prev, season] : prev.filter((s) => s !== season),
@@ -187,22 +214,24 @@ export function SearchForm({
         <Input
           type="number"
           inputMode="numeric"
-          placeholder="開始年"
+          placeholder="開始"
           min={MIN_YEAR}
           max={currentYear}
           value={yearFromText}
           onChange={(e) => handleYearFromChange(e.target.value)}
+          disabled={currentSeasonMode}
           className="w-20 min-w-0 sm:w-32 md:w-24"
         />
         <span className="text-muted-foreground">〜</span>
         <Input
           type="number"
           inputMode="numeric"
-          placeholder="終了年"
+          placeholder="終了"
           min={MIN_YEAR}
           max={currentYear}
           value={yearToText}
           onChange={(e) => handleYearToChange(e.target.value)}
+          disabled={currentSeasonMode}
           className="w-20 min-w-0 sm:w-32 md:w-24"
         />
         <Button
@@ -210,14 +239,49 @@ export function SearchForm({
           variant="outline"
           size="sm"
           onClick={handleRandomYear}
-          disabled={error != null}
+          disabled={error != null || currentSeasonMode}
           aria-label="放送年をランダムで決定"
           className="shrink-0 cursor-pointer"
         >
           <Dices className="size-4" aria-hidden />
           <span>ランダム</span>
         </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={toggleCurrentSeasonMode}
+          aria-pressed={currentSeasonMode}
+          aria-label={`今期（${currentSeasonLabel}）から抽選`}
+          className={`shrink-0 cursor-pointer${
+            currentSeasonMode
+              ? " border-primary/40 bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary"
+              : ""
+          }`}
+        >
+          今期
+        </Button>
       </div>
+      {currentSeasonMode && (
+        <div className="flex items-center gap-2">
+          <span
+            role="status"
+            aria-live="polite"
+            className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-sm font-medium text-primary"
+          >
+            <Tv className="size-3.5" aria-hidden />
+            {currentSeasonLabel}で抽選
+            <button
+              type="button"
+              onClick={() => setCurrentSeasonMode(false)}
+              aria-label="今期の指定を解除"
+              className="ml-0.5 inline-flex size-4 cursor-pointer items-center justify-center rounded-full text-primary/70 hover:bg-primary/20 hover:text-primary"
+            >
+              <X className="size-3" aria-hidden />
+            </button>
+          </span>
+        </div>
+      )}
       {pickedYear != null && (
         <div className="flex items-center gap-2">
           <span
@@ -275,9 +339,12 @@ export function SearchForm({
 
   const popularitySection = (
     <div className="space-y-2">
-      <Label>人気度</Label>
+      <Label className={currentSeasonMode ? "text-muted-foreground" : ""}>
+        人気度
+      </Label>
       <RadioGroup
         value={popularity}
+        disabled={currentSeasonMode}
         onValueChange={(v) =>
           typeof v === "string" && setPopularity(v as Popularity)
         }
@@ -286,7 +353,9 @@ export function SearchForm({
         {popularityOptions.map((opt) => (
           <label
             key={opt.value}
-            className="flex items-start gap-2 cursor-pointer"
+            className={`flex items-start gap-2 ${
+              currentSeasonMode ? "opacity-50" : "cursor-pointer"
+            }`}
           >
             <RadioGroupItem value={opt.value} className="mt-1" />
             <span className="flex flex-col">
@@ -301,9 +370,14 @@ export function SearchForm({
 
   const highRatedSection = (
     <div className="space-y-2">
-      <label className="flex items-start gap-2 cursor-pointer">
+      <label
+        className={`flex items-start gap-2 ${
+          currentSeasonMode ? "opacity-50" : "cursor-pointer"
+        }`}
+      >
         <Checkbox
           checked={highRated}
+          disabled={currentSeasonMode}
           onCheckedChange={(checked) => setHighRated(checked === true)}
           className="mt-1"
         />
@@ -378,12 +452,12 @@ export function SearchForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
       <div className="grid gap-y-2.5 sm:gap-y-3 md:gap-y-5 md:grid-cols-2">
-        <div className="space-y-2.5 sm:space-y-3 md:space-y-5 md:border-r md:border-slate-200 md:pr-6">
+        <div className="min-w-0 space-y-2.5 sm:space-y-3 md:space-y-5 md:border-r md:border-slate-200 md:pr-6">
           {yearSection}
           {showSeason && seasonSection}
           {mediaSection}
         </div>
-        <div className="space-y-2.5 sm:space-y-3 md:space-y-5 md:pl-6">
+        <div className="min-w-0 space-y-2.5 sm:space-y-3 md:space-y-5 md:pl-6">
           {popularitySection}
           {highRatedSection}
           {countSection}

@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   expandSeasons,
+  getCurrentSeason,
   isSeason,
   isSeasonFilterEnabled,
   isWorkFutureSeason,
@@ -262,5 +263,34 @@ describe("isSeason", () => {
   it("空文字や無関係な文字列は false", () => {
     expect(isSeason("")).toBe(false);
     expect(isSeason("autumn-2023")).toBe(false);
+  });
+});
+
+describe("getCurrentSeason", () => {
+  it.each([
+    [1, "winter"],
+    [3, "winter"],
+    [4, "spring"],
+    [6, "spring"],
+    [7, "summer"],
+    [9, "summer"],
+    [10, "autumn"],
+    [12, "autumn"],
+  ] as const)("%i 月は %s", (month, season) => {
+    expect(getCurrentSeason(new Date(2026, month - 1, 15))).toEqual({
+      year: 2026,
+      season,
+    });
+  });
+
+  it("クールの初日と末日は同じ季節になる", () => {
+    expect(getCurrentSeason(new Date(2026, 9, 1, 0, 0)).season).toBe("autumn");
+    expect(getCurrentSeason(new Date(2026, 11, 31, 23, 59)).season).toBe(
+      "autumn",
+    );
+    expect(getCurrentSeason(new Date(2027, 0, 1, 0, 0))).toEqual({
+      year: 2027,
+      season: "winter",
+    });
   });
 });
