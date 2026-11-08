@@ -430,7 +430,7 @@ export default function Home() {
 
         <section className={gachaMode ? "gacha-form" : "simple-form"}>
           {gachaMode && (
-            <div className="gacha-form-header">SEARCH FORM</div>
+            <div className="gacha-form-header">CONDITIONS</div>
           )}
           <SearchForm
             loading={loading}
