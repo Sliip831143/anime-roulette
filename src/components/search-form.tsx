@@ -465,7 +465,7 @@ export function SearchForm({
       </div>
 
       {error && (
-        <p className="text-sm text-destructive" role="alert">
+        <p className="text-xs text-destructive sm:text-[13px]" role="alert">
           {error}
         </p>
       )}
