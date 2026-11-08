@@ -68,6 +68,16 @@ export function CollectionView() {
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   // 状態トグルでカードが消えた際のフォーカス退避先（現在のフィルタチップ）を探すために参照する
   const chipsRef = useRef<HTMLDivElement | null>(null);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 200);
+    };
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   useEffect(() => {
     // localStorage はクライアント限定のため、マウント後に読み込む。
@@ -216,9 +226,11 @@ export function CollectionView() {
     toast.success("図鑑をリセットしました");
   };
 
+  // 下余白 pb-20（lg 未満のみ）は、右下固定の「トップへ戻る」ボタンが
+  // 最下部カードの視聴状態ボタンに重ならないようにするための確保分
   return (
     <div
-      className="flex flex-col flex-1 items-center px-4 py-5 sm:py-8"
+      className="flex flex-col flex-1 items-center px-4 py-5 pb-20 sm:py-8 sm:pb-20 lg:pb-8"
       style={!loaded ? { visibility: "hidden" } : undefined}
     >
       <main className="w-full max-w-3xl space-y-4 sm:space-y-6">
@@ -455,6 +467,26 @@ export function CollectionView() {
           onConfirm={confirmResetCollection}
           onClose={() => setPendingConfirm(null)}
         />
+      )}
+      {showScrollTop && (
+        <button
+          type="button"
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          className="scroll-top-btn"
+          aria-label="ページトップへ戻る"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <polyline points="18 15 12 9 6 15" />
+          </svg>
+        </button>
       )}
     </div>
   );
