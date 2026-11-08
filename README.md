@@ -306,7 +306,15 @@ src/
 │   ├── share/page.tsx            # シェアランディング（generateMetadata で動的 OGP）
 │   ├── collection/page.tsx       # 図鑑ページ（robots: noindex、実体は collection-view.tsx）
 │   ├── error.tsx                 # Error Boundary（リトライ / トップへ戻る）
-│   ├── globals.css               # Tailwind + ブルアカ風テーマ・演出・図鑑 FAB・レスポンシブ用 CSS
+│   ├── globals.css               # Tailwind の読み込み・テーマ変数・@layer base と、styles/ の @import（順序＝カスケード）
+│   ├── styles/                   # 役割ごとに分割した CSS（globals.css から順に読み込む）
+│   │   ├── theme.css             # ブルアカ風テーマ：ページ背景 / レアリティ変数 / 結果カード
+│   │   ├── hero.css              # ロゴと、結果がない間のキャラ画像（立ち絵・吹き出し）
+│   │   ├── form.css              # 検索フォーム（申請書風カード・CTA・各フォーム部品）
+│   │   ├── shell.css             # トップへ戻る / 図鑑 FAB / 結果一覧パネル / 演出スイッチ
+│   │   ├── responsive.css        # スマホ幅の調整（フォームカード・縦余白・演出のアニメ情報）
+│   │   ├── gacha-sequence.css    # ガチャ演出（フルスクリーンオーバーレイ）
+│   │   └── motion.css            # マイクロインタラクション / prefers-reduced-motion
 │   ├── layout.tsx                # metadata / JSON-LD（WebApplication / FAQ / HowTo） / prefetch / 隠しコマンド登録
 │   ├── page.tsx                  # メイン画面 + オフライン検知 + リトライ UI + 図鑑記録・抽選除外
 │   ├── page.test.tsx             # トップ画面のコンポーネントテスト（演出スイッチ / 演出 ON・OFF の結果表示）
@@ -558,7 +566,7 @@ curl -o og.png "http://localhost:3005/api/og?id=4168"
 | 検索フィルタの追加・変更        | `src/app/api/anime/schema.ts`（zod）→ `src/app/api/anime/route.ts`（`applyFilters`）→ `src/components/search-form.tsx`               |
 | Annict から取るフィールドの変更 | `src/lib/annict.ts`（クエリ・型）。`roleOther` / `organizations` / `ratingsCount` は取らないこと（[制約](#annict-api-の制約と対処)） |
 | レアリティの条件                | `src/lib/rarity.ts` + `rarity.test.ts` + README の表（[レアリティ](#レアリティ)）                                                    |
-| ガチャ演出                      | `src/components/gacha-sequence.tsx` + `src/app/globals.css`                                                                          |
+| ガチャ演出                      | `src/components/gacha-sequence.tsx` + `src/app/styles/gacha-sequence.css`                                                            |
 | 結果カード / 詳細ダイアログ     | `src/components/anime-card.tsx` / `anime-detail-dialog.tsx`                                                                          |
 | 図鑑・抽選除外                  | `src/lib/collection.ts`（純粋関数）/ `use-collection.ts`（永続化）/ `src/components/collection-view.tsx`                             |
 | シェア文言・OG 画像             | `src/lib/share.ts` / `src/app/share/page.tsx` / `src/app/api/og/route.tsx`                                                           |
