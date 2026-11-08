@@ -2,7 +2,7 @@
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, RotateCcw, Trash2 } from "lucide-react";
+import { ChevronLeft, RotateCcw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { AnimeDetailDialog } from "@/components/anime-detail-dialog";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -232,7 +232,7 @@ export function CollectionView() {
               href="/"
               className="inline-flex items-center gap-1.5 justify-self-start text-sm text-muted-foreground transition-colors hover:text-foreground"
             >
-              <ArrowLeft className="size-4" aria-hidden />
+              <ChevronLeft className="size-4" aria-hidden />
               トップへ
             </Link>
             <h1 className="text-xl font-semibold tracking-tight">図鑑</h1>
