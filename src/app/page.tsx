@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { SearchForm, type SearchParams } from "@/components/search-form";
 import { AnimeCard } from "@/components/anime-card";
 import { usePeriodicCheer } from "@/components/use-periodic-cheer";
-import { Heart } from "lucide-react";
+import { BookMarked, Heart } from "lucide-react";
 import { XLogo } from "@/components/x-logo";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
@@ -658,17 +658,7 @@ export default function Home() {
             : "図鑑"
         }
       >
-        <picture>
-          <source srcSet="/gacha/collection.avif" type="image/avif" />
-          <source srcSet="/gacha/collection.webp" type="image/webp" />
-          <img
-            src="/gacha/collection.png"
-            alt=""
-            width={64}
-            height={64}
-            className="collection-fab-icon"
-          />
-        </picture>
+        <BookMarked aria-hidden />
         {mounted && Object.keys(collection.entries).length > 0 && (
           <span className="collection-fab-badge" aria-hidden>
             {Object.keys(collection.entries).length}
