@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { SearchForm, type SearchParams } from "@/components/search-form";
 import { AnimeCard } from "@/components/anime-card";
 import { usePeriodicCheer } from "@/components/use-periodic-cheer";
-import { BookMarked, Heart } from "lucide-react";
+import { Heart } from "lucide-react";
 import { XLogo } from "@/components/x-logo";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
@@ -449,7 +449,17 @@ export default function Home() {
                 }
                 className="hidden items-center gap-1 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:inline-flex"
               >
-                <BookMarked className="size-3.5" aria-hidden />
+                <picture>
+                  <source srcSet="/gacha/collection.avif" type="image/avif" />
+                  <source srcSet="/gacha/collection.webp" type="image/webp" />
+                  <img
+                    src="/gacha/collection.png"
+                    alt=""
+                    width={64}
+                    height={64}
+                    className="size-4"
+                  />
+                </picture>
                 図鑑
                 {mounted && Object.keys(collection.entries).length > 0 && (
                   <span
@@ -648,7 +658,17 @@ export default function Home() {
             : "図鑑"
         }
       >
-        <BookMarked aria-hidden />
+        <picture>
+          <source srcSet="/gacha/collection.avif" type="image/avif" />
+          <source srcSet="/gacha/collection.webp" type="image/webp" />
+          <img
+            src="/gacha/collection.png"
+            alt=""
+            width={64}
+            height={64}
+            className="collection-fab-icon"
+          />
+        </picture>
         {mounted && Object.keys(collection.entries).length > 0 && (
           <span className="collection-fab-badge" aria-hidden>
             {Object.keys(collection.entries).length}

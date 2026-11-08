@@ -77,9 +77,9 @@
   z-index: 50;
 }
 
-.collection-fab svg {
-  width: 20px;
-  height: 20px;
+.collection-fab-icon {
+  width: 24px;
+  height: 24px;
 }
 
 .collection-fab-badge {
