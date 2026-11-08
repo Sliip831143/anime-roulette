@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Dices, Tv, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,10 +57,12 @@ type Props = {
   loading: boolean;
   onSubmit: (params: SearchParams) => void;
   submitLabel?: string;
+  /** 送信ボタンの文言の左に添えるアイコン（読み込み中は出さない） */
+  submitIcon?: ReactNode;
   loadingLabel?: string;
+  countLabel?: (count: number) => string;
   showSeason?: boolean;
   extendedCount?: boolean;
-  countLabel?: (count: number) => string;
   popularThreshold?: number;
   /** 「超人気のみ」または「高評価のみ」が選ばれているかを親へ通知する（ガチャモードの背景切り替えに使う） */
   onRareFilterChange?: (active: boolean) => void;
@@ -70,11 +72,12 @@ export function SearchForm({
   loading,
   onSubmit,
   submitLabel = "候補を取得",
+  submitIcon,
   loadingLabel = "取得中...",
+  countLabel = (n) => `取得件数: ${n}件`,
   showSeason = true,
   extendedCount = false,
   popularThreshold = DEFAULT_POPULAR_THRESHOLD,
-  countLabel = (n) => `取得件数: ${n}件`,
   onRareFilterChange,
 }: Props) {
   const [yearFromText, setYearFromText] = useState("");
@@ -473,7 +476,14 @@ export function SearchForm({
       )}
 
       <Button type="submit" disabled={loading || error != null} className="w-full">
-        {loading ? loadingLabel : submitLabel}
+        {loading ? (
+          loadingLabel
+        ) : (
+          <>
+            {submitIcon}
+            {submitLabel}
+          </>
+        )}
       </Button>
     </form>
   );

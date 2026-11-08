@@ -774,6 +774,19 @@ body[data-mode="gacha"] {
   overflow: hidden;
 }
 
+/* 「ガチャを引く」の左に添える宝石。文字の高さに合わせる */
+[data-mode="gacha"] .gacha-submit-gem {
+  display: block;
+  width: auto;
+  height: 20px;
+}
+
+@media (max-width: 640px) {
+  [data-mode="gacha"] .gacha-submit-gem {
+    height: 16px;
+  }
+}
+
 [data-mode="gacha"] .gacha-form button[type="submit"]::before {
   content: "";
   position: absolute;
