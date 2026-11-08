@@ -15,6 +15,8 @@ const nextConfig: NextConfig = {
   // next/image は使っておらず（画像は <img> / <picture> で直接配信）、画像最適化 API（/_next/image）は
   // 不要なのに到達可能な状態だった。過去に SVG / AVIF 処理経由の RCE が報告された攻撃面なので無効化する。
   images: { unoptimized: true },
+  // dev 時に左下へ出る Next.js のインジケーターが、スマホ幅で左下固定の図鑑ボタンと重なるため出さない
+  devIndicators: false,
   async headers() {
     return [
       {
