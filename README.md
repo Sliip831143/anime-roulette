@@ -324,7 +324,7 @@ src/
 │   ├── status-buttons.tsx        # 視聴状態（観た / 後で観る / 興味なし）の 3 分割ピル（結果カード・詳細・図鑑で共用）
 │   ├── favorite-button.tsx       # お気に入り（丸枠ハート）トグル。「観た」作品にだけホストが描画
 │   ├── confirm-dialog.tsx        # テーマ準拠の確認ダイアログ（alertdialog、初期フォーカス=キャンセル）
-│   ├── console-cmd.tsx           # DevTools 隠しコマンド window.cmd の登録（layout でマウント）
+│   ├── console-cmd.tsx           # DevTools 隠しコマンド window.cmd の登録（layout でマウント。一覧は lib/hidden-commands.ts）
 │   ├── gacha-sequence.tsx        # ガチャ演出のフルスクリーンオーバーレイ（intro〜reveal〜closing）
 │   ├── no-image-icon.tsx         # No image プレースホルダ共通アイコン（結果カード・図鑑で共用）
 │   ├── x-logo.tsx                # X（旧 Twitter）公式ロゴ SVG（currentColor 追従）
@@ -346,6 +346,8 @@ src/
     ├── use-collection.test.ts    # 永続化フックのテスト（jsdom。保存 / flush / 再読込）
     ├── settings.ts               # UI 設定の localStorage キー + 安全な読み書きヘルパ（旧「簡易モード」の演出 OFF への引き継ぎ含む）
     ├── settings.test.ts          # 旧「簡易モード」設定の引き継ぎテスト（jsdom）
+    ├── hidden-commands.ts        # 隠しコマンド一覧（/help とロード時のコンソール案内の共通定義）
+    ├── hidden-commands.test.ts   # 案内の %c とスタイル引数の数が一致することの検証
     ├── share.ts                  # X (Twitter) シェア URL ビルダー（個別 + 一括、X カウント仕様準拠）
     ├── share.test.ts             # 一括シェアテキスト生成の境界値・X カウント・省略ロジックのテスト
     ├── format.ts                 # 表示フォーマッタ集約（満足度正規化 / 季節・メディアのラベル）
@@ -553,7 +555,7 @@ curl -o og.png "http://localhost:3005/api/og?id=4168"
 | 結果カード / 詳細ダイアログ     | `src/components/anime-card.tsx` / `anime-detail-dialog.tsx`                                                                          |
 | 図鑑・抽選除外                  | `src/lib/collection.ts`（純粋関数）/ `use-collection.ts`（永続化）/ `src/components/collection-view.tsx`                             |
 | シェア文言・OG 画像             | `src/lib/share.ts` / `src/app/share/page.tsx` / `src/app/api/og/route.tsx`                                                           |
-| 隠しコマンド                    | `src/components/console-cmd.tsx`                                                                                                     |
+| 隠しコマンド                    | `src/lib/hidden-commands.ts`（一覧）/ `src/components/console-cmd.tsx`（実装）                                                       |
 | メタ情報・JSON-LD               | `src/app/layout.tsx`                                                                                                                 |
 
 ### デプロイと依存更新
