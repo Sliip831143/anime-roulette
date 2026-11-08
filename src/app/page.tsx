@@ -192,10 +192,23 @@ export default function Home() {
   // ★3 が出やすい条件（超人気のみ／高評価のみ）を選んでいる間と、★3 を含む結果を表示している間は、
   // ガチャモードのページ背景を★3演出と同じピンク系に切り替える
   const [rareFilterActive, setRareFilterActive] = useState(false);
+  // レア条件で★3を引いた後に条件を外しても、★3 の結果が残っていると背景がピンクのまま戻らない。
+  // 条件を外した時点の結果を覚えておき、次に引き直すまでは★3 の結果があっても青に戻す
+  const [r3BgDismissedFor, setR3BgDismissedFor] = useState<
+    AnnictWork[] | null
+  >(null);
+  const [prevRareFilterActive, setPrevRareFilterActive] =
+    useState(rareFilterActive);
+  if (prevRareFilterActive !== rareFilterActive) {
+    setPrevRareFilterActive(rareFilterActive);
+    if (!rareFilterActive) setR3BgDismissedFor(results);
+  }
   const hasR3Result =
-    results?.some(
+    results !== r3BgDismissedFor &&
+    (results?.some(
       (w) => getRarity(w.watchersCount, w.satisfactionRate) === "r3",
-    ) ?? false;
+    ) ??
+      false);
   const rainbowBg = gachaMode && (rareFilterActive || hasR3Result);
   const mascotVisible =
     gachaMode &&
