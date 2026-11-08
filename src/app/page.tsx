@@ -6,7 +6,8 @@ import { toast } from "sonner";
 import { SearchForm, type SearchParams } from "@/components/search-form";
 import { AnimeCard } from "@/components/anime-card";
 import { GachaSequence } from "@/components/gacha-sequence";
-import { BookMarked } from "lucide-react";
+import { useIdleCheer } from "@/components/use-idle-cheer";
+import { BookMarked, Heart } from "lucide-react";
 import { XLogo } from "@/components/x-logo";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
@@ -33,6 +34,12 @@ import {
   readSettings,
   safeSetItem,
 } from "@/lib/settings";
+
+// トップで操作がない時間がこれだけ続くと、立ち絵が跳ねて吹き出しを出す（以後も同じ間隔で繰り返す）
+const MASCOT_IDLE_MS = 20_000;
+// 演出の状態を保つ時間。globals.css の mascot-hop / mascot-bubble（3s）より短くすること
+// （アニメーションが先に終わると、跳ねる動きと吹き出しが最初から繰り返されてしまう）
+const MASCOT_CHEER_MS = 2_600;
 
 export default function Home() {
   const [results, setResults] = useState<AnnictWork[] | null>(null);
@@ -190,6 +197,17 @@ export default function Home() {
       (w) => getRarity(w.watchersCount, w.satisfactionRate) === "r3",
     ) ?? false;
   const rainbowBg = gachaMode && (rareFilterActive || hasR3Result);
+  const mascotVisible =
+    gachaMode &&
+    (results == null || results.length === 0) &&
+    !(redrawing && (loading || pendingWorks != null));
+  // 放置していると立ち絵が跳ねて吹き出しを出す
+  const mascotCheering = useIdleCheer(
+    mascotVisible,
+    MASCOT_IDLE_MS,
+    MASCOT_CHEER_MS,
+  );
+
   useEffect(() => {
     if (rainbowBg) {
       document.documentElement.dataset.gachaBg = "rainbow";
@@ -572,10 +590,8 @@ export default function Home() {
         {/* キャラ画像。ガチャ結果がない間（未抽選・0 件）だけ、フォームの下に残った高さを使って表示する。
             結果表示中からの引き直しでは、取得中〜演出終了まで出さない。
             クリックでブルーアーカイブ公式サイトを新しいタブで開く */}
-        {gachaMode &&
-          (results == null || results.length === 0) &&
-          !(redrawing && (loading || pendingWorks != null)) && (
-          <div className="gacha-mascot">
+        {mascotVisible && (
+          <div className={`gacha-mascot${mascotCheering ? " is-cheering" : ""}`}>
             <a
               href="https://bluearchive.jp/"
               target="_blank"
@@ -594,6 +610,11 @@ export default function Home() {
                   decoding="async"
                 />
               </picture>
+              {mascotCheering && (
+                <span className="gacha-mascot-bubble" aria-hidden>
+                  <Heart className="gacha-mascot-heart" />
+                </span>
+              )}
             </a>
           </div>
         )}
