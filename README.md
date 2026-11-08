@@ -189,7 +189,7 @@
 - **sonner**（トースト）
 - **next/font**（Zen Maru Gothic / Geist / Geist Mono）
 - **@vercel/analytics** + **@vercel/speed-insights**
-- **Vitest** + **Testing Library**（単体テスト。フックのテストのみ jsdom 環境）
+- **Vitest** + **Testing Library**（lib の単体テストに加え、トップ画面のコンポーネントテスト。画面・フックのテストは jsdom 環境）
 - **sharp**（画像変換スクリプト用、devDependency）
 - **pnpm**（パッケージマネージャ）
 
@@ -309,6 +309,8 @@ src/
 │   ├── globals.css               # Tailwind + ブルアカ風テーマ・演出・図鑑 FAB・レスポンシブ用 CSS
 │   ├── layout.tsx                # metadata / JSON-LD（WebApplication / FAQ / HowTo） / prefetch / 隠しコマンド登録
 │   ├── page.tsx                  # メイン画面 + オフライン検知 + リトライ UI + 図鑑記録・抽選除外
+│   ├── page.test.tsx             # トップ画面のコンポーネントテスト（演出スイッチ / 演出 ON・OFF の結果表示）
+│   ├── page.chunk-failure.test.tsx # 演出チャンクの読み込み失敗時に結果を直接表示することの検証
 │   ├── manifest.ts               # PWA manifest（自動配信）
 │   ├── sitemap.ts                # /sitemap.xml（自動配信）
 │   ├── robots.ts                 # /robots.txt（自動配信）
@@ -332,6 +334,8 @@ src/
 │   ├── use-periodic-cheer.ts     # 一定間隔ごとに立ち絵の演出フラグを立てる（操作の有無に関係なく繰り返す）
 │   ├── sw-register.tsx           # 旧 Service Worker の登録解除 + caches 削除（廃止後のクリーンアップ用）
 │   └── ui/                       # shadcn/ui プリミティブ
+├── test/
+│   └── setup.ts                  # Vitest 共通セットアップ（jsdom に無い matchMedia / scrollTo / ResizeObserver のスタブ）
 └── lib/
     ├── annict.ts                 # GraphQL クライアント / クエリ / ページネーション
     ├── annict-rate-limit.ts      # Annict レート制限（429）の Retry-After 解釈・短時間待機再試行・専用エラー
@@ -450,6 +454,9 @@ CLAUDE.md                         # プロジェクト固有の Claude 指示（
 - **`src/lib/annict-rate-limit.test.ts`**: Annict レート制限対応。`Retry-After` の解釈（整数秒 / HTTP-date / 不正値）、上限内なら待って 1 回だけ再試行、上限超過・ヘッダ無し・再試行失敗時は `AnnictRateLimitError`、429 以外は素通し
 - **`src/lib/use-collection.test.ts`**: 図鑑永続化フック（jsdom 環境）。デバウンス保存、pagehide / アンマウント時の即時フラッシュ、外部書き換え検知時の再読込と未保存分破棄、`markStatus` / `markFavorite` の既知判定、保存失敗時の一度きりトースト
 - **`src/lib/settings.test.ts`**: 旧「簡易モード」保存値の演出 OFF への引き継ぎ（jsdom 環境）。明示保存済みの演出設定を優先すること、旧キーが削除されること
+- **`src/lib/hidden-commands.test.ts`**: ページ読み込み時のコンソール案内で `%c` の数とスタイル引数の数が一致すること、全コマンドが案内に含まれること
+- **`src/app/page.test.tsx`**: トップ画面（jsdom 環境）。演出スイッチの初期値・保存・ラベルクリック、演出 OFF 時は演出を挟まず結果表示、演出 ON 時は演出表示 → 閉じると結果表示
+- **`src/app/page.chunk-failure.test.tsx`**: 演出チャンク（`next/dynamic`）の読み込みが失敗しても演出を飛ばして結果を直接表示すること
 
 ### 実行
 
