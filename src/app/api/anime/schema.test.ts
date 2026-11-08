@@ -132,21 +132,23 @@ describe("querySchema (anime API)", () => {
     expect(result.success).toBe(false);
   });
 
-  it("popularityThreshold は 0 以上の整数を許容", () => {
+  it("popularityThreshold は 1 以上の整数を許容", () => {
     const result = querySchema.safeParse({
       ...minimal,
       popularity: "popular",
-      popularityThreshold: "0",
+      popularityThreshold: "1",
     });
     expect(result.success).toBe(true);
   });
 
-  it("popularityThreshold の負数は失敗", () => {
-    const result = querySchema.safeParse({
-      ...minimal,
-      popularityThreshold: "-1",
-    });
-    expect(result.success).toBe(false);
+  it("popularityThreshold の 0 以下は失敗（0 は「すべて」と同じで人気のみの条件として無意味）", () => {
+    for (const v of ["0", "-1"]) {
+      const result = querySchema.safeParse({
+        ...minimal,
+        popularityThreshold: v,
+      });
+      expect(result.success).toBe(false);
+    }
   });
 
   it("highRated は 'true'/'false' の文字列のみ受理し boolean に変換", () => {

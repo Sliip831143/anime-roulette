@@ -21,7 +21,7 @@ export const querySchema = z
     seasons: z.array(z.enum(SEASONS)).optional(),
     count: z.coerce.number().int().min(1).max(100).default(5),
     popularity: z.enum(["all", "popular", "very_popular"]).default("all"),
-    popularityThreshold: z.coerce.number().int().min(0).optional(),
+    popularityThreshold: z.coerce.number().int().min(1).optional(),
     highRated: z
       .union([z.literal("true"), z.literal("false")])
       .default("false")

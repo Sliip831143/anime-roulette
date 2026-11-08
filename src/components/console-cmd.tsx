@@ -161,9 +161,9 @@ export function ConsoleCmd() {
         }
         if (sub === "tune") {
           const n = Number(parts[2]);
-          if (!Number.isInteger(n) || n < 0) {
+          if (!Number.isInteger(n) || n < 1) {
             console.log(
-              `%c[cmd] /popularity tune <n>: 0以上の整数を指定してください`,
+              `%c[cmd] /popularity tune <n>: 1以上の整数を指定してください`,
               "color:#a55;font-weight:600",
             );
             return;

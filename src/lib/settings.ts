@@ -82,8 +82,10 @@ export function readSettings(): Settings {
     debugMode: safeGetItem(DEBUG_MODE_KEY) === "1",
     animDisabled: safeGetItem(ANIM_DISABLED_KEY) === "1",
     extendedCount: safeGetItem(EXTENDED_COUNT_KEY) === "1",
+    // 0 以下は既定値に戻す。初期のコードが未設定時に Number(null) === 0 を正当な値として保存していたため、
+    // その時期に開いた環境には 0 が残っており「人気のみ」が「すべて」と同じ条件になっていた
     popularThreshold:
-      Number.isInteger(popular) && popular >= 0
+      Number.isInteger(popular) && popular >= 1
         ? popular
         : DEFAULT_POPULAR_THRESHOLD,
   };
