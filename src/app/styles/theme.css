@@ -425,3 +425,11 @@ main {
   background-clip: text;
   color: transparent;
 }
+
+/* 結果表示時にプログラムからフォーカスを移す見出し（tabIndex=-1）。
+   キーボード操作時だけ、フォーム部品と同じ薄青リングで現在地を示す */
+.gacha-title:focus-visible {
+  outline: none;
+  border-radius: 4px;
+  box-shadow: 0 0 0 3px oklch(0.62 0.16 230 / 0.25);
+}
