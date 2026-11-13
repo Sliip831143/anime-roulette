@@ -172,11 +172,11 @@ a[data-entrance="pending"] img {
   opacity: 0;
 }
 
-/* 境界が上端を抜けるのは 76%（約 0.5s）の時点。アニメーションが途中で終わるとコンテナクエリの再評価で
-   最初から再生されてしまうため（上の is-cheering と同じ事情）、演出の状態（page.tsx の MASCOT_ENTRANCE_MS = 0.55s）
-   より長い 0.66s にして、状態が外れるまで終わらないようにしている */
+/* 境界が上端を抜けるのは 76%（約 0.65s）の時点。アニメーションが途中で終わるとコンテナクエリの再評価で
+   最初から再生されてしまうため（上の is-cheering と同じ事情）、演出の状態（page.tsx の MASCOT_ENTRANCE_MS = 0.72s）
+   より長い 0.86s にして、状態が外れるまで終わらないようにしている */
 a[data-entrance="playing"] {
-  animation: mascot-warp-in 0.66s linear both;
+  animation: mascot-warp-in 0.86s linear both;
 }
 
 a[data-entrance="playing"] img {
