@@ -96,6 +96,18 @@ export function GachaSequence({ works, onClose }: Props) {
   const stageRef = useRef<HTMLDivElement | null>(null);
   useFocusTrap(stageRef, phase !== "done", "container");
 
+  // 閉じ始めてから親が結果一覧へ切り替えるまで、ページ側の立ち絵を隠す合図を出す（hero.css が参照）。
+  // 立ち絵は演出の裏で表示されたままなので、隠さないと演出が消えていくフェードの間と、
+  // done で何も描画しなくなってから親が結果を出すまでの一瞬に、立ち絵が見えてしまう
+  const closing = phase === "closing" || phase === "done";
+  useEffect(() => {
+    if (!closing) return;
+    document.documentElement.dataset.gachaClosing = "";
+    return () => {
+      delete document.documentElement.dataset.gachaClosing;
+    };
+  }, [closing]);
+
   // revealIndex が進むたびに次の画像を preload して有効性を確認
   useEffect(() => {
     const url = works[revealIndex]?.image?.recommendedImageUrl;

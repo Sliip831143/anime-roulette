@@ -274,6 +274,14 @@ a[data-entrance="playing"] img {
   }
 }
 
+/* ガチャ演出が閉じ始めたら立ち絵を隠す（合図は gacha-sequence.tsx が html に付ける）。
+   演出の裏では表示したままなので、隠さないと演出が消えていくフェードの間に立ち絵が透けて見え、
+   直後に結果一覧へ切り替わって消えるのが目に付く。
+   演出の開始時に隠すと、演出がフェードインする間に立ち絵が消えるのが見えてしまうため、閉じ始めに合わせる */
+html[data-gacha-closing] :is(.gacha-mascot, .gacha-mascot-docked) {
+  visibility: hidden;
+}
+
 /* 残り高さが小さすぎると光輪だけが覗く中途半端な見た目になるため、出さない */
 @container (max-height: 120px) {
   .gacha-mascot img,
