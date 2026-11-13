@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AnnictWork } from "@/lib/annict";
 import { ANIM_DISABLED_KEY } from "@/lib/settings";
@@ -126,9 +126,12 @@ describe("Home: 演出スイッチ", () => {
     expect(document.activeElement).toBe(document.body);
     // 実装は結果確定時の effect で移すため、改めて結果を出し直して確認する
     await drawGacha();
-    await screen.findByRole("button", { name: "「作品1」の詳細を見る" });
-    expect(document.activeElement).toBe(
-      screen.getByRole("heading", { name: "結果" }),
+    // 1 回目の結果カードが残っているため、カードの有無では 2 回目の結果確定を待てない。
+    // フォーカスが移るまで待つ
+    await waitFor(() =>
+      expect(document.activeElement).toBe(
+        screen.getByRole("heading", { name: "結果" }),
+      ),
     );
   });
   it("★3 を含む結果なら、演出の表示中からページ背景がピンクになり結果表示後も続く", async () => {
@@ -145,7 +148,10 @@ describe("Home: 演出スイッチ", () => {
     await drawGacha();
 
     await screen.findByTestId("gacha-sequence");
-    expect(document.documentElement.dataset.gachaBg).toBe("rainbow");
+    // 背景の切り替えは描画後の effect で行うため、演出が DOM に出た直後はまだ反映されていないことがある
+    await waitFor(() =>
+      expect(document.documentElement.dataset.gachaBg).toBe("rainbow"),
+    );
 
     fireEvent.click(screen.getByRole("button", { name: "演出を閉じる" }));
     await screen.findByRole("button", { name: "「作品9」の詳細を見る" });
