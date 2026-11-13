@@ -54,9 +54,9 @@ const MASCOT_CHEER_MS = 2_600;
 const MASCOT_MIN_SLOT_HEIGHT = 120;
 // 立ち絵の登場演出を、ページ表示（画像の読み込み完了）からこの時間だけ遅らせて始める
 const MASCOT_ENTRANCE_DELAY_MS = 500;
-// 登場演出の状態を保つ時間。hero.css の mascot-warp-in（1.2s）より短くすること
+// 登場演出の状態を保つ時間。hero.css の mascot-warp-in（0.66s）より短くすること
 // （アニメーションが先に終わると、登場演出が最初から繰り返されてしまう）
-const MASCOT_ENTRANCE_MS = 1_000;
+const MASCOT_ENTRANCE_MS = 550;
 
 export default function Home() {
   const [results, setResults] = useState<AnnictWork[] | null>(null);
