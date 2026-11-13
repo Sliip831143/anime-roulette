@@ -50,8 +50,12 @@ const MASCOT_CHEER_INTERVAL_MS = 20_000;
 // 演出の状態を保つ時間。globals.css の mascot-hop / mascot-bubble（3s）より短くすること
 // （アニメーションが先に終わると、跳ねる動きと吹き出しが最初から繰り返されてしまう）
 const MASCOT_CHEER_MS = 2_600;
-// フォームの下に残った高さがこれ以下だと立ち絵を出さない（hero.css の @container (max-height: 120px) と同じ値）
+// フォームの下に残った高さがこれ以下だと立ち絵を出さない（hero.css の @container (max-height: …) と同じ値）。
+// 右下固定版に切り替えられる幅（80rem 以上）では早めに切り替え、それ未満の幅では代わりがないので、
+// 顔が見える高さが残っている限りフォームの下に出す
 const MASCOT_MIN_SLOT_HEIGHT = 120;
+const MASCOT_MIN_SLOT_HEIGHT_NARROW = 70;
+const MASCOT_DOCKABLE_QUERY = "(min-width: 80rem)";
 // 立ち絵の登場演出を、ページ表示（画像の読み込み完了）からこの時間だけ遅らせて始める
 const MASCOT_ENTRANCE_DELAY_MS = 500;
 // 登場演出の状態を保つ時間。hero.css の mascot-warp-in（0.86s）より短くすること
@@ -241,7 +245,10 @@ export default function Home() {
     const slot = mascotSlotRef.current;
     if (!slot) return;
     const observer = new ResizeObserver(([entry]) => {
-      setMascotDocked(entry.contentRect.height <= MASCOT_MIN_SLOT_HEIGHT);
+      const minHeight = window.matchMedia(MASCOT_DOCKABLE_QUERY).matches
+        ? MASCOT_MIN_SLOT_HEIGHT
+        : MASCOT_MIN_SLOT_HEIGHT_NARROW;
+      setMascotDocked(entry.contentRect.height <= minHeight);
     });
     observer.observe(slot);
     return () => observer.disconnect();

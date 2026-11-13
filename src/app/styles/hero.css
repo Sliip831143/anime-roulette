@@ -51,16 +51,25 @@
 
 /* 画像の上から --visible の割合だけを見せ、残りは負のマージンで枠の下へ押し出す。
    高さは「上限 --max-h」「見える部分が枠に収まる高さ」「枠幅に収まる高さ（縦横比 0.775）」の最小値なので、
-   枠が低くても光輪が上で切れることはなく、見切れ位置（服のどこで切れるか）は画面サイズによらず一定になる */
+   枠が低くても光輪が上で切れることはなく、見切れ位置（服のどこで切れるか）は画面サイズによらず一定になる。
+   ただし --min-h（下記、80rem 未満の幅でだけ指定）より小さくはしない。枠がそれより低いときは縮める代わりに
+   押し出す量を増やし、上端を枠に揃えたまま下へ沈める（margin-bottom の 2 つ目の値） */
 .gacha-mascot img {
   --visible: 0.92;
   --max-h: 740px;
-  --h: min(var(--max-h), calc(100cqh / var(--visible)), calc(100cqw / 0.775));
+  --min-h: 0px;
+  --h: max(
+    var(--min-h),
+    min(var(--max-h), calc(100cqh / var(--visible)), calc(100cqw / 0.775))
+  );
   display: block;
   flex: none;
   height: var(--h);
   width: auto;
-  margin-bottom: calc(var(--h) * (var(--visible) - 1));
+  margin-bottom: min(
+    calc(var(--h) * (var(--visible) - 1)),
+    calc(100cqh - var(--h))
+  );
 }
 
 /* 一定間隔で出す演出：2 回小さく跳ねる。跳ねる高さは画像を枠の下へ押し出している量より小さくし、
@@ -282,12 +291,31 @@ html[data-gacha-closing] :is(.gacha-mascot, .gacha-mascot-docked) {
   visibility: hidden;
 }
 
-/* 残り高さが小さすぎると光輪だけが覗く中途半端な見た目になるため、出さない */
-@container (max-height: 120px) {
-  .gacha-mascot img,
-  .gacha-mascot-bubble,
-  .gacha-mascot-warp {
-    display: none;
+/* 残り高さが小さすぎると光輪だけが覗く中途半端な見た目になるため、出さない。
+   右下固定版（下記）に切り替えられる 80rem 以上の幅では、120px 以下で早めに切り替える。
+   80rem 未満（タブレットの横画面・スマホ）には代わりがないので、立ち絵を 150px より縮めずに下へ沈め、
+   顔が見える 70px までは出す（閾値は page.tsx の MASCOT_MIN_SLOT_HEIGHT / _NARROW と同じ値） */
+@media (min-width: 80rem) {
+  @container (max-height: 120px) {
+    .gacha-mascot img,
+    .gacha-mascot-bubble,
+    .gacha-mascot-warp {
+      display: none;
+    }
+  }
+}
+
+@media not (min-width: 80rem) {
+  .gacha-mascot img {
+    --min-h: 150px;
+  }
+
+  @container (max-height: 70px) {
+    .gacha-mascot img,
+    .gacha-mascot-bubble,
+    .gacha-mascot-warp {
+      display: none;
+    }
   }
 }
 
