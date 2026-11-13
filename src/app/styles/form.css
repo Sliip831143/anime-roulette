@@ -96,12 +96,12 @@
 .gacha-submit-gem {
   display: block;
   width: auto;
-  height: 20px;
+  height: 16px;
 }
 
 @media (max-width: 640px) {
   .gacha-submit-gem {
-    height: 16px;
+    height: 14px;
   }
 }
 
