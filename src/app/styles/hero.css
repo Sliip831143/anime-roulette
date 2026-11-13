@@ -154,10 +154,131 @@
   }
 }
 
+/* 登場演出：ワープしてきたように、下から上へ立ち絵が現れる（状態は page.tsx の data-entrance で切り替える）。
+   - pending: 画像の読み込みと登場までの待ち時間の間。見えない立ち絵をクリックできないようにする
+   - playing: --mascot-reveal（画像の下端からの割合）より下だけをマスクで見せ、境界を上へ動かす
+   まだ現れていない側には、青い四角の群れ（.gacha-mascot-warp）を境界に沿って重ねる */
+@property --mascot-reveal {
+  syntax: "<percentage>";
+  inherits: true;
+  initial-value: 100%;
+}
+
+:is(.gacha-mascot, .gacha-mascot-docked) a[data-entrance="pending"] {
+  pointer-events: none;
+}
+
+a[data-entrance="pending"] img {
+  opacity: 0;
+}
+
+/* 境界が上端を抜けるのは 76%（約 0.9s）の時点。アニメーションが途中で終わるとコンテナクエリの再評価で
+   最初から再生されてしまうため（上の is-cheering と同じ事情）、演出の状態（page.tsx の MASCOT_ENTRANCE_MS = 1s）
+   より長い 1.2s にして、状態が外れるまで終わらないようにしている */
+a[data-entrance="playing"] {
+  animation: mascot-warp-in 1.2s linear both;
+}
+
+a[data-entrance="playing"] img {
+  mask-image: linear-gradient(
+    to top,
+    #000 var(--mascot-reveal),
+    transparent var(--mascot-reveal)
+  );
+}
+
+/* 開始位置は、画面下端で見切れている位置の少し下 */
+@keyframes mascot-warp-in {
+  0% {
+    --mascot-reveal: 6%;
+    animation-timing-function: cubic-bezier(0.45, 0, 0.4, 1);
+  }
+  76%,
+  100% {
+    --mascot-reveal: 106%;
+  }
+}
+
+/* 青い四角の群れと、断面の白い光。画像と同じ位置・大きさに重ねる。
+   外側（.gacha-mascot-warp）は白いぼかしの縁取りを付けるだけの枠。filter は同じ要素の mask より先に適用され、
+   縁取りごとシルエットで切り落とされてしまうため、切り抜きは内側（.gacha-mascot-warp-field）で行う */
+.gacha-mascot-warp {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  aspect-ratio: 760 / 981;
+  pointer-events: none;
+  filter: drop-shadow(0 0 2px oklch(1 0 0 / 0.95))
+    drop-shadow(0 0 7px oklch(1 0 0 / 0.7));
+}
+
+/* 「立ち絵のシルエット」と「境界から上へ薄れていく帯」の両方に入る部分だけを見せる。
+   背景は断面に沿った白い光の線。四角の画像は src/lib/mascot-warp.ts が作り、配置の違う 2 枚を交互に明滅させる */
+.gacha-mascot-warp-field {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(
+    to top,
+    transparent calc(var(--mascot-reveal) - 2%),
+    oklch(1 0 0) calc(var(--mascot-reveal) - 0.4%),
+    oklch(1 0 0) calc(var(--mascot-reveal) + 0.4%),
+    transparent calc(var(--mascot-reveal) + 2%)
+  );
+  mask-image:
+    url("/gacha/arona_3.webp"),
+    linear-gradient(
+      to top,
+      transparent calc(var(--mascot-reveal) - 2.5%),
+      #000 calc(var(--mascot-reveal) - 1%),
+      #000 var(--mascot-reveal),
+      transparent calc(var(--mascot-reveal) + 14%)
+    );
+  mask-size: 100% 100%;
+  mask-repeat: no-repeat;
+  mask-composite: intersect;
+}
+
+.gacha-mascot-warp-field::before,
+.gacha-mascot-warp-field::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--mascot-warp-a);
+  background-size: 100% 100%;
+  animation: mascot-warp-flicker 0.28s steps(1) infinite;
+}
+
+.gacha-mascot-warp-field::after {
+  background-image: var(--mascot-warp-b);
+  animation-delay: -0.14s;
+}
+
+@keyframes mascot-warp-flicker {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+
+/* 動きを減らす設定では演出をせず、最初から立ち絵を見せる */
+@media (prefers-reduced-motion: reduce) {
+  a[data-entrance="pending"] img {
+    opacity: 1;
+  }
+
+  .gacha-mascot-warp {
+    display: none;
+  }
+}
+
 /* 残り高さが小さすぎると光輪だけが覗く中途半端な見た目になるため、出さない */
 @container (max-height: 120px) {
   .gacha-mascot img,
-  .gacha-mascot-bubble {
+  .gacha-mascot-bubble,
+  .gacha-mascot-warp {
     display: none;
   }
 }

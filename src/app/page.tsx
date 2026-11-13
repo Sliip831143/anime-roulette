@@ -16,6 +16,7 @@ import { Switch } from "@/components/ui/switch";
 import { openBatchTweetIntent } from "@/lib/share";
 import type { AnnictWork } from "@/lib/annict";
 import { getRarity, RARITY_STARS } from "@/lib/rarity";
+import { MASCOT_WARP_STYLE } from "@/lib/mascot-warp";
 import {
   excludedIdsOf,
   pickAfterExclusion,
@@ -51,6 +52,11 @@ const MASCOT_CHEER_INTERVAL_MS = 20_000;
 const MASCOT_CHEER_MS = 2_600;
 // フォームの下に残った高さがこれ以下だと立ち絵を出さない（hero.css の @container (max-height: 120px) と同じ値）
 const MASCOT_MIN_SLOT_HEIGHT = 120;
+// 立ち絵の登場演出を、ページ表示（画像の読み込み完了）からこの時間だけ遅らせて始める
+const MASCOT_ENTRANCE_DELAY_MS = 500;
+// 登場演出の状態を保つ時間。hero.css の mascot-warp-in（1.2s）より短くすること
+// （アニメーションが先に終わると、登場演出が最初から繰り返されてしまう）
+const MASCOT_ENTRANCE_MS = 1_000;
 
 export default function Home() {
   const [results, setResults] = useState<AnnictWork[] | null>(null);
@@ -240,25 +246,64 @@ export default function Home() {
     observer.observe(slot);
     return () => observer.disconnect();
   }, [mascotVisible]);
+  // 登場演出（下から上へワープしてくるように現れる）。ページ表示につき 1 回だけ再生し、
+  // 通常版と右下固定版の切り替えや、0 件での再表示では繰り返さない
+  const [mascotLoaded, setMascotLoaded] = useState(false);
+  const [mascotEntrance, setMascotEntrance] = useState<
+    "pending" | "playing" | "done"
+  >("pending");
+  const markMascotLoaded = useCallback(() => setMascotLoaded(true), []);
+  // ハイドレーション前に読み込みが終わった画像は onLoad が発火しないため、ref で complete も確認する
+  const mascotImgRef = useCallback((img: HTMLImageElement | null) => {
+    if (img?.complete) setMascotLoaded(true);
+  }, []);
+  useEffect(() => {
+    if (!mascotLoaded) return;
+    const start = setTimeout(
+      () => setMascotEntrance("playing"),
+      MASCOT_ENTRANCE_DELAY_MS,
+    );
+    const end = setTimeout(
+      () => setMascotEntrance("done"),
+      MASCOT_ENTRANCE_DELAY_MS + MASCOT_ENTRANCE_MS,
+    );
+    return () => {
+      clearTimeout(start);
+      clearTimeout(end);
+    };
+  }, [mascotLoaded]);
   const mascotLink = (
     <a
       href="https://bluearchive.jp/"
       target="_blank"
       rel="noopener noreferrer"
       aria-label="ブルーアーカイブ公式サイト（新しいタブで開く）"
+      data-entrance={mascotEntrance === "done" ? undefined : mascotEntrance}
     >
       <picture>
         <source srcSet="/gacha/arona_3.avif" type="image/avif" />
         <source srcSet="/gacha/arona_3.webp" type="image/webp" />
         <img
+          ref={mascotImgRef}
           src="/gacha/arona_3.png"
           alt=""
           width={760}
           height={981}
           loading="lazy"
           decoding="async"
+          onLoad={markMascotLoaded}
+          onError={markMascotLoaded}
         />
       </picture>
+      {mascotEntrance === "playing" && (
+        <span
+          className="gacha-mascot-warp"
+          aria-hidden
+          style={MASCOT_WARP_STYLE}
+        >
+          <span className="gacha-mascot-warp-field" />
+        </span>
+      )}
       {mascotCheering && (
         <span className="gacha-mascot-bubble" aria-hidden>
           <Heart className="gacha-mascot-heart" />
