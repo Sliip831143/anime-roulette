@@ -52,7 +52,7 @@
 /* 画像の上から --visible の割合だけを見せ、残りは負のマージンで枠の下へ押し出す。
    高さは「上限 --max-h」「見える部分が枠に収まる高さ」「枠幅に収まる高さ（縦横比 0.775）」の最小値なので、
    枠が低くても光輪が上で切れることはなく、見切れ位置（服のどこで切れるか）は画面サイズによらず一定になる。
-   ただし --min-h（下記、80rem 未満の幅でだけ指定）より小さくはしない。枠がそれより低いときは縮める代わりに
+   ただし --min-h（下記、64rem 未満の幅でだけ指定）より小さくはしない。枠がそれより低いときは縮める代わりに
    押し出す量を増やし、上端を枠に揃えたまま下へ沈める（margin-bottom の 2 つ目の値） */
 .gacha-mascot img {
   --visible: 0.92;
@@ -292,10 +292,10 @@ html[data-gacha-closing] :is(.gacha-mascot, .gacha-mascot-docked) {
 }
 
 /* 残り高さが小さすぎると光輪だけが覗く中途半端な見た目になるため、出さない。
-   右下固定版（下記）に切り替えられる 80rem 以上の幅では、120px 以下で早めに切り替える。
-   80rem 未満（タブレットの横画面・スマホ）には代わりがないので、立ち絵を 150px より縮めずに下へ沈め、
+   右下固定版（下記）に切り替えられる 64rem 以上の幅では、120px 以下で早めに切り替える。
+   64rem 未満（スマホ・タブレットの縦画面）には代わりがないので、立ち絵を 150px より縮めずに下へ沈め、
    顔が見える 70px までは出す（閾値は page.tsx の MASCOT_MIN_SLOT_HEIGHT / _NARROW と同じ値） */
-@media (min-width: 80rem) {
+@media (min-width: 64rem) {
   @container (max-height: 120px) {
     .gacha-mascot img,
     .gacha-mascot-bubble,
@@ -305,7 +305,7 @@ html[data-gacha-closing] :is(.gacha-mascot, .gacha-mascot-docked) {
   }
 }
 
-@media not (min-width: 80rem) {
+@media not (min-width: 64rem) {
   .gacha-mascot img {
     --min-h: 150px;
   }
@@ -326,17 +326,20 @@ html[data-gacha-closing] :is(.gacha-mascot, .gacha-mascot-docked) {
 }
 
 /* 画面の高さが足りずフォームの下に立ち絵を出せないときの右下固定版（page.tsx が切り替える）。
-   フォーム（max-w-3xl = 48rem）の右に立ち絵が収まる余白がある 80rem 以上の幅でだけ出す。
-   フォームから目線を奪わないよう、高さは「上限 340px」「画面高の 48%」「フォーム右側の余白（左右 24px ずつ空ける）に収まる高さの 8 割」の最小値 */
+   フォーム（max-w-3xl = 48rem）の右に立ち絵が収まる余白がある 64rem 以上の幅でだけ出す。
+   フォームから目線を奪わないよう、80rem 以上での高さは「上限 340px」「画面高の 48%」
+   「フォーム右側の余白（左右 24px ずつ空ける）に収まる高さの 8 割」の最小値。
+   64rem〜80rem（タブレットの横画面など）は余白が狭く、同じ式では小さくなりすぎるため、
+   左右の空きを 12px ずつに詰めて余白いっぱいに出す。上限 220px は 80rem での高さ（約 215px）に揃えたもの */
 .gacha-mascot-docked {
   display: none;
 }
 
-@media (min-width: 80rem) {
+@media (min-width: 64rem) {
   .gacha-mascot-docked {
     display: block;
     position: fixed;
-    right: 24px;
+    right: 12px;
     bottom: 0;
     z-index: 10;
     pointer-events: none;
@@ -358,11 +361,21 @@ html[data-gacha-closing] :is(.gacha-mascot, .gacha-mascot-docked) {
 
   .gacha-mascot-docked img {
     --visible: 0.92;
-    --h: min(340px, 48vh, calc((50vw - 24rem - 48px) / 0.775 * 0.8));
+    --h: min(220px, 48vh, calc((50vw - 24rem - 24px) / 0.775));
     display: block;
     height: var(--h);
     width: auto;
     margin-bottom: calc(var(--h) * (var(--visible) - 1));
+  }
+}
+
+@media (min-width: 80rem) {
+  .gacha-mascot-docked {
+    right: 24px;
+  }
+
+  .gacha-mascot-docked img {
+    --h: min(340px, 48vh, calc((50vw - 24rem - 48px) / 0.775 * 0.8));
   }
 }
 
