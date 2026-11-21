@@ -46,7 +46,7 @@ const GachaSequence = dynamic(
 );
 
 // 立ち絵の表示中、この間隔ごとに立ち絵が跳ねて吹き出しを出す（操作の有無に関係なく繰り返す）
-const MASCOT_CHEER_INTERVAL_MS = 20_000;
+const MASCOT_CHEER_INTERVAL_MS = 15_000;
 // 演出の状態を保つ時間。globals.css の mascot-hop / mascot-bubble（3s）より短くすること
 // （アニメーションが先に終わると、跳ねる動きと吹き出しが最初から繰り返されてしまう）
 const MASCOT_CHEER_MS = 2_600;
