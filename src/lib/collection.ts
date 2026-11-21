@@ -100,12 +100,12 @@ function isValidEntry(
   );
 }
 
-/** SSR・壊れた JSON・バージョン不一致はすべて初期値にフォールバック */
-export function loadCollection(): CollectionData {
-  if (typeof window === "undefined") return emptyCollection();
+/**
+ * 図鑑の JSON 文字列を検証して読み込む。壊れた JSON・バージョン不一致は null。
+ * localStorage からの読み込みと、書き出したファイルの読み込み（インポート）で共用する。
+ */
+export function parseCollection(raw: string): CollectionData | null {
   try {
-    const raw = localStorage.getItem(COLLECTION_STORAGE_KEY);
-    if (!raw) return emptyCollection();
     const parsed: unknown = JSON.parse(raw);
     if (
       typeof parsed !== "object" ||
@@ -114,7 +114,7 @@ export function loadCollection(): CollectionData {
       typeof (parsed as { entries?: unknown }).entries !== "object" ||
       (parsed as { entries?: unknown }).entries == null
     ) {
-      return emptyCollection();
+      return null;
     }
     const data = parsed as CollectionData;
     const entries: Record<string, CollectionEntry> = {};
@@ -137,8 +137,38 @@ export function loadCollection(): CollectionData {
         : 0;
     return { version: 1, totalDraws, entries };
   } catch {
+    return null;
+  }
+}
+
+/** SSR・壊れた JSON・バージョン不一致はすべて初期値にフォールバック */
+export function loadCollection(): CollectionData {
+  if (typeof window === "undefined") return emptyCollection();
+  try {
+    const raw = localStorage.getItem(COLLECTION_STORAGE_KEY);
+    if (!raw) return emptyCollection();
+    return parseCollection(raw) ?? emptyCollection();
+  } catch {
     return emptyCollection();
   }
+}
+
+/** 書き出しファイル名（例: anime-roulette-collection-2026-11-21.json）。日付はローカル時刻 */
+export function collectionExportFileName(now: Date = new Date()): string {
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  return `anime-roulette-collection-${y}-${m}-${d}.json`;
+}
+
+/**
+ * ブラウザに図鑑の保存領域を消さないよう要求する（容量不足時の自動削除を防ぐ）。
+ * Firefox では許可を求める表示が出るため、ページ表示時ではなく図鑑の書き出し・読み込み操作の直後に呼ぶ。
+ * 非対応・拒否でも図鑑の動作には影響しないので結果は捨てる。
+ */
+export function requestPersistentStorage(): void {
+  if (typeof navigator === "undefined") return;
+  navigator.storage?.persist?.().catch(() => {});
 }
 
 /**

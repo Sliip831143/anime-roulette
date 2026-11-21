@@ -1,8 +1,16 @@
 "use client";
 
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+} from "react";
 import Link from "next/link";
-import { ChevronLeft, RotateCcw, Trash2 } from "lucide-react";
+import { ChevronLeft, Download, RotateCcw, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { AnimeDetailDialog } from "@/components/anime-detail-dialog";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -11,8 +19,12 @@ import { StatusButtons } from "@/components/status-buttons";
 import { FavoriteButton } from "@/components/favorite-button";
 import {
   clearStatus,
+  collectionExportFileName,
   emptyCollection,
+  parseCollection,
+  requestPersistentStorage,
   statsOf,
+  type CollectionData,
   type CollectionEntry,
   type CollectionStatus,
 } from "@/lib/collection";
@@ -37,6 +49,9 @@ const FILTERS: { value: Filter; label: string; ariaLabel?: string }[] = [
 
 const RARITY_ORDER: Record<Rarity, number> = { r3: 0, r2: 1, r1: 2 };
 
+// localStorage の容量（一般に 5MB 前後）を超えるファイルは読み込んでも保存できないため、読む前に弾く
+const IMPORT_MAX_BYTES = 5 * 1024 * 1024;
+
 // 無限スクロールの 1 回あたりの表示件数。グリッド列数（2/3/4）の公倍数にして
 // 途中ロード時に行が欠けないようにする
 const PAGE_SIZE = 24;
@@ -59,8 +74,13 @@ export function CollectionView() {
   const [openEntry, setOpenEntry] = useState<CollectionEntry | null>(null);
   // リセット確認ダイアログの表示対象（null = 非表示）
   const [pendingConfirm, setPendingConfirm] = useState<
-    "reset-watched" | "reset-collection" | null
+    "reset-watched" | "reset-collection" | "import" | null
   >(null);
+  // 読み込んだファイルの内容。現在の図鑑を置き換えてよいか確認している間だけ保持する
+  const [pendingImport, setPendingImport] = useState<CollectionData | null>(
+    null,
+  );
+  const importInputRef = useRef<HTMLInputElement | null>(null);
   // 無限スクロール：描画する件数（データは全件メモリ上にあり、描画だけ間引く）
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
@@ -217,6 +237,52 @@ export function CollectionView() {
     toast.success("図鑑をリセットしました");
   };
 
+  // localStorage だけに保存している図鑑は、ブラウザのデータ削除や機種変更で失われるため、ファイルへ書き出せるようにする
+  const handleExport = () => {
+    requestPersistentStorage();
+    const blob = new Blob([JSON.stringify(collection)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = collectionExportFileName();
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const applyImport = (data: CollectionData) => {
+    setCollection(data);
+    setVisibleCount(PAGE_SIZE);
+    setPendingImport(null);
+    setPendingConfirm(null);
+    focusCurrentChipIfLost();
+    toast.success(
+      `図鑑を読み込みました（${Object.keys(data.entries).length} 件）`,
+    );
+  };
+
+  const handleImportFile = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    // 同じファイルを続けて選んでも change が発火するよう、選択状態を毎回空に戻す
+    e.target.value = "";
+    if (!file) return;
+    requestPersistentStorage();
+    const data =
+      file.size <= IMPORT_MAX_BYTES ? parseCollection(await file.text()) : null;
+    if (!data) {
+      toast.error("図鑑のファイルとして読み込めませんでした");
+      return;
+    }
+    // 空の図鑑（新しい端末など）は失うものが無いので確認せずに読み込む
+    if (stats.totalDraws === 0 && stats.unique === 0) {
+      applyImport(data);
+      return;
+    }
+    setPendingImport(data);
+    setPendingConfirm("import");
+  };
+
   // 下余白 pb-20（lg 未満のみ）は、右下固定の「トップへ戻る」ボタンが
   // 最下部カードの視聴状態ボタンに重ならないようにするための確保分
   return (
@@ -280,16 +346,45 @@ export function CollectionView() {
                 <dd className="font-semibold">{stats.totalDraws} 連</dd>
               </div>
             </dl>
-            {stats.totalDraws > 0 && (
+            <div className="flex flex-wrap items-center gap-2">
+              {stats.totalDraws > 0 && (
+                <button
+                  type="button"
+                  onClick={handleExport}
+                  className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                >
+                  <Download className="size-3" aria-hidden />
+                  書き出す
+                </button>
+              )}
               <button
                 type="button"
-                onClick={handleResetCollection}
-                className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive"
+                onClick={() => importInputRef.current?.click()}
+                className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               >
-                <Trash2 className="size-3" aria-hidden />
-                図鑑をリセット
+                <Upload className="size-3" aria-hidden />
+                読み込む
               </button>
-            )}
+              <input
+                ref={importInputRef}
+                type="file"
+                accept="application/json,.json"
+                onChange={handleImportFile}
+                className="hidden"
+                aria-label="図鑑のファイルを読み込む"
+                data-testid="collection-import-input"
+              />
+              {stats.totalDraws > 0 && (
+                <button
+                  type="button"
+                  onClick={handleResetCollection}
+                  className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive"
+                >
+                  <Trash2 className="size-3" aria-hidden />
+                  図鑑をリセット
+                </button>
+              )}
+            </div>
           </div>
         </header>
 
@@ -454,6 +549,31 @@ export function CollectionView() {
           destructive
           onConfirm={confirmResetCollection}
           onClose={() => setPendingConfirm(null)}
+        />
+      )}
+      {pendingConfirm === "import" && pendingImport && (
+        <ConfirmDialog
+          title="図鑑を読み込む"
+          description={
+            <>
+              <p>
+                今の図鑑の記録 {stats.unique} 件を、ファイルの記録{" "}
+                {Object.keys(pendingImport.entries).length}{" "}
+                件で置き換えます。よろしいですか？
+              </p>
+              <p>
+                今の視聴状態やお気に入りの設定は、ファイルの内容で上書きされます。
+                この操作は取り消せません。
+              </p>
+            </>
+          }
+          confirmLabel="置き換える"
+          destructive
+          onConfirm={() => applyImport(pendingImport)}
+          onClose={() => {
+            setPendingImport(null);
+            setPendingConfirm(null);
+          }}
         />
       )}
       {showScrollTop && (

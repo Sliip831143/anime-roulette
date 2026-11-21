@@ -8,7 +8,9 @@ import {
   setStatus,
   setFavorite,
   clearStatus,
+  collectionExportFileName,
   excludedIdsOf,
+  parseCollection,
   pickAfterExclusion,
   statsOf,
   type CollectionEntry,
@@ -441,5 +443,32 @@ describe("loadCollection", () => {
       JSON.stringify({ version: 1, totalDraws: "many", entries: {} }),
     );
     expect(loadCollection().totalDraws).toBe(0);
+  });
+});
+
+describe("parseCollection", () => {
+  it("書き出した JSON を読み込むと元の図鑑に戻る", () => {
+    const data = setStatus(
+      recordDraws(emptyCollection(), [makeWork()], 1_000),
+      1,
+      "later",
+    );
+    expect(parseCollection(JSON.stringify(data))).toEqual(data);
+  });
+
+  it("JSON でない文字列・version 不一致は null", () => {
+    expect(parseCollection("not json")).toBeNull();
+    expect(
+      parseCollection(JSON.stringify({ version: 2, entries: {} })),
+    ).toBeNull();
+    expect(parseCollection(JSON.stringify({ version: 1 }))).toBeNull();
+  });
+});
+
+describe("collectionExportFileName", () => {
+  it("ローカル日付を 0 埋めしたファイル名にする", () => {
+    expect(collectionExportFileName(new Date(2026, 0, 5))).toBe(
+      "anime-roulette-collection-2026-01-05.json",
+    );
   });
 });

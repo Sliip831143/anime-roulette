@@ -134,6 +134,21 @@ describe("Home: 演出スイッチ", () => {
       ),
     );
   });
+  it("結果の件数をスクリーンリーダー向けに通知し、演出中は通知しない", async () => {
+    render(<Home />);
+    await screen.findByRole("switch", { name: "演出" });
+
+    await drawGacha();
+    await screen.findByTestId("gacha-sequence");
+    expect(screen.queryByText("3 件の結果を表示しました")).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "演出を閉じる" }));
+    const message = await screen.findByText("3 件の結果を表示しました");
+    expect(message.closest("[aria-live]")?.getAttribute("aria-live")).toBe(
+      "polite",
+    );
+  });
+
   it("★3 を含む結果なら、演出の表示中からページ背景がピンクになり結果表示後も続く", async () => {
     // watchersCount 22,000 以上は ★3（src/lib/rarity.ts）
     const r3 = { ...makeWork(9), watchersCount: 30_000 };

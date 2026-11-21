@@ -704,6 +704,16 @@ export default function Home() {
           ) : null}
         </section>
 
+        {/* 結果の件数をスクリーンリーダーへ通知する。0 件や件数不足はトーストが読み上げるので扱わない。
+            引き直しで同じ件数になっても読み上げられるよう、結果確定ごとに key を変えて要素ごと差し替える */}
+        <p aria-live="polite" className="sr-only">
+          {resultsVersion > 0 && results && results.length > 0 && (
+            <span key={resultsVersion}>
+              {results.length} 件の結果を表示しました
+            </span>
+          )}
+        </p>
+
         {/* キャラ画像。ガチャ結果がない間（未抽選・0 件）だけ、フォームの下に残った高さを使って表示する。
             結果表示中からの引き直しでは、取得中〜演出終了まで出さない。
             残った高さが足りないときは中身を出さず、main の外の右下固定版に切り替える。
